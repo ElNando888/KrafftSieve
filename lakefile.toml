@@ -1,10 +1,10 @@
-name = "Aristotle"
+name = "KrafftSieve"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["Aristotle"]
+defaultTargets = ["KrafftSieve"]
 
 [leanOptions]
-pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+pp.unicode.fun = true                 # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
@@ -12,7 +12,7 @@ maxSynthPendingDepth = 3
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.29.0-rc1"
+rev = "v4.24.0"
 
 [[lean_lib]]
-name = "Aristotle"
+name = "KrafftSieve"
