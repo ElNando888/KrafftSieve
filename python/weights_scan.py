@@ -39,7 +39,7 @@ def c(x, primes):
             hits += 1
     return hits
 
-def weight(n, x, lower_bound, upper_bound, primes, alpha, use_log_weight=True):
+def weight(n, x, lower_bound, upper_bound, primes, alpha, nconv=2, use_log_weight=True):
     """
     The Analytic Sieve Weight: Continuous, Smooth, and Non-Negative.
     Mimics the GPY/Selberg multidimensional tuning in a 1D continuous wave.
@@ -76,16 +76,17 @@ def weight(n, x, lower_bound, upper_bound, primes, alpha, use_log_weight=True):
         
     # 3. The Selberg/GPY Squaring
     # Guarantees non-negativity and mathematically forces the high-frequency spikes
-    resonator = (1.0 - alpha * penalty_sum)**2
+    # (modified to allow for higher exponents)
+    resonator = abs((1.0 - alpha * penalty_sum)**nconv)
     
     return bump * resonator
 
-def run_test():
+def run_test(nconv=2):
     """Sweeps through tuning parameters to find the optimal ratio of Hits to Mass."""
-    print(f"{'n':<3} | {'Best Alpha':<12} | {'S1 (Mass)':<12} | {'S2 (Hits)':<12} | {'Ratio S2/S1':<12} | S2 < S1?")
+    print(f"{'n':<3} | {'Best Alpha':<14} | {'S1 (Mass)':<14} | {'S2 (Hits)':<14} | {'Ratio S2/S1':<14} | S2 < S1?")
     print("-" * 80)
     
-    for n in range(2, 13):
+    for n in range(2, 103):
         primes = get_P_n(n)
         lower, upper = get_A_n_bounds(n)
         
@@ -103,7 +104,7 @@ def run_test():
             
             # Evaluate the continuous wave over the spatial interval
             for x in range(lower, upper + 1):
-                w_val = weight(n, x, lower, upper, primes, test_alpha, use_log_weight=True)
+                w_val = weight(n, x, lower, upper, primes, test_alpha, nconv, use_log_weight=True)
                 if w_val > 0:
                     c_val = c(x, primes)
                     S1_test += w_val
@@ -118,7 +119,7 @@ def run_test():
                     best_S2 = S2_test
                     
         success = best_S2 < best_S1
-        print(f"{n:<3} | {best_alpha:<12.2f} | {best_S1:<12.4f} | {best_S2:<12.4f} | {best_ratio:<12.4f} | {success}")
+        print(f"{n:<3} | {best_alpha:<14.3f} | {best_S1:<14.4f} | {best_S2:<14.4f} | {best_ratio:<14.4f} | {success}")
 
 if __name__ == '__main__':
-    run_test()
+    run_test(nconv=2)
