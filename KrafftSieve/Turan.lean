@@ -230,7 +230,8 @@ $x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$.
 --/
 def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
   haveI : NeZero (q n) := ⟨by
-  exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   Finset.univ.filter (fun x => ∀ i : Fin (w n), (x.cast : ZMod (p n i)) ∈ A_i n r i)
 
 /--
@@ -260,8 +261,10 @@ Define the Discrete Fourier Transform of $f$ at frequency $h \in \mathbb{Z}/q\ma
 --/
 noncomputable def f_hat (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
-    exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
-  (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
+    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+  (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
+    (f n r x) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /--
 #### Definition of the physical variance σ_sq.
@@ -270,7 +273,8 @@ Define the physical variance of the survivor distribution as:
 --/
 noncomputable def σ_sq (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
   haveI : NeZero (q n) := ⟨by
-    exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℝ)) * ∑ x : ZMod (q n), (f n r x - μ n r) ^ 2
 
 /-
@@ -285,100 +289,119 @@ instance q_ne_zero (n : ℕ) : NeZero (q n) := ⟨by
 /-
 Lemma: The Fourier coefficient at 0 is equal to the mean density μ.
 -/
-theorem f_hat_zero_eq_mu (n : ℕ) (r : Fin (w n) → ℕ) :
-    f_hat n r 0 = μ n r := by
+theorem f_hat_zero_eq_mu (n : ℕ) (r : Fin (w n) → ℕ) : f_hat n r 0 = μ n r := by
   simp [f_hat, μ];
   rw [ inv_mul_eq_div, div_eq_div_iff ] <;> norm_cast <;> norm_num [ q_ne_zero ];
   · unfold f N; aesop;
-  · exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2;
-  · exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
+  · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2;
+  · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
 
 /-
 Lemma: Orthogonality of the exponential sum.
 -/
 lemma sum_exp_orthogonality (n : ℕ) (k : ZMod (q n)) :
-    ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * k.val / (q n : ℂ)) = if k = 0 then (q n : ℂ) else 0 := by
-  rw [ ← Finset.sum_subset ( Finset.subset_univ ( Finset.image ( fun x : ℕ => ↑x : ℕ → ZMod ( q n ) ) ( Finset.range ( q n ) ) ) ) ];
-  · rw [ Finset.sum_image ] <;> norm_num;
-    · split_ifs;
-      · rw [ Finset.sum_congr rfl fun x hx => by rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp hx ) ] ] ; aesop;
-      · -- Let $z = e^{2 \pi i k / q}$. Since $k \neq 0$, $z$ is a primitive $q$-th root of unity.
-        set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k.val / (q n : ℂ))
-        have hz : z ≠ 1 := by
-          rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
-          field_simp;
-          rintro ⟨ m, hm ⟩;
-          rw [ div_eq_iff ] at hm <;> norm_cast at * <;> simp_all;
-          · replace hm := congr_arg ( fun x : ℤ => x : ℤ → ZMod ( q n ) ) hm ; simp_all;
-          · exact Nat.ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
-        -- The sum of a geometric series with ratio $z$ is zero when $z \neq 1$.
-        have h_geo_series : ∑ x ∈ Finset.range (q n), z ^ x = 0 := by
-          rw [ geom_sum_eq ] <;> norm_num [ hz ];
-          exact Or.inl ( by rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨ k.val, by push_cast; ring_nf; norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ⟩ ] ; ring );
-        convert h_geo_series using 2 ; ring_nf;
-        rw [ ← Complex.exp_nat_mul ] ; rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp ‹_› ) ] ; ring_nf;
-        simp +decide [ mul_assoc, mul_comm, mul_left_comm ];
-    · exact fun x hx y hy hxy => Nat.mod_eq_of_lt hx.out ▸ Nat.mod_eq_of_lt hy.out ▸ by simpa [ ZMod.natCast_eq_natCast_iff ] using hxy;
-  · simp +zetaDelta at *;
-    intro x; exact ⟨ x.val, by exact x.val_lt, by exact ZMod.natCast_zmod_val x ⟩ ;
+  ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * k.val / (q n : ℂ)) =
+    if k = 0 then (q n : ℂ) else 0 := by
+    rw [ ← Finset.sum_subset ( Finset.subset_univ ( Finset.image ( 
+      fun x : ℕ => ↑x : ℕ → ZMod ( q n ) ) ( Finset.range ( q n ) ) ) ) ];
+    · rw [ Finset.sum_image ] <;> norm_num;
+      · split_ifs;
+        · rw [ Finset.sum_congr rfl fun x hx => by
+            rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp hx ) ] ] ; aesop;
+        · -- Let $z = e^{2 \pi i k / q}$. Since $k \neq 0$,
+          -- $z$ is a primitive $q$-th root of unity.
+          set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k.val / (q n : ℂ))
+          have hz : z ≠ 1 := by
+            rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
+            field_simp;
+            rintro ⟨ m, hm ⟩;
+            rw [ div_eq_iff ] at hm <;> norm_cast at * <;> simp_all;
+            · replace hm := congr_arg ( fun x : ℤ => x : ℤ → ZMod ( q n ) ) hm ; simp_all;
+            · exact Nat.ne_of_gt <| Finset.prod_pos fun p hp =>
+                Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
+          -- The sum of a geometric series with ratio $z$ is zero when $z \neq 1$.
+          have h_geo_series : ∑ x ∈ Finset.range (q n), z ^ x = 0 := by
+            rw [ geom_sum_eq ] <;> norm_num [ hz ];
+            exact Or.inl ( by rw [ ← Complex.exp_nat_mul, mul_comm,
+              Complex.exp_eq_one_iff.mpr ⟨ k.val, by
+                push_cast; ring_nf; norm_num [ show q n ≠ 0 from
+                  Finset.prod_ne_zero_iff.mpr fun p hp =>
+                    Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ⟩ ] ; ring );
+          convert h_geo_series using 2 ; ring_nf;
+          rw [ ← Complex.exp_nat_mul ] ;
+          rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp ‹_› ) ] ; ring_nf;
+          simp +decide [ mul_assoc, mul_comm, mul_left_comm ];
+      · exact fun x hx y hy hxy =>
+          Nat.mod_eq_of_lt hx.out ▸ Nat.mod_eq_of_lt hy.out ▸ by
+            simpa [ ZMod.natCast_eq_natCast_iff ] using hxy;
+    · simp +zetaDelta at *;
+      intro x; exact ⟨ x.val, by exact x.val_lt, by exact ZMod.natCast_zmod_val x ⟩ ;
 
 /-
 Orthogonality of the exponential sum over x.
 -/
 lemma orthogonality_x (n : ℕ) (k : ZMod (q n)) :
-    ∑ x : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * k.val * x.val / (q n : ℂ)) = if k = 0 then (q n : ℂ) else 0 := by
+  ∑ x : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * k.val * x.val / (q n : ℂ)) =
+    if k = 0 then (q n : ℂ) else 0 := by
       convert sum_exp_orthogonality n k using 1;
-      rw [ ← Equiv.sum_comp ( Equiv.ofBijective ( fun x : ZMod ( q n ) => x ) ⟨ fun x y hxy => by aesop, fun x => ⟨ x, by aesop ⟩ ⟩ ) ] ; norm_num [ mul_assoc, mul_comm, mul_left_comm ]
+      rw [ ← Equiv.sum_comp ( Equiv.ofBijective ( fun x : ZMod ( q n ) => x ) ⟨ fun x y hxy => by
+        subst hxy; simp_all only, fun x => ⟨ x, by aesop ⟩ ⟩ ) ] ;
+      norm_num [ mul_assoc, mul_comm, mul_left_comm ]
 
 /-
 Application of orthogonality to simplify the double sum of function values.
 -/
 lemma sum_orthogonality_application (n : ℕ) (r : Fin (w n) → ℕ) :
-    ∑ x : ZMod (q n), ∑ y : ZMod (q n), (f n r x : ℂ) * (f n r y : ℂ) *
-    ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) =
-    (q n : ℂ) * ∑ x : ZMod (q n), (f n r x : ℂ)^2 := by
-      -- Apply the orthogonality result to simplify the inner sum over $h$.
-      have h_inner : ∀ x y : ZMod (q n), ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) = if y = x then (q n : ℂ) else 0 := by
-        intro x y; split_ifs with h; simp_all;
-        have := sum_exp_orthogonality n ( y - x ) ; simp_all +decide [ sub_eq_iff_eq_add ] ;
-      simp_all +decide [ sq, mul_assoc, mul_comm, Finset.mul_sum _ _ _ ]
+  ∑ x : ZMod (q n), ∑ y : ZMod (q n), (f n r x : ℂ) * (f n r y : ℂ) *
+  ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) =
+  (q n : ℂ) * ∑ x : ZMod (q n), (f n r x : ℂ)^2 := by
+    -- Apply the orthogonality result to simplify the inner sum over $h$.
+    have h_inner : ∀ x y : ZMod (q n), ∑ h : ZMod (q n),
+      Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) =
+        if y = x then (q n : ℂ) else 0 := by
+          intro x y; split_ifs with h; simp_all;
+          have := sum_exp_orthogonality n ( y - x ) ;
+          simp_all +decide [ sub_eq_iff_eq_add ] ;
+    simp_all +decide [ sq, mul_assoc, mul_comm, Finset.mul_sum _ _ _ ]
 
 /-
 Expansion of the squared magnitude of a single Fourier coefficient.
 -/
 lemma f_hat_normSq_expansion (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
-    Complex.normSq (f_hat n r h) =
-    (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n), (f n r x : ℂ) * (f n r y : ℂ) *
-    Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) := by
-      -- By definition of $f_hat$, we have:
-      have h_def : f_hat n r h = (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)) := by
-        exact rfl;
-      -- By definition of $f_hat$, we have
-      -- $\overline{\hat{f}(h)} = \frac{1}{q} \sum_y f(y) e^{2\pi i h y / q}$.
-      have h_conj : starRingEnd ℂ (f_hat n r h) = (1 / (q n : ℂ)) * ∑ y : ZMod (q n), (f n r y : ℂ) * Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val : ℕ) / (q n : ℂ)) := by
-        simp_all +decide [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
-        norm_num [ neg_div, mul_div_assoc, Real.cos_neg, Real.sin_neg ];
-        have h_exp : ∀ x : ZMod (q n), Complex.re (h.val * x.val) = h.val * x.val ∧ Complex.im (h.val * x.val) = 0 := by
-          norm_cast ; aesop;
-        aesop;
-      convert congr_arg₂ ( · * · ) h_def h_conj using 1 <;> ring_nf;
-      · norm_num [ Complex.mul_conj, Complex.normSq_eq_norm_sq ];
-      · -- By combining the exponents, we can see that the left-hand side and right-hand side
-        -- are equal.
-        have h_exp : ∀ x y : ZMod (q n), Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * (y - x).val * 2) = Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * y.val * 2) * Complex.exp (-(q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * x.val * 2) := by
-          intro x y; rw [ ← Complex.exp_add ] ; ring_nf;
-          rw [ Complex.exp_eq_exp_iff_exists_int ];
-          -- Since $y$ and $x$ are elements of $ZMod (q n)$, their values are integers modulo
-          -- $q n$. Therefore, $(y - x).val$ is equal to $y.val - x.val$ plus some multiple of
-          -- $q n$.
-          obtain ⟨k, hk⟩ : ∃ k : ℤ, (y - x).val = y.val - x.val + k * q n := by
-            have h_mod : (y - x).val ≡ y.val - x.val [ZMOD q n] := by
-              simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
-            exact h_mod.symm.dvd.imp fun k hk => by linarith;
-          use k * h.val; push_cast [ ← @Int.cast_inj ℂ ] at *; rw [ hk ] ; ring_nf;
-          rw [ mul_inv_cancel₀ ( Nat.cast_ne_zero.mpr <| ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ] ; ring;
-        simp +decide only [mul_assoc, Finset.mul_sum _ _ _, Finset.sum_mul];
-        exact Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by push_cast [ ← mul_assoc, ← Complex.exp_add ] ; rw [ h_exp ] ; ring_nf )
+  Complex.normSq (f_hat n r h) =
+  (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n), (f n r x : ℂ) * (f n r y : ℂ) *
+  Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) := by
+    -- By definition of $f_hat$, we have:
+    have h_def : f_hat n r h = (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)) := by
+      exact rfl;
+    -- By definition of $f_hat$, we have
+    -- $\overline{\hat{f}(h)} = \frac{1}{q} \sum_y f(y) e^{2\pi i h y / q}$.
+    have h_conj : starRingEnd ℂ (f_hat n r h) = (1 / (q n : ℂ)) * ∑ y : ZMod (q n), (f n r y : ℂ) * Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val : ℕ) / (q n : ℂ)) := by
+      simp_all +decide [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
+      norm_num [ neg_div, mul_div_assoc, Real.cos_neg, Real.sin_neg ];
+      have h_exp : ∀ x : ZMod (q n), Complex.re (h.val * x.val) = h.val * x.val ∧ Complex.im (h.val * x.val) = 0 := by
+        norm_cast ; aesop;
+      aesop;
+    convert congr_arg₂ ( · * · ) h_def h_conj using 1 <;> ring_nf;
+    · norm_num [ Complex.mul_conj, Complex.normSq_eq_norm_sq ];
+    · -- By combining the exponents, we can see that the left-hand side and right-hand side
+      -- are equal.
+      have h_exp : ∀ x y : ZMod (q n), Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * (y - x).val * 2) = Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * y.val * 2) * Complex.exp (-(q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * x.val * 2) := by
+        intro x y; rw [ ← Complex.exp_add ] ; ring_nf;
+        rw [ Complex.exp_eq_exp_iff_exists_int ];
+        -- Since $y$ and $x$ are elements of $ZMod (q n)$, their values are integers modulo
+        -- $q n$. Therefore, $(y - x).val$ is equal to $y.val - x.val$ plus some multiple of
+        -- $q n$.
+        obtain ⟨k, hk⟩ : ∃ k : ℤ, (y - x).val = y.val - x.val + k * q n := by
+          have h_mod : (y - x).val ≡ y.val - x.val [ZMOD q n] := by
+            simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
+          exact h_mod.symm.dvd.imp fun k hk => by linarith;
+        use k * h.val; push_cast [ ← @Int.cast_inj ℂ ] at *; rw [ hk ] ; ring_nf;
+        rw [ mul_inv_cancel₀ ( Nat.cast_ne_zero.mpr <| ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ] ; ring;
+      simp +decide only [mul_assoc, Finset.mul_sum _ _ _, Finset.sum_mul];
+      exact Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by push_cast [ ← mul_assoc, ← Complex.exp_add ] ; rw [ h_exp ] ; ring_nf )
 
 /-
 Standard Parseval's Identity: The sum of the squared magnitudes of the Fourier coefficients
