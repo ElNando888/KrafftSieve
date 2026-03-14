@@ -457,18 +457,21 @@ lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod 
       · linarith [ show 0 ≤ ∑ x ∈ ( Finset.univ \ { h } ) \ { -h }, if x = 0 then 0 else Complex.normSq ( f_hat n r x ) from Finset.sum_nonneg fun x hx => by split_ifs <;> norm_num [ Complex.normSq_nonneg ] ];
       · intro h_eq; have := q_odd n; simp_all +decide [ neg_eq_iff_add_eq_zero ] ;
 
-/-
+/--
+#### Define r^K
 Define the Krafft tuple r^K such that for each 1 <= i <= w, r^K_i = floor((p_i+1)/6).
--/
+--/
 def r_K (n : ℕ) (i : Fin (w n)) : ℕ := (p n i + 1) / 6
 
-/-
+/--
+#### Define A_n
 Define the target interval of indices: A_n = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}.
--/
+--/
 def A_n (n : ℕ) : Finset ℕ := Finset.Icc (6 * n^2 - 2 * n) (6 * n^2 + 10 * n + 3)
 
 /-
-As defined previously, an integer x survives the sieve (i.e., f(x) = 1) if and only if x is not congruent to +/ - r^K_i mod p_i for all 1 <= i <= w.
+As defined previously, an integer x survives the sieve (i.e., f(x) = 1) if and only if
+x is not congruent to ±r^K_i mod p_i for all 1 <= i <= w.
 -/
 theorem survives_iff (n : ℕ) (x : ZMod (q n)) :
     f n (r_K n) x = 1 ↔ ∀ i : Fin (w n), (x.cast : ZMod (p n i)) ≠ r_K n i ∧ (x.cast : ZMod (p n i)) ≠ -r_K n i := by
@@ -645,17 +648,18 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
           · exact h ▸ Finset.dvd_prod_of_mem _ ( Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) )
 
 
-/-
-Define the interval indicator function I_A which is 1 if the representative of x is in A_n, and 0 otherwise.
--/
-/-- Define the interval indicator function $I_{\mathcal{A}} : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ such that $I_{\mathcal{A}}(x) = 1$ if $x \in \mathcal{A}_n$, and $0$ otherwise. -/
+/--
+#### Define I_A
+Define the interval indicator function I_A which is 1 if the representative of x is in A_n,
+and 0 otherwise.
+--/
 noncomputable def I_A (n : ℕ) (x : ZMod (q n)) : ℝ :=
   if x.val ∈ A_n n then 1 else 0
 
-/-
-Define L as the cardinality of A_n and prove it equals 12n + 4.
--/
-/-- Define the length of the interval $L = |\mathcal{A}_n|$. -/
+/--
+#### Define L
+Define the length of the interval $L = |\mathcal{A}_n|$.
+--/
 def L (n : ℕ) : ℕ := (A_n n).card
 
 /-- The length of the interval is $12n + 4$. -/
@@ -663,21 +667,21 @@ theorem L_eq (n : ℕ) : L n = 12 * n + 4 := by
   rw [ show L n = Finset.card ( Finset.Icc ( 6 * n ^ 2 - 2 * n ) ( 6 * n ^ 2 + 10 * n + 3 ) ) by rfl, Nat.card_Icc ] ; ring_nf;
   exact Nat.sub_eq_of_eq_add <| by linarith [ Nat.sub_add_cancel <| show n * 2 ≤ n ^ 2 * 6 from by nlinarith [ show n ≤ n ^ 2 by nlinarith ] ] ;
 
-/-
-Define the Discrete Fourier Transform of I_A.
--/
-/-- Define the Discrete Fourier Transform of $I_{\mathcal{A}}$ at frequency $h$:
-    $$ \hat{I}_{\mathcal{A}}(h) = \frac{1}{q} \sum_{x=0}^{q-1} I_{\mathcal{A}}(x) e^{-2\pi i h x / q} $$ -/
+/--
+#### Define the Discrete Fourier Transform of I_A.
+Define the Discrete Fourier Transform of $I_{\mathcal{A}}$ at frequency $h$:
+  $$ \hat{I}_{\mathcal{A}}(h) = \frac{1}{q} \sum_{x=0}^{q-1} I_{\mathcal{A}}(x) e^{-2\pi i h x / q} $$
+--/
 noncomputable def I_A_hat (n : ℕ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (I_A n x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
-/-
-Define S as the sum of f(x) * I_A(x) over ZMod q.
--/
-/-- Let $S$ be the total number of survivors in $\mathcal{A}_n$:
-    $$ S = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} f(x) I_{\mathcal{A}}(x) $$ -/
+/--
+#### Define S as the sum of f(x) * I_A(x) over ZMod q.
+Let $S$ be the total number of survivors in $\mathcal{A}_n$:
+  $$ S = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} f(x) I_{\mathcal{A}}(x) $$
+--/
 noncomputable def S (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
   ∑ x : ZMod (q n), f n r x * I_A n x
 
@@ -832,20 +836,22 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
           nlinarith only [ hn, hn_large ];
       exact h_exp_growth n hn_large.le
 
-/-
-Define the local hit function g_i(x) which is 1 if x is congruent to +/ - r^K_i mod p_i, and 0 otherwise.
--/
-/-- Define the local hit function $g_i : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ for each prime index $i \in \{1, \dots, w\}$.
-$g_i(x) = 1$ if $x \equiv r^K_i \pmod{p_i}$ or $x \equiv -r^K_i \pmod{p_i}$.
-Otherwise, $g_i(x) = 0$. -/
+/--
+#### Define the local hit function g_i(x)
+Define the local hit function $g_i : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ for each prime
+index $i \in \{1, \dots, w\}$.
+- $g_i(x) = 1$ if $x \equiv r^K_i \pmod{p_i}$ or $x \equiv -r^K_i \pmod{p_i}$.
+- Otherwise, $g_i(x) = 0$.
+--/
 noncomputable def g (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : ℝ :=
   if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0
 
-/-
-Define the global additive hit counter c(x) as the sum of all local hits g_i(x).
--/
-/-- Define the global additive hit counter $c : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ as the sum of all local hits:
-$$ c(x) = \sum_{i=1}^w g_i(x) $$ -/
+/--
+#### Define the global additive hit counter c(x)
+Define the global additive hit counter $c : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ as the
+sum of all local hits:
+$$ c(x) = \sum_{i=1}^w g_i(x) $$
+--/
 noncomputable def c (n : ℕ) (x : ZMod (q n)) : ℝ :=
   ∑ i : Fin (w n), g n i x
 
@@ -863,19 +869,21 @@ lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ 
       unfold g; simp_all ;
       unfold A_i at this; aesop;)
 
-/-
-Define the First Moment M_1(n) as the sum of c(x) for x in A_n.
--/
-/-- Define the First Moment $M_1(n)$ as the total number of hits across the target interval $\mathcal{A}_n$:
-$$ M_1(n) = \sum_{x \in \mathcal{A}_n} c(x) $$ -/
+/--
+#### Define the First Moment M_1(n)
+Define the First Moment $M_1(n)$ as the total number of hits across the target interval
+$\mathcal{A}_n$:
+$$ M_1(n) = \sum_{x \in \mathcal{A}_n} c(x) $$
+--/
 noncomputable def M_1 (n : ℕ) : ℝ :=
   ∑ x ∈ A_n n, c n (x : ZMod (q n))
 
-/-
-Define the Second Moment M_2(n) as the sum of (c(x))^2 for x in A_n.
--/
-/-- Define the Second Moment $M_2(n)$ as the sum of the squares of the hits across the target interval $\mathcal{A}_n$:
-$$ M_2(n) = \sum_{x \in \mathcal{A}_n} (c(x))^2 $$ -/
+/--
+#### Define the Second Moment M_2(n)
+Define the Second Moment $M_2(n)$ as the sum of the squares of the hits across the target
+interval $\mathcal{A}_n$:
+$$ M_2(n) = \sum_{x \in \mathcal{A}_n} (c(x))^2 $$
+--/
 noncomputable def M_2 (n : ℕ) : ℝ :=
   ∑ x ∈ A_n n, (c n (x : ZMod (q n)))^2
 
@@ -1091,11 +1099,11 @@ theorem cross_term_density_bound (n : ℕ) (i j : Fin (w n)) (h_ne : i ≠ j) :
     _ = 4 * ((L n : ℝ) / (p n i * p n j : ℝ) + 1) := by ring
     _ = (4 * L n : ℝ) / (p n i * p n j : ℝ) + 4 := by ring
 
-/-
-Define H(n) as the sum of the reciprocals of the primes in the sieve window.
--/
-/-- Define $H(n)$ as the sum of the reciprocals of the primes in the sieve window:
-$$ H(n) = \sum_{i=1}^w \frac{1}{p_i} $$ -/
+/--
+#### Define H(n)
+Define $H(n)$ as the sum of the reciprocals of the primes in the sieve window:
+$$ H(n) = \sum_{i=1}^w \frac{1}{p_i} $$
+--/
 noncomputable def H (n : ℕ) : ℝ :=
   ∑ i : Fin (w n), 1 / (p n i : ℝ)
 
@@ -1144,19 +1152,19 @@ theorem second_moment_bound (n : ℕ) :
         exact Finset.sum_nonneg fun _ _ => mul_self_nonneg _;
       unfold H; nlinarith;
 
-/-
-Define the total weighted mass of the interval S_1(n) as the sum of W(x) for x in A_n.
--/
-/-- Define the total weighted mass of the interval $S_1(n)$:
-$$ S_1(n) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
+/--
+#### Define the total weighted mass of the interval S_1(n)
+Define the total weighted mass of the interval $S_1(n)$:
+$$ S_1(n) = \sum_{x \in \mathcal{A}_n} W(x) $$
+--/
 noncomputable def S_1 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n))
 
-/-
-Define the weighted hit count S_2(n) as the sum of W(x)c(x) for x in A_n.
--/
-/-- Define the weighted hit count $S_2(n)$:
-$$ S_2(n) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
+/--
+#### Define the weighted hit count S_2(n)
+Define the weighted hit count $S_2(n)$:
+$$ S_2(n) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$
+--/
 noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n)) * c n (x : ZMod (q n))
 
@@ -1192,21 +1200,22 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
         exact fun x hx => if hx' : W x = 0 then by simp +decide [ hx' ] else by nlinarith [ hW x, h_c_ge_one x hx ( lt_of_le_of_ne ( hW x ) ( Ne.symm hx' ) ) ] ;
       exact Finset.sum_le_sum h_Wc_ge_W
 
-/-
-Definition 5.1 (Fourier Transform of the Weight):
-Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(x)$ over $\mathbb{Z}/q\mathbb{Z}$:
+/--
+#### Define $\hat{W}(h)$ (Fourier Transform of the Weight):
+Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(x)$ over 
+$\mathbb{Z}/q\mathbb{Z}$:
 $$ \hat{W}(h) = \frac{1}{q} \sum_{x=0}^{q-1} W(x) e^{-2\pi i h x / q} $$
--/
+--/
 noncomputable def W_hat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (W x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
-/-
-Definition 5.2 (Fourier Transform of the Local Hit):
+/--
+#### Define $\hat{g}_i(h)$ (Fourier Transform of the Local Hit):
 Define $\hat{g}_i(h)$ as the Discrete Fourier Transform of the local hit function $g_i(x)$:
 $$ \hat{g}_i(h) = \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x / q} $$
--/
+--/
 noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
@@ -1710,9 +1719,10 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
         norm_num +zetaDelta at *;
         have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by { exact ( mem_P_n_iff_exists_index n _ ) |>.2 ⟨ i, rfl ⟩ } ) ; norm_num at this ; interval_cases p n i <;> norm_num at *;
 
-/-
-Definition of the Krafft Admissibility condition: existence of a weight function W such that S_2(n) < S_1(n).
--/
+/--
+#### Definition of the Krafft Admissibility condition
+Existence of a weight function $W$ such that $S_2(n) < S_1(n)$.
+--/
 def Krafft_Admissibility (n : ℕ) : Prop :=
   ∃ W : ZMod (q n) → ℝ, (∀ x, W x ≥ 0) ∧
   (∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) ∧
