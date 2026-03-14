@@ -298,7 +298,7 @@ Lemma: Orthogonality of the exponential sum.
 -/
 lemma sum_exp_orthogonality (n : ℕ) (k : ZMod (q n)) :
     ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * k.val / (q n : ℂ)) = if k = 0 then (q n : ℂ) else 0 := by
-  erw [ ← Finset.sum_subset ( Finset.subset_univ ( Finset.image ( fun x : ℕ => ↑x : ℕ → ZMod ( q n ) ) ( Finset.range ( q n ) ) ) ) ];
+  rw [ ← Finset.sum_subset ( Finset.subset_univ ( Finset.image ( fun x : ℕ => ↑x : ℕ → ZMod ( q n ) ) ( Finset.range ( q n ) ) ) ) ];
   · rw [ Finset.sum_image ] <;> norm_num;
     · split_ifs;
       · rw [ Finset.sum_congr rfl fun x hx => by rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp hx ) ] ] ; aesop;
@@ -448,7 +448,7 @@ lemma f_hat_conj_symm (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
         · exact Nat.cast_ne_zero.mpr <| Nat.ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
       simp +zetaDelta at *;
       left; congr; ext x; rw [ h_exp ] ; rw [ Complex.ext_iff ] ; norm_num [ Complex.exp_re, Complex.exp_im, neg_div ] ; ring_nf;
-      erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; aesop
+      rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; aesop
 
 /-
 Lemma 2 (Harmonic Variance Lower Bound): For any non-zero frequency h, the variance is at least
@@ -563,12 +563,12 @@ lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1) (
       have h_cong : (x.cast : ZMod p) ≠ r_K n i ∧ (x.cast : ZMod p) ≠ -r_K n i := by
         convert survives_iff n x |>.1 h_survives i ; aesop;
         all_goals subst hi; norm_cast;
-        · erw [ ZMod.cast_eq_val ];
+        · rw [ ZMod.cast_eq_val ];
           norm_num [ ZMod.natCast_zmod_val ];
           rw [ ← ZMod.natCast_mod ];
           rw [ ← Nat.mod_mod_of_dvd x ( show p n i ∣ q n from Finset.dvd_prod_of_mem _ hp ) ];
           exact ZMod.natCast_mod (x % q n) (p n i);
-        · erw [ ZMod.cast_eq_val ];
+        · rw [ ZMod.cast_eq_val ];
           norm_num [ ZMod.natCast_zmod_val ];
           rw [ ZMod.natCast_eq_natCast_iff ];
           rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ ( show p n i ∣ q n from Finset.dvd_prod_of_mem _ hp ) ];
@@ -648,9 +648,9 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
         simp_all +decide [ r_K ];
         convert this using 1;
         · norm_num [ ZMod.natCast_eq_natCast_iff' ];
-          erw [ ZMod.cast_eq_val ];
-          erw [ ZMod.val_natCast ];
-          erw [ ZMod.natCast_eq_natCast_iff ];
+          rw [ ZMod.cast_eq_val ];
+          rw [ ZMod.val_natCast ];
+          rw [ ZMod.natCast_eq_natCast_iff ];
           rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ ( show p n i ∣ q n from Finset.dvd_prod_of_mem _ <| by
                                                   exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ];
         · norm_num [ ZMod.cast, ZMod.val ];
@@ -874,8 +874,8 @@ theorem local_hit_density_bound (n : ℕ) (i : Fin (w n)) :
         have hg_def : ∀ x ∈ A_n n, g n i (x : ZMod (q n)) = if (6 * n^2 - 2 * n + (x - (6 * n^2 - 2 * n)) : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨ (6 * n^2 - 2 * n + (x - (6 * n^2 - 2 * n)) : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0 := by
           intros x hx
           simp [g];
-          erw [ ZMod.cast_eq_val ];
-          erw [ ZMod.val_cast_of_lt ];
+          rw [ ZMod.cast_eq_val ];
+          rw [ ZMod.val_cast_of_lt ];
           refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) _;
           by_cases hn : n ≥ 1;
           · exact q_bound n hn;
@@ -997,13 +997,13 @@ lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
         split_ifs <;> norm_num;
         simp_all +decide [ Nat.cast_sub ( show r_K n i ≤ p n i from Nat.div_le_of_le_mul <| by linarith [ show p n i ≥ 5 from by { have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by { exact ( mem_P_n_iff_exists_index n _ ) |>.2 ⟨ i, rfl ⟩ } ) ; linarith } ] ), Nat.cast_sub ( show r_K n j ≤ p n j from Nat.div_le_of_le_mul <| by linarith [ show p n j ≥ 5 from by { have := Finset.mem_filter.mp ( show p n j ∈ P_n n from by { exact ( mem_P_n_iff_exists_index n _ ) |>.2 ⟨ j, rfl ⟩ } ) ; linarith } ] ) ];
         rename_i h₁ h₂ h₃ h₄ h₅ h₆; rcases h₂ with ( h₂ | h₂ ) <;> rcases h₁ with ( h₁ | h₁ ) <;> simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
-        · erw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
+        · rw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
           rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ q n from Finset.dvd_prod_of_mem _ <| by
                                         exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) |> fun h => Finset.mem_filter.mp h |>.1 |> fun h => Finset.mem_filter.mpr ⟨ h, by
                                           aesop ⟩
                                     ) ] at h₂ ; rw [ Nat.mod_mod_of_dvd _ ( show p n j ∣ q n from Finset.dvd_prod_of_mem _ <| by
                                                                                                                                           exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ] at h₁ ; aesop;
-        · erw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
+        · rw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
           rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ q n from Finset.dvd_prod_of_mem _ <| by
                                         exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ] at h₂ ; simp_all ;
           rw [ Nat.mod_eq_of_lt ( show x < q n from by
@@ -1012,13 +1012,13 @@ lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
                                     · exact q_bound n hn;
                                     · interval_cases n ; simp_all;
                                       exact Fin.elim0 i ) ] at h₁ ; simp_all ;
-        · erw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
+        · rw [ ZMod.cast_eq_val ] at * ; simp_all +decide [ ZMod.natCast_eq_natCast_iff' ] ;
           rw [ Nat.mod_mod_of_dvd _ ( show p n j ∣ q n from Finset.dvd_prod_of_mem _ <| by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| by { exact List.get_mem _ _ } } ) ] at h₁ ; simp_all ;
           rw [ ← Nat.mod_add_div x ( q n ) ] at * ; simp_all ;
-          exact h₅ ( mul_eq_zero_of_left ( by erw [ ZMod.natCast_eq_zero_iff ] ; exact Finset.dvd_prod_of_mem _ <| by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| by { exact List.get_mem _ _ } } ) _ );
+          exact h₅ ( mul_eq_zero_of_left ( by rw [ ZMod.natCast_eq_zero_iff ] ; exact Finset.dvd_prod_of_mem _ <| by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| by { exact List.get_mem _ _ } } ) _ );
         · convert h₆ _ _;
           · convert h₂ using 1;
-            erw [ ZMod.cast_eq_val ];
+            rw [ ZMod.cast_eq_val ];
             norm_num +zetaDelta at *;
             rw [ Nat.mod_eq_of_lt ];
             refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) _;
@@ -1027,7 +1027,7 @@ lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
             · interval_cases n ; simp_all ;
               exact Fin.elim0 i;
           · convert h₁ using 1;
-            erw [ ZMod.cast_eq_val ];
+            rw [ ZMod.cast_eq_val ];
             norm_num [ ZMod.natCast_zmod_val ];
             rw [ Nat.mod_eq_of_lt ( show x < q n from _ ) ];
             refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) _;
@@ -1205,7 +1205,7 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
       · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp;
         · intro x hx; rw [ Nat.mod_eq_of_lt ] ; aesop;
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) ( q_bound n hn );
-        · intro a ha b hb hab; erw [ ZMod.natCast_eq_natCast_iff ] ; aesop;
+        · intro a ha b hb hab; rw [ ZMod.natCast_eq_natCast_iff ] ; aesop;
         · intro b hb;
           refine' ⟨ b, hb, Nat.mod_eq_of_lt _ ⟩;
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hb |>.2 ) ( q_bound n hn );
@@ -1235,7 +1235,7 @@ lemma sum_exp_orthogonality_neg (n : ℕ) (k : ZMod (q n)) :
       have h_conj : ∑ h : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * h.val * k.val / (q n : ℂ)) = starRingEnd ℂ (∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * k.val / (q n : ℂ))) := by
         rw [ map_sum ] ; congr ; ext ; rw [ ← Complex.exp_conj ] ; ring_nf;
         norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
-        erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; ring_nf ; norm_num;
+        rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; ring_nf ; norm_num;
       convert h_conj using 1;
       rw [ sum_exp_orthogonality ] ; aesop
 
@@ -1285,9 +1285,9 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
       norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
       left; ring_nf;
       constructor <;> congr! 1;
-      · erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; ring_nf;
+      · rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; ring_nf;
         erw [ Complex.ofReal_re, Complex.ofReal_im ] ; ring_nf;
-      · erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; ring_nf;
+      · rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; ring_nf;
         norm_cast ; ring_nf
 
 /-
