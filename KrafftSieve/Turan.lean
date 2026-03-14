@@ -122,14 +122,12 @@ We have formalized the sparse, discrete Fourier spectrum of the local hit functi
  
 Formalization of Phase 7: The Final Evaluation.
 
-This module formalizes the final evaluation of the analytic bounds for the Twin Prime
-survivor count. It includes:
-- Lemma 7.1: Bounds the local exponential sum and its product over all primes.
-- Lemma 7.2: Defines the statement of the Dirichlet Sine Envelope bound (admitted as an
-  assumption).
-- Theorem 7.3: Establishes the final error bound by combining Lemma 7.1 and Lemma 7.2.
-- The final lower bound for the survivor count S, expressing the strict positivity
-  requirement.
+Formalized Phase 7 of the Krafft Negative Resonance argument. Defined the Krafft
+Admissibility condition (existence of a resonant weight function) and proved that it implies
+the existence of twin primes in the interval $\mathcal{A}_n$ (Theorem 7.3), using the Exact
+Krafft Cosine (Lemma 7.1) and Third Harmonic Extraction (Lemma 7.2). Note that the existence
+of such a weight function is taken as a hypothesis (`Krafft_Admissibility`) as requested.
+
 -/
 
 import Mathlib.Algebra.Group.Pointwise.Finset.Basic
