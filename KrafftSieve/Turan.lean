@@ -696,75 +696,9 @@ lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
   -- Since $P_n \subseteq P_{n+1}$, the product of elements in $P_n$ divides the product of elements in $P_{n+1}$.
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
-/-
-q(n) is at least 35 for n >= 1.
--/
-lemma q_ge_35 (n : ℕ) (hn : n ≥ 1) : q n ≥ 35 := by
-  -- Since $q(n)$ is monotonic (in the sense of divisibility), we have $q(1) \mid q(n)$.
-  have h_div : q 1 ∣ q n := by
-    induction hn <;> [ tauto; exact dvd_trans ‹_› ( q_mono _ ) ];
-  exact Nat.le_of_dvd ( Nat.pos_of_ne_zero ( by unfold q; exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ) ) h_div |> le_trans ( by native_decide )
-
-/-
-q(n) is at least 5005 for n >= 2.
--/
-lemma q_ge_5005 (n : ℕ) (hn : n ≥ 2) : q n ≥ 5005 := by
-  -- Since $q(n)$ is monotonic (divisibility), for $n \ge 2$, $q(n)$ is a multiple of $q(2) = 5005$.
-  have h_div : q 2 ∣ q n := by
-    induction hn <;> [ tauto; exact dvd_trans ‹_› ( q_mono _ ) ];
-  exact Nat.le_of_dvd ( Nat.pos_of_ne_zero ( by unfold q; exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ) ) h_div |> le_trans ( by native_decide )
-
-/-
-q(3) is 1616615.
--/
-lemma q_3_val : q 3 = 1616615 := by
-  native_decide +revert
-
-/-
-q(n) is at least 1616615 for n >= 3.
--/
-lemma q_ge_q3 (n : ℕ) (hn : n ≥ 3) : q n ≥ 1616615 := by
-  induction' n, hn using Nat.le_induction with n hn ih;
-  · native_decide +revert;
-  · exact le_trans ih ( Nat.le_of_dvd ( Finset.prod_pos fun p hp => Nat.Prime.pos ( Finset.mem_filter.mp hp |>.2.2 ) ) ( q_mono n ) )
-
-/-
-q(4) is 37182145.
--/
-lemma q_4_val : q 4 = 37182145 := by
-  native_decide +revert
-
-/-
-q(n) is at least 37182145 for n >= 4.
--/
-lemma q_ge_q4 (n : ℕ) (hn : n ≥ 4) : q n ≥ 37182145 := by
-  induction' hn with n hn ih;
-  · native_decide +revert;
-  · exact le_trans ih ( Nat.le_of_dvd ( Finset.prod_pos fun p hp => Nat.Prime.pos ( Finset.mem_filter.mp hp |>.2.2 ) ) ( q_mono n ) )
-
-/-
-q(10) is greater than 10^10.
--/
-lemma q_10_large : q 10 > 10^10 := by
-  native_decide +revert
-
-/-
-q(n) is at least 10^10 for n >= 10.
--/
-lemma q_ge_q10 (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^10 := by
-  induction' hn with n hn ih <;> norm_num [ * ] at *;
-  · native_decide +revert;
-  · exact le_trans ih ( Nat.le_of_dvd ( Finset.prod_pos fun p hp => Nat.Prime.pos ( Finset.mem_filter.mp hp |>.2.2 ) ) ( q_mono n ) )
-
-/-
-q(10) is greater than 10^20.
--/
-lemma q_10_very_large : q 10 > 10^20 := by
-  native_decide +revert
-
-/-
+/--
 q(n) is at least 10^20 for n >= 10.
--/
+--/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
   induction' n, hn using Nat.le_induction with n hn ih;
   · native_decide +revert;
