@@ -10,33 +10,37 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
 /-
-We have formally defined the sieve setting, including the set of primes $\mathcal{P}_n$, the primorial $q$, the permitted residue classes, and the survivor indicator function $f$. We have defined the Discrete Fourier Transform $\hat{f}$ and the physical variance $\sigma^2$.
+We have formally defined the sieve setting, including the set of primes $\mathcal{P}_n$,
+the primorial $q$, the permitted residue classes, and the survivor indicator function $f$.
+We have defined the Discrete Fourier Transform $\hat{f}$ and the physical variance
+$\sigma^2$.
 
 We have proven the following main results:
-1.  **Parseval's Identity for the Sieve (`parseval_identity`)**: The variance of the indicator function is equal to the sum of the squared magnitudes of its non-zero Fourier coefficients: $\sigma^2 = \sum_{h \ne 0} |\hat{f}(h)|^2$.
-2.  **Harmonic Variance Lower Bound (`harmonic_variance_lower_bound`)**: For any non-zero frequency $h$, the variance is bounded below by twice the squared magnitude of the Fourier coefficient at $h$: $\sigma^2 \ge 2 |\hat{f}(h)|^2$.
+- Parseval's Identity for the Sieve (`parseval_identity`): The variance of the indicator
+  function is equal to the sum of the squared magnitudes of its non-zero Fourier
+  coefficients: $\sigma^2 = \sum_{h \ne 0} |\hat{f}(h)|^2$.
+- Harmonic Variance Lower Bound (`harmonic_variance_lower_bound`): For any non-zero
+  frequency $h$, the variance is bounded below by twice the squared magnitude of the
+  Fourier coefficient at $h$: $\sigma^2 \ge 2 |\hat{f}(h)|^2$.
 
-These proofs rely on the orthogonality of characters on $\mathbb{Z}/q\mathbb{Z}$ and the conjugate symmetry of the Fourier transform for real-valued functions, which we have also formally established.
--/
-
-/-
-Formalization of Phase 3 Setup and Definitions, and Main Claims (Lemmas 3.1, 3.2, 3.3) for the Krafft sieve.
+These proofs rely on the orthogonality of characters on $\mathbb{Z}/q\mathbb{Z}$ and
+the conjugate symmetry of the Fourier transform for real-valued functions, which we have
+also formally established.
 
 Definitions:
-* `r_K`: The Krafft tuple.
-* `A_n`: The target interval of indices.
-* `survives_iff`: Characterization of survival in the sieve.
+- `r_K`: The Krafft tuple.
+- `A_n`: The target interval of indices.
+- `survives_iff`: Characterization of survival in the sieve.
 
 Theorems:
-* `krafft_algebraic_equivalence` (Lemma 3.1): Equivalence between modular condition and divisibility by 6x ± 1.
-* `interval_projection_bound` (Lemma 3.2): Bound on 6x+1 for x in A_n.
-* `sieve_isomorphism` (Lemma 3.3): x survives the sieve iff 6x-1 and 6x+1 are prime.
--/
+- `krafft_algebraic_equivalence`: Equivalence between modular condition and
+  divisibility by 6x ± 1.
+- `interval_projection_bound`: Bound on 6x+1 for x in A_n.
+- `sieve_isomorphism`: x survives the sieve iff 6x-1 and 6x+1 are prime.
 
-/-
-Phase 1: The Additive Turán Sieve Architecture
-
-We have successfully formalized the additive variance sieve (the Turán method) by defining the local hit function, the global hit counter, and the first and second moments over the target interval. We have also proved the Additive Sieve Isomorphism.
+We have successfully formalized the additive variance sieve (the Turán method) by defining
+the local hit function, the global hit counter, and the first and second moments over the
+target interval. We have also proved the Additive Sieve Isomorphism.
 
 Definitions:
 - `g`: The local hit function $g_i(x)$.
@@ -45,79 +49,87 @@ Definitions:
 - `M_2`: The Second Moment $M_2(n)$.
 
 Theorems:
-- `additive_sieve_isomorphism`: Proves that $c(x) = 0$ if and only if $x$ survives the Krafft sieve (i.e., $6x-1$ and $6x+1$ are prime).
--/
-
-/-
+- `additive_sieve_isomorphism`: Proves that $c(x) = 0$ if and only if $x$ survives the
+  Krafft sieve (i.e., $6x-1$ and $6x+1$ are prime).
+ 
 Formal verification of the Additive Moments Expansion phase.
 
-This module contains the formal statements and proofs (or admitted bounds as permitted) for the moments of the additive hit counter.
+This module contains the formal statements and proofs (or admitted bounds as permitted)
+for the moments of the additive hit counter.
 
 Key results:
-- `first_moment_expansion`: Lemma 2.1, verifying the swap of summation order for the First Moment.
-- `second_moment_expansion`: Lemma 2.2, verifying the expansion and swap of summation order for the Second Moment.
-- `local_hit_density_bound`: Lemma 2.3, bounding the local hits in the interval A_n.
-- `cross_term_density_bound`: Lemma 2.4, bounding the simultaneous hits for distinct primes in the interval A_n.
+- `first_moment_expansion`: verifying the swap of summation order for the First Moment.
+- `second_moment_expansion`: verifying the expansion and swap of summation order for the
+  Second Moment.
+- `local_hit_density_bound`: bounding the local hits in the interval A_n.
+- `cross_term_density_bound`: bounding the simultaneous hits for distinct primes in the
+  interval A_n.
 
-Helper lemmas `count_mod_bound`, `crt_intersection_bound`, and `cross_term_splitting` were formalized and proved to support the proof of `cross_term_density_bound`.
--/
+Helper lemmas `count_mod_bound`, `crt_intersection_bound`, and `cross_term_splitting`
+were formalized and proved to support the proof of `cross_term_density_bound`.
 
-/-
-Formalization of Phase 3: The Moment Evaluations.
+Formal verification of the Additive Moments Evaluation phase.
 
-This module defines the Prime Reciprocal Sum H(n) and establishes upper bounds for the First and Second Moments of the additive hit counter.
+This module defines the Prime Reciprocal Sum H(n) and establishes upper bounds for the
+First and Second Moments of the additive hit counter.
 
 Key definitions and results:
 - `H`: The sum of the reciprocals of the primes in the sieve window.
 - `first_moment_bound`: Proves that the First Moment M_1(n) is bounded by 2L * H(n) + 2w.
-- `second_moment_bound`: Proves that the Second Moment M_2(n) is bounded by 4L * H(n)^2 + 4w^2 + M_1(n).
+- `second_moment_bound`: Proves that the Second Moment M_2(n) is bounded by
+  4L * H(n)^2 + 4w^2 + M_1(n).
 
-These bounds are derived using the Local Hit Density Bound and the Cross-Term Density Bound established in Phase 2.
--/
+These bounds are derived using the Local Hit Density Bound and the Cross-Term Density
+Bound established in Phase 2.
+ 
+We have formalized the Weighted Sieve Principle, including the definitions of the weighted
+interval mass $S_1(n)$ and the weighted hit mass $S_2(n)$. We proved Lemma 4.4 (Non-negative
+Hits) showing that the hit counter $c(x)$ is non-negative and integer-valued (in the sense
+that $c(x) < 1 \implies c(x) = 0$). Finally, we proved Theorem 4.5 (The Weighted Existence
+Principle), which states that if $S_2(n) < S_1(n)$, then there exists a survivor
+$x \in \mathcal{A}_n$ with positive weight $W(x) > 0$ and zero hits $c(x) = 0$.
 
-/-
-We have formalized the Weighted Sieve Principle, including the definitions of the weighted interval mass
-$S_1(n)$ and the weighted hit mass $S_2(n)$. We proved Lemma 4.4 (Non-negative Hits) showing that the hit
-counter $c(x)$ is non-negative and integer-valued (in the sense that $c(x) < 1 \implies c(x) = 0$).
-Finally, we proved Theorem 4.5 (The Weighted Existence Principle), which states that if $S_2(n) < S_1(n)$,
-then there exists a survivor $x \in \mathcal{A}_n$ with positive weight $W(x) > 0$ and zero hits
-$c(x) = 0$.
--/
+Formal verification of the Weighted Sieve Principle phase.
 
-/-
-Phase 5: The Fourier Expansion of the Weighted Moments
+Formal verification of the Fourier Expansion of the Weighted Moments phase.
 
-We have successfully transitioned the weighted moments into the frequency domain using the compact support of $W(x)$ and Plancherel's theorem.
+We have successfully transitioned the weighted moments into the frequency domain using
+the compact support of $W(x)$ and Plancherel's theorem.
 
 Key Definitions and Lemmas:
 - `W_hat`: The Discrete Fourier Transform of the weight function $W(x)$.
 - `g_hat`: The Discrete Fourier Transform of the local hit function $g_i(x)$.
-- `compact_support_equivalence` (Lemma 5.3): Proves that $S_1(n) = q \hat{W}(0)$ given the compact support of $W$.
-- `plancherel_hit_expansion` (Lemma 5.4): Expands the weighted hit count $S_2(n)$ into the Fourier domain as $S_2(n) = q \sum_{i, h} \hat{W}(h) \overline{\hat{g}_i(h)}$.
+- `compact_support_equivalence` (Lemma 5.3): Proves that $S_1(n) = q \hat{W}(0)$ given
+  the compact support of $W$.
+- `plancherel_hit_expansion` (Lemma 5.4): Expands the weighted hit count $S_2(n)$ into
+  the Fourier domain as $S_2(n) = q \sum_{i, h} \hat{W}(h) \overline{\hat{g}_i(h)}$.
 
 Helper Lemmas:
-- `sum_W_eq_S1`: Relates the sum of $W$ over the full space to the sum over the interval $\mathcal{A}_n$.
-- `sum_exp_orthogonality_neg`: Establishes the orthogonality of the exponential sum with a negative sign.
-- `plancherel_theorem_custom`: Proves Plancherel's theorem for the specific Fourier transform definition used.
--/
-
-/-
+- `sum_W_eq_S1`: Relates the sum of $W$ over the full space to the sum over the interval
+  $\mathcal{A}_n$.
+- `sum_exp_orthogonality_neg`: Establishes the orthogonality of the exponential sum with
+  a negative sign.
+- `plancherel_theorem_custom`: Proves Plancherel's theorem for the specific Fourier
+  transform definition used.
+ 
 Formalization of Phase 6 of the Resonant Frequency Collapse.
+
 We have formalized the sparse, discrete Fourier spectrum of the local hit functions.
-- Lemma 6.1 (The Dirac Comb of the Hit Function) is split into `dirac_comb_nonzero` and `dirac_comb_zero`.
+- Lemma 6.1 (The Dirac Comb of the Hit Function) is split into `dirac_comb_nonzero` and
+  `dirac_comb_zero`.
 - Lemma 6.2 (The Zero-Frequency Main Term) is formalized as `zero_frequency_main_term`.
 - Theorem 6.3 (The Resonant Sieve Equation) is formalized as `resonant_sieve_equation`.
--/
-
-/-
+ 
 Formalization of Phase 7: The Final Evaluation.
 
-This module formalizes the final evaluation of the analytic bounds for the Twin Prime survivor count.
-It includes:
+This module formalizes the final evaluation of the analytic bounds for the Twin Prime
+survivor count. It includes:
 - Lemma 7.1: Bounds the local exponential sum and its product over all primes.
-- Lemma 7.2: Defines the statement of the Dirichlet Sine Envelope bound (admitted as an assumption).
+- Lemma 7.2: Defines the statement of the Dirichlet Sine Envelope bound (admitted as an
+  assumption).
 - Theorem 7.3: Establishes the final error bound by combining Lemma 7.1 and Lemma 7.2.
-- The final lower bound for the survivor count S, expressing the strict positivity requirement.
+- The final lower bound for the survivor count S, expressing the strict positivity
+  requirement.
 -/
 
 import Mathlib.Algebra.Group.Pointwise.Finset.Basic
@@ -154,52 +166,58 @@ set_option autoImplicit false
 
 noncomputable section
 
-/-
-Definition of the set of primes P_n.
--/
-/-- Let $\mathcal{P}_n$ denote the set of primes $p$ such that $5 \le p < 6n+2$. -/
+/--
+#### Definition of the set of primes P_n.
+Let $\mathcal{P}_n$ denote the set of primes $p$ such that $5 \le p < 6n+2$.
+--/
 def P_n (n : ℕ) : Finset ℕ := (Finset.range (6 * n + 2)).filter (fun p => 5 ≤ p ∧ p.Prime)
 
-/-
-Definition of the primorial q.
--/
-/-- Define the primorial $q = \prod_{p \in \mathcal{P}_n} p$. -/
+/--
+#### Definition of the primorial q.
+Define the primorial $q = \prod_{p \in \mathcal{P}_n} p$.
+--/
 def q (n : ℕ) : ℕ := (P_n n).prod (fun p => p)
 
-/-
-Definition of w as the cardinality of P_n.
--/
-/-- Let $w = |\mathcal{P}_n|$ be the number of distinct prime factors of $q$. -/
+/--
+#### Definition of w as the cardinality of P_n.
+Let $w = |\mathcal{P}_n|$ be the number of distinct prime factors of $q$.
+--/
 def w (n : ℕ) : ℕ := (P_n n).card
 
-/-
-Definition of the sorted list of primes and the accessor function p_i.
--/
-/-- Index the primes in $\mathcal{P}_n$ as $p_1, p_2, \dots, p_w$. -/
+/--
+#### Definition of the sorted list of primes and the accessor function p_i.
+Index the primes in $\mathcal{P}_n$ as $p_1, p_2, \dots, p_w$.
+--/
 def primes_list (n : ℕ) : List ℕ := (P_n n).sort (· ≤ ·)
 
-/-- Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the implementation, so $p_0$ corresponds to the user's $p_1$. -/
+/--
+Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the implementation,
+so $p_0$ corresponds to the user's $p_1$.
+--/
 def p (n : ℕ) (i : Fin (w n)) : ℕ := (primes_list n).get (i.cast (by
 unfold w primes_list; aesop;))
 
-/-
-Definition of valid residues r.
--/
-/-- For each $p_i$, let $r_i$ be an integer satisfying $0 < r_i \le \lfloor p_i/2 \rfloor$. -/
+/--
+#### Definition of valid residues r.
+For each $p_i$, let $r_i$ be an integer satisfying $0 < r_i \le \lfloor p_i/2 \rfloor$.
+--/
 def valid_r (n : ℕ) (r : Fin (w n) → ℕ) : Prop :=
   ∀ i, 0 < r i ∧ r i ≤ (p n i) / 2
 
-/-
-Definition of the permitted residue classes A_i.
--/
-/-- Define the set of permitted residue classes for each prime as $A_i = (\mathbb{Z}/p_i\mathbb{Z}) \setminus \{\pm r_i \pmod{p_i}\}$. -/
+/--
+#### Definition of the permitted residue classes A_i.
+Define the set of permitted residue classes for each prime as
+$A_i = (\mathbb{Z}/p_i\mathbb{Z}) \setminus \{\pm r_i \pmod{p_i}\}$.
+--/
 def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)) :=
   haveI : NeZero (p n i) := ⟨by
-  -- Since $p n i$ is an element of $P_n n$, and $P_n n$ consists of primes greater than or equal to 5, $p n i$ must be at least 5. Hence, it cannot be zero.
+  -- Since $p n i$ is an element of $P_n n$, and $P_n n$ consists of primes greater than
+  --or equal to 5, $p n i$ must be at least 5. Hence, it cannot be zero.
   have h_prime : ∀ i : Fin (w n), 5 ≤ p n i := by
     intro i
     have h_prime : p n i ∈ P_n n := by
-      -- Since the sorted list is a permutation of the original set, every element in the sorted list is in the original set.
+      -- Since the sorted list is a permutation of the original set, every element in the
+      -- sorted list is in the original set.
       have h_perm : ∀ x ∈ primes_list n, x ∈ P_n n := by
         exact fun x hx => Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 hx;
       exact h_perm _ ( List.get_mem _ _ )
@@ -207,49 +225,51 @@ def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)
   exact ne_of_gt (by linarith [h_prime i])⟩
   Finset.univ.filter (fun x => x ≠ (r i : ZMod (p n i)) ∧ x ≠ -(r i : ZMod (p n i)))
 
-/-
-Definition of the global set of surviving residues A.
--/
-/-- Define the global set of surviving residues $A \subseteq \mathbb{Z}/q\mathbb{Z}$ such that $x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$. -/
+/--
+#### Definition of the global set of surviving residues A.
+Define the global set of surviving residues $A \subseteq \mathbb{Z}/q\mathbb{Z}$ such that
+$x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$.
+--/
 def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
   haveI : NeZero (q n) := ⟨by
   exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   Finset.univ.filter (fun x => ∀ i : Fin (w n), (x.cast : ZMod (p n i)) ∈ A_i n r i)
 
-/-
-Definition of the indicator function f.
--/
-/-- Define the indicator function $f : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ such that $f(x) = 1$ if $x \in A$, and $f(x) = 0$ otherwise. -/
+/--
+#### Definition of the indicator function f.
+Define the indicator function $f : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ such that
+$f(x) = 1$ if $x \in A$, and $f(x) = 0$ otherwise.
+--/
 noncomputable def f (n : ℕ) (r : Fin (w n) → ℕ) (x : ZMod (q n)) : ℝ :=
   if x ∈ A n r then 1 else 0
 
-/-
-Definition of N as the cardinality of A.
--/
-/-- Let $N = |A| = \prod_{i=1}^w (p_i - 2)$ be the total number of surviving residues. -/
+/--
+#### Definition of N as the cardinality of A.
+Let $N = |A| = \prod_{i=1}^w (p_i - 2)$ be the total number of surviving residues.
+--/
 def N (n : ℕ) (r : Fin (w n) → ℕ) : ℕ := (A n r).card
 
-/-
-Definition of the global mean density μ.
--/
-/-- Define the global mean density $\mu = \frac{N}{q}$. -/
+/--
+#### Definition of the global mean density μ.
+Define the global mean density $\mu = \frac{N}{q}$.
+--/
 noncomputable def μ (n : ℕ) (r : Fin (w n) → ℕ) : ℝ := (N n r : ℝ) / (q n : ℝ)
 
-/-
-Definition of the Discrete Fourier Transform f_hat.
--/
-/-- Define the Discrete Fourier Transform of $f$ at frequency $h \in \mathbb{Z}/q\mathbb{Z}$ as:
-    $$ \hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q} $$ -/
+/--
+#### Definition of the Discrete Fourier Transform f_hat.
+Define the Discrete Fourier Transform of $f$ at frequency $h \in \mathbb{Z}/q\mathbb{Z}$ as:
+  $$ \hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q} $$
+--/
 noncomputable def f_hat (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
-/-
-Definition of the physical variance σ_sq.
--/
-/-- Define the physical variance of the survivor distribution as:
-    $$ \sigma^2 = \frac{1}{q} \sum_{x=0}^{q-1} (f(x) - \mu)^2 $$ -/
+/--
+#### Definition of the physical variance σ_sq.
+Define the physical variance of the survivor distribution as:
+  $$ \sigma^2 = \frac{1}{q} \sum_{x=0}^{q-1} (f(x) - \mu)^2 $$
+--/
 noncomputable def σ_sq (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
