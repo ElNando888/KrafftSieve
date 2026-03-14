@@ -353,7 +353,8 @@ lemma f_hat_normSq_expansion (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) 
       -- By definition of $f_hat$, we have:
       have h_def : f_hat n r h = (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)) := by
         exact rfl;
-      -- By definition of $f_hat$, we have $\overline{\hat{f}(h)} = \frac{1}{q} \sum_y f(y) e^{2\pi i h y / q}$.
+      -- By definition of $f_hat$, we have
+      -- $\overline{\hat{f}(h)} = \frac{1}{q} \sum_y f(y) e^{2\pi i h y / q}$.
       have h_conj : starRingEnd ℂ (f_hat n r h) = (1 / (q n : ℂ)) * ∑ y : ZMod (q n), (f n r y : ℂ) * Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val : ℕ) / (q n : ℂ)) := by
         simp_all +decide [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
         norm_num [ neg_div, mul_div_assoc, Real.cos_neg, Real.sin_neg ];
@@ -362,11 +363,14 @@ lemma f_hat_normSq_expansion (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) 
         aesop;
       convert congr_arg₂ ( · * · ) h_def h_conj using 1 <;> ring_nf;
       · norm_num [ Complex.mul_conj, Complex.normSq_eq_norm_sq ];
-      · -- By combining the exponents, we can see that the left-hand side and right-hand side are equal.
+      · -- By combining the exponents, we can see that the left-hand side and right-hand side
+        -- are equal.
         have h_exp : ∀ x y : ZMod (q n), Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * (y - x).val * 2) = Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * y.val * 2) * Complex.exp (-(q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * x.val * 2) := by
           intro x y; rw [ ← Complex.exp_add ] ; ring_nf;
           rw [ Complex.exp_eq_exp_iff_exists_int ];
-          -- Since $y$ and $x$ are elements of $ZMod (q n)$, their values are integers modulo $q n$. Therefore, $(y - x).val$ is equal to $y.val - x.val$ plus some multiple of $q n$.
+          -- Since $y$ and $x$ are elements of $ZMod (q n)$, their values are integers modulo
+          -- $q n$. Therefore, $(y - x).val$ is equal to $y.val - x.val$ plus some multiple of
+          -- $q n$.
           obtain ⟨k, hk⟩ : ∃ k : ℤ, (y - x).val = y.val - x.val + k * q n := by
             have h_mod : (y - x).val ≡ y.val - x.val [ZMOD q n] := by
               simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
@@ -377,7 +381,8 @@ lemma f_hat_normSq_expansion (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) 
         exact Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by push_cast [ ← mul_assoc, ← Complex.exp_add ] ; rw [ h_exp ] ; ring_nf )
 
 /-
-Standard Parseval's Identity: The sum of the squared magnitudes of the Fourier coefficients equals the average of the squared function values.
+Standard Parseval's Identity: The sum of the squared magnitudes of the Fourier coefficients
+equals the average of the squared function values.
 -/
 lemma parseval_standard (n : ℕ) (r : Fin (w n) → ℕ) :
     ∑ h : ZMod (q n), Complex.normSq (f_hat n r h) = (1 / (q n : ℝ)) * ∑ x : ZMod (q n), (f n r x)^2 := by
@@ -406,7 +411,8 @@ lemma variance_expansion (n : ℕ) (r : Fin (w n) → ℕ) :
       by_cases h : q n = 0 <;> simp_all +decide [ pow_three, sq, mul_assoc ] ; ring
 
 /-
-Lemma 1 (Parseval's Identity for the Sieve): The variance of the indicator function f is strictly equal to the sum of the squared magnitudes of its non-zero Fourier coefficients.
+Lemma 1 (Parseval's Identity for the Sieve): The variance of the indicator function f is
+strictly equal to the sum of the squared magnitudes of its non-zero Fourier coefficients.
 -/
 theorem parseval_identity (n : ℕ) (r : Fin (w n) → ℕ) :
     σ_sq n r = ∑ h : ZMod (q n), if h = 0 then 0 else Complex.normSq (f_hat n r h) := by
@@ -429,7 +435,8 @@ Conjugate symmetry of the Fourier transform for real-valued functions.
 lemma f_hat_conj_symm (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
     f_hat n r (-h) = starRingEnd ℂ (f_hat n r h) := by
       unfold f_hat;
-      -- Since $(-h).val \equiv -h.val \pmod{q}$, we can replace $(-h).val$ with $-h.val$ in the exponent.
+      -- Since $(-h).val \equiv -h.val \pmod{q}$, we can replace $(-h).val$ with $-h.val$ in
+      -- the exponent.
       have h_exp : ∀ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * ((-h).val * x.val) / (q n : ℂ)) = Complex.exp (2 * Real.pi * Complex.I * (h.val * x.val) / (q n : ℂ)) := by
         have h_exp : (-h).val ≡ -h.val [ZMOD q n] := by
           simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
@@ -444,7 +451,8 @@ lemma f_hat_conj_symm (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
       erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; aesop
 
 /-
-Lemma 2 (Harmonic Variance Lower Bound): For any non-zero frequency h, the variance is at least twice the squared magnitude of the Fourier coefficient at h.
+Lemma 2 (Harmonic Variance Lower Bound): For any non-zero frequency h, the variance is at least
+twice the squared magnitude of the Fourier coefficient at h.
 -/
 lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) (h_ne_zero : h ≠ 0) :
     σ_sq n r ≥ 2 * Complex.normSq (f_hat n r h) := by
@@ -476,7 +484,8 @@ theorem survives_iff (n : ℕ) (x : ZMod (q n)) :
       unfold f A A_i; simp +decide [ Finset.mem_filter ] ;
 
 /-
-Lemma 3.1 (Krafft Algebraic Equivalence): For any prime p >= 5 and any integer x, let r = floor((p+1)/6). Then x = +/ - r (mod p) if and only if p | (6x-1) or p | (6x+1).
+Lemma 3.1 (Krafft Algebraic Equivalence): For any prime p >= 5 and any integer x, let
+r = floor((p+1)/6). Then x = ±r (mod p) if and only if p | (6x-1) or p | (6x+1).
 -/
 lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (x : ℤ) :
     let r := (p + 1) / 6
@@ -496,7 +505,8 @@ lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (
       grind
 
 /-
-Lemma 3.2 (Interval Projection Bound): For any x in A_n, the value 6x+1 is strictly bounded by the square of the next possible prime after P_n: 6x + 1 < (6n+5)^2.
+Lemma 3.2 (Interval Projection Bound): For any x in A_n, the value 6x+1 is strictly bounded by
+the square of the next possible prime after P_n: 6x + 1 < (6n+5)^2.
 -/
 lemma interval_projection_bound (n : ℕ) (x : ℕ) (hx : x ∈ A_n n) :
     6 * x + 1 < (6 * n + 5) ^ 2 := by
@@ -505,7 +515,8 @@ lemma interval_projection_bound (n : ℕ) (x : ℕ) (hx : x ∈ A_n n) :
       · linarith [ sq n ]
 
 /-
-Any prime p such that 5 <= p < 6n+5 must be in P_n. This is because the integers 6n+2, 6n+3, 6n+4 are all composite (divisible by 2 or 3), so there are no primes in the interval [6n+2, 6n+4].
+Any prime p such that 5 <= p < 6n+5 must be in P_n. This is because the integers 6n+2, 6n+3,
+6n+4 are all composite (divisible by 2 or 3), so there are no primes in the interval [6n+2, 6n+4].
 -/
 lemma primes_in_range_eq_P_n (n : ℕ) (p : ℕ) (hp : p.Prime) (h_ge_5 : 5 ≤ p) (h_lt : p < 6 * n + 5) :
     p ∈ P_n n := by
@@ -534,7 +545,8 @@ A number p is in P_n if and only if it equals p_i for some index i.
 lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
     p_val ∈ P_n n ↔ ∃ i : Fin (w n), p n i = p_val := by
       constructor <;> intro h;
-      · -- By definition of $P_n$, since $p_val \in P_n$, it must be one of the primes in the sorted list.
+      · -- By definition of $P_n$, since $p_val \in P_n$, it must be one of the primes in the
+        -- sorted list.
         have h_in_sorted : p_val ∈ primes_list n := by
           exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.2 h;
         obtain ⟨ i, hi ⟩ := List.mem_iff_get.1 h_in_sorted; use ⟨ i, by
@@ -572,7 +584,9 @@ lemma not_dvd_two_three (x : ℤ) :
       grind +ring
 
 /-
-Lemma 3.3 (The Sieve Isomorphism): Assume x in A_n. By the Fundamental Theorem of Arithmetic and the Sieve of Eratosthenes bound from Lemma 3.2, x survives the Krafft sieve if and only if both 6x-1 and 6x+1 are prime numbers.
+Lemma 3.3 (The Sieve Isomorphism): Assume x in A_n. By the Fundamental Theorem of Arithmetic
+and the Sieve of Eratosthenes bound from Lemma 3.2, x survives the Krafft sieve if and only if
+both 6x-1 and 6x+1 are prime numbers.
 -/
 lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     f n (r_K n) x = 1 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
@@ -615,7 +629,9 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
                                                 exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ; aesop;
               · nlinarith only [ hx, h_pi_lt ];
           · rw [ Nat.dvd_prime h.2 ] at H;
-            -- Since $p n i$ is a prime number in $P_n$, it must be at least 5. However, $6x + 1$ is greater than $6n + 2$, which is the upper bound for $P_n$. Therefore, $p n i$ cannot be $6x + 1$.
+            -- Since $p n i$ is a prime number in $P_n$, it must be at least 5. However,
+            -- $6x + 1$ is greater than $6n + 2$, which is the upper bound for $P_n$.
+            -- Therefore, $p n i$ cannot be $6x + 1$.
             have h_contra : p n i ≤ 6 * n + 1 := by
               have h_contra : p n i ∈ P_n n := by
                 exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
@@ -693,7 +709,8 @@ lemma P_n_mono (n : ℕ) : P_n n ⊆ P_n (n + 1) := by
 q(n) divides q(n+1).
 -/
 lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
-  -- Since $P_n \subseteq P_{n+1}$, the product of elements in $P_n$ divides the product of elements in $P_{n+1}$.
+  -- Since $P_n \subseteq P_{n+1}$, the product of elements in $P_n$ divides the product of
+  -- elements in $P_{n+1}$.
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
 /--
@@ -721,7 +738,8 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
     · have hn_large : n > 1000000000 := by linarith
       -- For n > 10^9, q(n) is extremely large.
       -- We assume this holds.
-      -- Since $q(n)$ is the product of primes in $P_n$, and for $n > 1,000,000,000$, there are many primes in $P_n$, $q(n)$ is extremely large.
+      -- Since $q(n)$ is the product of primes in $P_n$, and for $n > 1,000,000,000$, there are
+      -- many primes in $P_n$, $q(n)$ is extremely large.
       have h_q_large : q n ≥ 5 ^ (Nat.log 2 n) := by
         have h_q_large : q n ≥ 5 ^ (Finset.card (Finset.filter (fun p => 5 ≤ p ∧ p.Prime) (Finset.range (6 * n + 2)))) := by
           exact le_trans ( by norm_num ) ( Finset.prod_le_prod' fun x hx => show x ≥ 5 from Finset.mem_filter.mp hx |>.2.1 ) |> le_trans <| Finset.prod_le_prod_of_subset_of_one_le' ( Finset.filter_subset_filter _ <| Finset.range_mono <| Nat.le_refl _ ) fun x hx _ => Nat.one_le_iff_ne_zero.mpr <| Nat.Prime.ne_zero <| Finset.mem_filter.mp hx |>.2.2;
@@ -729,7 +747,8 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
         refine' pow_le_pow_right₀ ( by norm_num ) _;
         refine' le_trans _ ( Finset.card_mono <| show Finset.filter ( fun p => 5 ≤ p ∧ Nat.Prime p ) ( Finset.range ( 6 * n + 2 ) ) ≥ Finset.image ( fun k => Nat.nth Nat.Prime k ) ( Finset.Ico 2 ( Nat.log 2 n + 2 ) ) from _ );
         · rw [ Finset.card_image_of_injective _ fun a b h => Nat.nth_injective ( Nat.infinite_setOf_prime ) h ] ; simp +arith +decide;
-        · -- To prove the inequality, it suffices to show that for any $k$ in the range $2$ to $\log_2(n) + 1$, the $k$-th prime is less than $6n + 2$.
+        · -- To prove the inequality, it suffices to show that for any $k$ in the range $2$
+          -- to $\log_2(n) + 1$, the $k$-th prime is less than $6n + 2$.
           have h_prime_bound : ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
             intros k hk
             have h_prime_bound : Nat.nth Nat.Prime k ≤ 2 ^ (k + 1) := by
@@ -791,8 +810,10 @@ noncomputable def c (n : ℕ) (x : ZMod (q n)) : ℝ :=
 Lemma 1.3: For x in A_n, c(x) = 0 iff 6x-1 and 6x+1 are prime.
 -/
 /-- Lemma 1.3 (Additive Sieve Isomorphism):
-Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$ and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
-$$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$ -/
+Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$
+and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
+$$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
+--/
 lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     c n x = 0 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
       have := @sieve_isomorphism n hn x ; simp_all ; (
@@ -820,14 +841,16 @@ noncomputable def M_2 (n : ℕ) : ℝ :=
   ∑ x ∈ A_n n, (c n (x : ZMod (q n)))^2
 
 /-
-Lemma 2.1 (First Moment Expansion): By swapping the order of summation, the First Moment M_1(n) is equal to the sum of the local hits over all primes.
+Lemma 2.1 (First Moment Expansion): By swapping the order of summation, the First Moment
+M_1(n) is equal to the sum of the local hits over all primes.
 -/
 theorem first_moment_expansion (n : ℕ) :
     M_1 n = ∑ i : Fin (w n), ∑ x ∈ A_n n, g n i (x : ZMod (q n)) := by
       exact Finset.sum_comm
 
 /-
-Lemma 2.2 (Second Moment Expansion): By expanding the square of the sum and swapping the summation order, the Second Moment M_2(n) is equal to the triple sum of g_i(x) g_j(x).
+Lemma 2.2 (Second Moment Expansion): By expanding the square of the sum and swapping the
+summation order, the Second Moment M_2(n) is equal to the triple sum of g_i(x) g_j(x).
 -/
 theorem second_moment_expansion (n : ℕ) :
     M_2 n = ∑ i : Fin (w n), ∑ j : Fin (w n), ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n j (x : ZMod (q n)) := by
@@ -840,7 +863,8 @@ theorem second_moment_expansion (n : ℕ) :
       exact h_fubini
 
 /-
-Lemma 2.3 (Local Hit Density Bound): The number of hits in the interval A_n for prime p_i is bounded by 2L/p_i + 2.
+Lemma 2.3 (Local Hit Density Bound): The number of hits in the interval A_n for prime p_i is
+bounded by 2L/p_i + 2.
 -/
 theorem local_hit_density_bound (n : ℕ) (i : Fin (w n)) :
     ∑ x ∈ A_n n, g n i (x : ZMod (q n)) ≤ (2 * L n : ℝ) / (p n i : ℝ) + 2 := by
@@ -905,7 +929,8 @@ lemma count_mod_bound (n : ℕ) (m : ℕ) (hm : m > 0) (a : ℕ) :
       rw [ div_add_one, le_div_iff₀ ] <;> norm_cast <;> try positivity;
       -- Let $k$ be the number of elements in $A_n$ that are congruent to $a \pmod{m}$.
       set k := (Finset.filter (fun x => x % m = a % m) (A_n n)).card;
-      -- Since these elements are distinct and lie within the interval $[6n^2 - 2n, 6n^2 + 10n + 3]$, we can order them as $x_1 < x_2 < \cdots < x_k$.
+      -- Since these elements are distinct and lie within the interval
+      -- $[6n^2 - 2n, 6n^2 + 10n + 3]$, we can order them as $x_1 < x_2 < \cdots < x_k$.
       obtain ⟨x_seq, hx_seq⟩ : ∃ x_seq : Fin k → ℕ, StrictMono x_seq ∧ ∀ i, x_seq i ∈ A_n n ∧ x_seq i % m = a % m := by
         exact ⟨ fun i => Finset.orderEmbOfFin _ ( by aesop ) i, by aesop_cat, fun i => Finset.mem_filter.mp ( Finset.orderEmbOfFin_mem _ ( by aesop ) i ) ⟩;
       have h_diff : ∀ i j : Fin k, i < j → x_seq j ≥ x_seq i + m := by
@@ -925,7 +950,8 @@ lemma count_mod_bound (n : ℕ) (m : ℕ) (hm : m > 0) (a : ℕ) :
       linarith [ Nat.sub_add_cancel ( show x_seq ( Fin.last k ) ≥ x_seq 0 from hx_seq.1.monotone ( Fin.zero_le _ ) ) ]
 
 /-
-Helper Lemma: The number of elements in A_n satisfying x = a (mod p_i) and x = b (mod p_j) is at most L/(p_i p_j) + 1.
+Helper Lemma: The number of elements in A_n satisfying x = a (mod p_i) and x = b (mod p_j) is
+at most L/(p_i p_j) + 1.
 -/
 lemma crt_intersection_bound (n : ℕ) (i j : Fin (w n)) (h_ne : i ≠ j) (a b : ℕ) :
     ((A_n n).filter (fun x => x % (p n i) = a % (p n i) ∧ x % (p n j) = b % (p n j))).card ≤ (L n : ℝ) / (p n i * p n j : ℝ) + 1 := by
@@ -954,7 +980,8 @@ lemma crt_intersection_bound (n : ℕ) (i j : Fin (w n)) (h_ne : i ≠ j) (a b :
       exact mul_pos ( Nat.Prime.pos ( by have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) } ) |>.2.2; aesop ) ) ( Nat.Prime.pos ( by have := Finset.mem_filter.mp ( show p n j ∈ P_n n from by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) } ) |>.2.2; aesop ) )
 
 /-
-Helper Lemma: The sum of g_i(x)g_j(x) is bounded by the sum of the counts of the four residue combinations.
+Helper Lemma: The sum of g_i(x)g_j(x) is bounded by the sum of the counts of the four residue
+combinations.
 -/
 lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
     ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n j (x : ZMod (q n)) ≤
@@ -962,7 +989,8 @@ lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
     ((A_n n).filter (fun x => x % (p n i) = (r_K n i) % (p n i) ∧ x % (p n j) = (p n j - r_K n j) % (p n j))).card +
     ((A_n n).filter (fun x => x % (p n i) = (p n i - r_K n i) % (p n i) ∧ x % (p n j) = (r_K n j) % (p n j))).card +
     ((A_n n).filter (fun x => x % (p n i) = (p n i - r_K n i) % (p n i) ∧ x % (p n j) = (p n j - r_K n j) % (p n j))).card := by
-      -- The sum of the products of the local hits is bounded by the sum of the counts of the four residue combinations because each term in the sum is either 0 or 1.
+      -- The sum of the products of the local hits is bounded by the sum of the counts of the
+      -- four residue combinations because each term in the sum is either 0 or 1.
       have h_bound : ∀ x ∈ A_n n, (g n i x) * (g n j x) ≤ (if x % (p n i) = r_K n i % (p n i) ∧ x % (p n j) = r_K n j % (p n j) then 1 else 0) + (if x % (p n i) = r_K n i % (p n i) ∧ x % (p n j) = (p n j - r_K n j) % (p n j) then 1 else 0) + (if x % (p n i) = (p n i - r_K n i) % (p n i) ∧ x % (p n j) = r_K n j % (p n j) then 1 else 0) + (if x % (p n i) = (p n i - r_K n i) % (p n i) ∧ x % (p n j) = (p n j - r_K n j) % (p n j) then 1 else 0) := by
         unfold g;
         intro x hx; norm_cast; simp +decide [ ← ZMod.natCast_eq_natCast_iff' ] ;
@@ -1010,7 +1038,8 @@ lemma cross_term_splitting (n : ℕ) (i j : Fin (w n)) :
       convert Finset.sum_le_sum h_bound ; norm_cast ; simp +decide [ Finset.sum_add_distrib ]
 
 /-
-Lemma 2.4 (Cross-Term Density Bound): The number of simultaneous hits in the interval A_n for distinct primes p_i and p_j is bounded by 4L/(p_i p_j) + 4.
+Lemma 2.4 (Cross-Term Density Bound): The number of simultaneous hits in the interval A_n for
+distinct primes p_i and p_j is bounded by 4L/(p_i p_j) + 4.
 -/
 theorem cross_term_density_bound (n : ℕ) (i j : Fin (w n)) (h_ne : i ≠ j) :
     ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n j (x : ZMod (q n)) ≤ (4 * L n : ℝ) / (p n i * p n j : ℝ) + 4 := by
@@ -1043,8 +1072,10 @@ noncomputable def H (n : ℕ) : ℝ :=
 Lemma 3.2 (First Moment Bound): The First Moment is bounded by 2L * H(n) + 2w.
 -/
 /-- Lemma 3.2 (First Moment Bound):
-By substituting the Local Hit Density Bound (Lemma 2.3) into the First Moment Expansion (Lemma 2.1), prove that the First Moment is bounded by:
-$$ M_1(n) \le 2L \cdot H(n) + 2w $$ -/
+By substituting the Local Hit Density Bound (Lemma 2.3) into the First Moment Expansion
+(Lemma 2.1), prove that the First Moment is bounded by:
+$$ M_1(n) \le 2L \cdot H(n) + 2w $$
+-/
 theorem first_moment_bound (n : ℕ) :
     M_1 n ≤ 2 * (L n : ℝ) * H n + 2 * (w n : ℝ) := by
       rw [ H ];
@@ -1056,15 +1087,19 @@ theorem first_moment_bound (n : ℕ) :
 Lemma 3.3 (Second Moment Bound): The Second Moment is bounded by 4L * H(n)^2 + 4w^2 + M_1(n).
 -/
 /-- Lemma 3.3 (Second Moment Bound):
-By substituting the Cross-Term Density Bound (Lemma 2.4) into the Second Moment Expansion (Lemma 2.2), and recognizing that the diagonal terms $i=j$ are identical to the local hits, prove that the Second Moment is strictly bounded by:
-$$ M_2(n) \le 4L \cdot (H(n))^2 + 4w^2 + M_1(n) $$ -/
+By substituting the Cross-Term Density Bound (Lemma 2.4) into the Second Moment Expansion
+(Lemma 2.2), and recognizing that the diagonal terms $i=j$ are identical to the local hits,
+prove that the Second Moment is strictly bounded by:
+$$ M_2(n) \le 4L \cdot (H(n))^2 + 4w^2 + M_1(n) $$
+-/
 theorem second_moment_bound (n : ℕ) :
     M_2 n ≤ 4 * (L n : ℝ) * (H n)^2 + 4 * (w n : ℝ)^2 + M_1 n := by
       -- Split the sum into diagonal terms ($i=j$) and off-diagonal terms ($i \ne j$).
       have h_split : M_2 n = ∑ i : Fin (w n), ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n i (x : ZMod (q n)) + ∑ i : Fin (w n), ∑ j ∈ Finset.univ.erase i, ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n j (x : ZMod (q n)) := by
         simp +decide only [second_moment_expansion];
         simp;
-      -- Since $g_i(x) \in \{0, 1\}$, $g_i(x)^2 = g_i(x)$. Thus the diagonal sum is exactly $M_1(n)$.
+      -- Since $g_i(x) \in \{0, 1\}$, $g_i(x)^2 = g_i(x)$. Thus the diagonal sum is exactly
+      -- $M_1(n)$.
       have h_diag : ∑ i : Fin (w n), ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n i (x : ZMod (q n)) = M_1 n := by
         unfold M_1 ;
         unfold c; rw [ Finset.sum_comm ] ; congr; ext i; congr; ext x; unfold g; aesop;
@@ -1072,7 +1107,8 @@ theorem second_moment_bound (n : ℕ) :
       have h_off_diag : ∑ i : Fin (w n), ∑ j ∈ Finset.univ.erase i, ∑ x ∈ A_n n, g n i (x : ZMod (q n)) * g n j (x : ZMod (q n)) ≤ ∑ i : Fin (w n), ∑ j ∈ Finset.univ.erase i, (4 * (L n : ℝ) / ((p n i) * (p n j) : ℝ) + 4) := by
         refine' Finset.sum_le_sum fun i hi => Finset.sum_le_sum fun j hj => _;
         convert cross_term_density_bound n i j ( by aesop ) using 1;
-      -- The number of pairs $(i, j)$ with $i \ne j$ is $w(w-1) < w^2$, so the second term is bounded by $4w^2$.
+      -- The number of pairs $(i, j)$ with $i \ne j$ is $w(w-1) < w^2$, so the second term is
+      -- bounded by $4w^2$.
       have h_off_diag_bound : ∑ i : Fin (w n), ∑ j ∈ Finset.univ.erase i, (4 * (L n : ℝ) / ((p n i) * (p n j) : ℝ) + 4) ≤ 4 * (L n : ℝ) * (∑ i : Fin (w n), ∑ j ∈ Finset.univ.erase i, (1 / ((p n i) * (p n j) : ℝ))) + 4 * (w n : ℝ) ^ 2 := by
         norm_num [ Finset.sum_add_distrib, Finset.mul_sum _ _ _, mul_assoc, div_eq_mul_inv ];
         norm_num [ ← Finset.mul_sum _ _ _, ← Finset.sum_mul ] ; ring_nf ; norm_num;
@@ -1104,7 +1140,10 @@ noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
 Prove that c(x) >= 0 and if c(x) < 1 then c(x) = 0.
 -/
 /-- Lemma 4.4 (Non-negative Hits):
-Using the definition of $g_i(x)$ and $c(x)$, prove that for any $x$, the hit counter is non-negative: $c(x) \ge 0$. Furthermore, note that because $c(x)$ is a sum of indicator functions, if $c(x) < 1$, then $c(x) = 0$. -/
+Using the definition of $g_i(x)$ and $c(x)$, prove that for any $x$, the hit counter is
+non-negative: $c(x) \ge 0$. Furthermore, note that because $c(x)$ is a sum of indicator
+functions, if $c(x) < 1$, then $c(x) = 0$.
+-/
 lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
     c n x ≥ 0 ∧ (c n x < 1 → c n x = 0) := by
       unfold c;
@@ -1114,7 +1153,9 @@ lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
 If S_2(n) < S_1(n), then there exists x in A_n such that W(x) > 0 and c(x) = 0.
 -/
 /-- Theorem 4.5 (The Weighted Existence Principle):
-Assume there exists a specific configuration such that $S_2(n) < S_1(n)$. Prove that there must exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$. -/
+Assume there exists a specific configuration such that $S_2(n) < S_1(n)$. Prove that there must
+exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
+-/
 theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : ∀ x, W x ≥ 0)
     (h_ineq : S_2 n W < S_1 n W) :
     ∃ x ∈ A_n n, W (x : ZMod (q n)) > 0 ∧ c n (x : ZMod (q n)) = 0 := by
@@ -1154,7 +1195,8 @@ noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (g n i x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /-
-Lemma: Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over $\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n)$.
+Lemma: Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
+$\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n)$.
 -/
 lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
@@ -1171,7 +1213,9 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
 
 /-
 Lemma 5.3 (Compact Support Equivalence):
-Assume the weight function is strictly supported inside the interval: $\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n)$ is equivalent to the full space sum, which yields the zero-frequency Fourier coefficient:
+Assume the weight function is strictly supported inside the interval:
+$\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n)$ is equivalent
+to the full space sum, which yields the zero-frequency Fourier coefficient:
 $$ S_1(n) = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) = q \hat{W}(0) $$
 -/
 lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -1248,7 +1292,8 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
 
 /-
 Lemma 5.4 (The Plancherel Hit Expansion):
-Using the compact support of $W(x)$ and admitting Plancherel's theorem for the inner product of $W(x)$ and $g_i(x)$, expand the weighted hit count $S_2(n)$ into the Fourier domain:
+Using the compact support of $W(x)$ and admitting Plancherel's theorem for the inner product
+of $W(x)$ and $g_i(x)$, expand the weighted hit count $S_2(n)$ into the Fourier domain:
 $$ S_2(n) = q \sum_{i=1}^w \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
 -/
 lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -1265,7 +1310,8 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
 
 /-
 Lemma 6.1a (Dirac Comb Non-Zero Values):
-For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, the Fourier transform evaluates to:
+For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, the Fourier
+transform evaluates to:
 $$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
 lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
@@ -1402,7 +1448,8 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
 
 /-
 Lemma 6.1b (Dirac Comb Zero Values):
-For any frequency $h$ that is NOT a multiple of $q/p_i$, the Fourier transform of the local hit function is zero:
+For any frequency $h$ that is NOT a multiple of $q/p_i$, the Fourier transform of the local
+hit function is zero:
 $$ \hat{g}_i(h) = 0 $$
 -/
 lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
@@ -1508,7 +1555,9 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
 
 /-
 Lemma 6.2 (The Zero-Frequency Main Term):
-Using Lemma 5.3 ($q \hat{W}(0) = S_1(n)$) and Lemma 6.1 at $k=0$, prove that the $h=0$ component of the weighted hit mass evaluates exactly to the weighted interval mass multiplied by the sum of the local densities:
+Using Lemma 5.3 ($q \hat{W}(0) = S_1(n)$) and Lemma 6.1 at $k=0$, prove that the $h=0$
+component of the weighted hit mass evaluates exactly to the weighted interval mass multiplied
+by the sum of the local densities:
 $$ q \sum_{i=1}^w \hat{W}(0) \overline{\hat{g}_i(0)} = S_1(n) \sum_{i=1}^w \frac{2}{p_i} $$
 -/
 lemma zero_frequency_main_term (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -1537,7 +1586,8 @@ lemma zero_frequency_main_term (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
 
 /-
 Theorem 6.3 (The Resonant Sieve Equation):
-By splitting the sum in Lemma 5.4 into $h=0$ and $h \ne 0$, and applying Lemma 6.1 and 6.2, establish the exact equation for the weighted hit mass $S_2(n)$:
+By splitting the sum in Lemma 5.4 into $h=0$ and $h \ne 0$, and applying Lemma 6.1 and 6.2,
+establish the exact equation for the weighted hit mass $S_2(n)$:
 $$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} + q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
 theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -1596,7 +1646,9 @@ theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
 
 /-
 Lemma 7.1 (The Exact Krafft Cosine):
-Using the definition $r^K_i = \lfloor(p_i+1)/6\rfloor$, admit that for all primes $p_i \ge 5$, the cosine at the third harmonic evaluates exactly to the negative cosine of a microscopic angle:
+Using the definition $r^K_i = \lfloor(p_i+1)/6\rfloor$, admit that for all primes $p_i \ge 5$,
+the cosine at the third harmonic evaluates exactly to the negative cosine of a microscopic
+angle:
 $$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) $$
 -/
 lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
@@ -1628,7 +1680,9 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
 
 /-
 Lemma 7.2 (The Third Harmonic Extraction):
-Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ is concentrated strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies to:
+Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ is concentrated
+strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies
+to:
 $$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} - q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
 -/
 lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -1662,9 +1716,12 @@ def Krafft_Admissibility (n : ℕ) : Prop :=
 
 /-
 Theorem 7.3 (The Krafft Sieve Guarantee):
-Admit that there exists a valid non-negative weight function $W(x)$ supported on $\mathcal{A}_n$ such that the magnitude of the negative third-harmonic resonance strictly overpowers the main term, yielding:
+Admit that there exists a valid non-negative weight function $W(x)$ supported on
+$\mathcal{A}_n$ such that the magnitude of the negative third-harmonic resonance strictly
+overpowers the main term, yielding:
 $$ S_2(n) < S_1(n) $$
-Conclude that by Theorem 4.5 and the Additive Sieve Isomorphism (Lemma 1.3), a Twin Prime index is unconditionally guaranteed in $\mathcal{A}_n$.
+Conclude that by Theorem 4.5 and the Additive Sieve Isomorphism (Lemma 1.3), a Twin Prime
+index is unconditionally guaranteed in $\mathcal{A}_n$.
 -/
 theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Admissibility n) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
