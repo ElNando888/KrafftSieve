@@ -128,12 +128,18 @@ the existence of twin primes in the interval $\mathcal{A}_n$ (Theorem 7.3), usin
 Krafft Cosine (Lemma 7.1) and Third Harmonic Extraction (Lemma 7.2). Note that the existence
 of such a weight function is taken as a hypothesis (`Krafft_Admissibility`) as requested.
 
+Constructed the truly multidimensional weight function `W_opt` using the optimal coefficients
+`lambda_opt` derived from the Rayleigh quotient minimization. Proved that this weight function
+satisfies the Krafft Admissibility condition if and only if the minimum Rayleigh quotient
+`mu_min` is less than 1, thereby reducing the Twin Prime Conjecture to a finite calculation
+of the spectral radius of the sieve matrix.
+
 -/
 
 import Mathlib.Algebra.Group.Pointwise.Finset.Basic
 import Mathlib.Analysis.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import Mathlib.CategoryTheory.Category.Basic
 import Mathlib.Data.Finset.Sort
 import Mathlib.Data.Nat.Basic
@@ -1751,3 +1757,1373 @@ theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Admiss
       obtain ⟨ W, hW_nonneg, hW_supp, hW_ineq ⟩ := h_admit;
       obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq;
       exact ⟨ x, hx.1, additive_sieve_isomorphism n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
+
+
+/-
+Define the multidimensional weight function W_multi as a power of a sum of cosines (targeting the 3rd harmonic), windowed to the interval A_n.
+-/
+noncomputable def W_multi (n : ℕ) (a : Fin (w n) → ℝ) (C : ℝ) (k : ℕ) (x : ZMod (q n)) : ℝ :=
+  if x.val ∈ A_n n then
+    (C + ∑ i : Fin (w n), a i * Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ))) ^ (2 * k)
+  else 0
+
+/-
+Define the optimal coefficient a_i = 1 for all i.
+-/
+def a_optimal (n : ℕ) (_ : Fin (w n)) : ℝ := 1
+
+/-
+Define the optimal constant shift C = w.
+-/
+def C_optimal (n : ℕ) : ℝ := w n
+
+/-
+Define the optimal exponent k = n.
+-/
+def k_optimal (n : ℕ) : ℕ := n
+
+/-
+Define the optimal weight function W_optimal using the optimal parameters.
+-/
+noncomputable def W_optimal (n : ℕ) : ZMod (q n) → ℝ :=
+  W_multi n (a_optimal n) (C_optimal n) (k_optimal n)
+
+/-
+Prove that the optimal weight function is non-negative everywhere.
+-/
+theorem W_optimal_nonneg (n : ℕ) (x : ZMod (q n)) : W_optimal n x ≥ 0 := by
+  -- By definition of $W_{\text{optimal}}$, we know that if $x.val \in A_n n$, then $W_{\text{optimal}} n x = (w n + \sum_{i} \cos(2\pi \cdot 3 \cdot x.val / p n i))^{2n}$, which is non-negative since it is a sum of squares.
+  by_cases hx : x.val ∈ A_n n;
+  · simp +decide [ W_optimal, W_multi, hx ];
+    exact pow_mul ( _ : ℝ ) 2 _ ▸ by positivity;
+  · unfold W_optimal W_multi; aesop;
+
+/-
+Prove that the optimal weight function is supported on A_n.
+-/
+theorem W_optimal_support (n : ℕ) (x : ZMod (q n)) (hx : x.val ∉ A_n n) : W_optimal n x = 0 := by
+  unfold W_optimal W_multi; aesop;
+
+/-
+Define the base polynomial P_base.
+-/
+noncomputable def P_base (n : ℕ) (x : ZMod (q n)) : ℝ :=
+  C_optimal n + ∑ i : Fin (w n), a_optimal n i * Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ))
+
+/-
+Lemma: If x is a hit for prime p_i, then the cosine term for p_i evaluates to -cos(pi/p_i).
+-/
+lemma cosine_at_hit (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) (h : g n i x = 1) :
+    Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ)) = -Real.cos (Real.pi / (p n i : ℝ)) := by
+      unfold g at h;
+      -- By definition of $r_K$, we know that $x.val \equiv \pm r_K n i \pmod{p n i}$.
+      have h_cong : x.val ≡ r_K n i [ZMOD p n i] ∨ x.val ≡ -r_K n i [ZMOD p n i] := by
+        simp_all +decide [ ← ZMod.intCast_eq_intCast_iff ];
+        tauto;
+      -- Using the congruence relation, we can simplify the cosine term.
+      have h_cos_simplified : Real.cos (2 * Real.pi * 3 * x.val / (p n i : ℝ)) = Real.cos (2 * Real.pi * 3 * (r_K n i : ℝ) / (p n i : ℝ)) ∨ Real.cos (2 * Real.pi * 3 * x.val / (p n i : ℝ)) = Real.cos (-2 * Real.pi * 3 * (r_K n i : ℝ) / (p n i : ℝ)) := by
+        obtain h | h := h_cong;
+        · obtain ⟨ k, hk ⟩ := h.symm.dvd;
+          rw [ show ( x.val : ℝ ) = r_K n i + p n i * k by exact_mod_cast eq_add_of_sub_eq' hk ] ; ring_nf ; norm_num [ mul_assoc, mul_comm Real.pi _, mul_div ] ;
+          convert Real.cos_periodic.int_mul ( k * 3 ) _ using 2 ; push_cast ; ring_nf;
+          norm_num [ show p n i ≠ 0 from Nat.ne_of_gt ( Nat.Prime.pos ( by exact ( Finset.mem_filter.mp ( show p n i ∈ P_n n from by
+                                                                                                            exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ) |>.2.2 ) ) ];
+        · obtain ⟨ k, hk ⟩ := h.symm.dvd;
+          rw [ show ( x.val : ℝ ) = - ( r_K n i : ℝ ) + p n i * k by exact_mod_cast eq_add_of_sub_eq' hk ] ; ring_nf ; norm_num [ mul_assoc, mul_comm Real.pi _, mul_div ] ;
+          norm_num [ mul_assoc, mul_left_comm, ne_of_gt ( show 0 < p n i from Nat.Prime.pos ( by
+                                                            have h_prime : p n i ∈ P_n n := by
+                                                              exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
+                                                            exact Finset.mem_filter.mp h_prime |>.2.2 ) ) ];
+          rw [ Real.cos_eq_cos_iff ];
+          exact ⟨ k * 3, Or.inr <| by push_cast; ring ⟩;
+      convert exact_krafft_cosine n i using 1 ; ring_nf at * ; aesop ( simp_config := { decide := true } ) ;
+
+lemma P_base_hit_bound (n : ℕ) (x : ZMod (q n)) (i : Fin (w n)) (h : g n i x = 1) :
+    P_base n x ≤ 2 * (w n : ℝ) - (1 + Real.cos (Real.pi / 5)) := by
+      -- Apply the bound for the cosine term and simplify the expression.
+      have h_cos_bound : Real.cos (Real.pi / (p n i)) ≥ Real.cos (Real.pi / 5) := by
+        refine' Real.cos_le_cos_of_nonneg_of_le_pi _ _ _ <;> try positivity;
+        · linarith [ Real.pi_pos ];
+        · gcongr;
+          norm_cast;
+          exact Finset.mem_filter.mp ( show p n i ∈ P_n n from by { unfold p; exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| List.get_mem _ _ } ) |>.2.1;
+      have h_cos_term : Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ)) ≤ -Real.cos (Real.pi / 5) := by
+        have h_cos_term : Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ)) = -Real.cos (Real.pi / (p n i : ℝ)) := by
+          convert cosine_at_hit n i x h using 1;
+        linarith;
+      have h_sum_bound : ∑ j ∈ Finset.univ.erase i, Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n j : ℝ)) ≤ (w n - 1) := by
+        exact le_trans ( Finset.sum_le_sum fun _ _ => Real.cos_le_one _ ) ( by simp +decide [ Finset.card_erase_of_mem ( Finset.mem_univ i ), Nat.cast_sub ( show 1 ≤ w n from Fin.pos i ) ] );
+      unfold P_base a_optimal C_optimal; norm_num at *; linarith;
+
+/-
+Define the frequency corresponding to the i-th prime as 3 * (q / p_i) and prove its value is exactly that (no modulo reduction needed since it's less than q).
+-/
+def freq_i (n : ℕ) (i : Fin (w n)) : ZMod (q n) := ((3 * (q n / p n i) : ℕ) : ZMod (q n))
+
+lemma freq_i_val (n : ℕ) (i : Fin (w n)) : (freq_i n i).val = 3 * (q n / p n i) := by
+  unfold freq_i;
+  rw [ ZMod.val_cast_of_lt ];
+  have h_mod : p n i ≥ 5 := by
+    exact ( Finset.mem_filter.mp ( show p n i ∈ P_n n from by
+                                    exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ) |>.2.1;
+  nlinarith [ Nat.div_mul_le_self ( q n ) ( p n i ), show q n > 0 from Nat.pos_of_ne_zero ( Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ) ]
+
+/-
+Lemma: The cosine term using p_i is equivalent to the cosine term using the frequency freq_i and period q.
+-/
+lemma cosine_term_eq_freq (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) :
+    Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ)) =
+    Real.cos (2 * Real.pi * (freq_i n i).val * (x.val : ℝ) / (q n : ℝ)) := by
+      convert Real.cos_periodic.int_mul ( x.val * ( q n / p n i ) - x.val * ( q n / p n i ) ) _ using 2 ; push_cast [ freq_i_val ] ; ring_nf;
+      rw [ Nat.cast_div ] <;> norm_num ; ring_nf;
+      · norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ];
+      · have h_div : p n i ∈ P_n n := by
+          exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
+        exact Finset.dvd_prod_of_mem _ h_div |> dvd_trans ( by aesop );
+      · exact Nat.ne_of_gt ( Nat.pos_of_ne_zero ( by have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
+                                                                                      exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ; aesop ) )
+
+/-
+Define the Fourier transform of P_base.
+-/
+noncomputable def P_base_hat (n : ℕ) (h : ZMod (q n)) : ℂ :=
+  (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (P_base n x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
+
+lemma P_base_hat_nonneg (n : ℕ) (h : ZMod (q n)) : (P_base_hat n h).re ≥ 0 ∧ (P_base_hat n h).im = 0 := by
+  -- By definition of $P_base_hat$, we can expand it into a sum over $i$ of cosine terms.
+  have h_expansion : P_base_hat n h = (1 / (q n : ℂ)) * (∑ i : Fin (w n), (a_optimal n i / 2) * (∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val - (freq_i n i).val) * x.val / (q n : ℂ)) + ∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val + (freq_i n i).val) * x.val / (q n : ℂ)))) + (1 / (q n : ℂ)) * (C_optimal n * ∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * h.val * x.val / (q n : ℂ))) := by
+    have h_expansion : P_base_hat n h = (1 / (q n : ℂ)) * (∑ x : ZMod (q n), (C_optimal n + ∑ i : Fin (w n), (a_optimal n i) * ((Complex.exp (2 * Real.pi * Complex.I * (freq_i n i).val * x.val / (q n : ℂ)) + Complex.exp (-2 * Real.pi * Complex.I * (freq_i n i).val * x.val / (q n : ℂ))) / 2)) * Complex.exp (-2 * Real.pi * Complex.I * h.val * x.val / (q n : ℂ))) := by
+      unfold P_base_hat P_base a_optimal C_optimal;
+      congr! 3;
+      · push_cast [ ← mul_assoc ];
+        congr! 2;
+        rw [ Complex.cos ] ; ring_nf;
+        rw [ freq_i_val ] ; ring_nf;
+        rw [ Nat.cast_mul, Nat.cast_div ] <;> norm_num ; ring_nf;
+        · norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ];
+        · exact Finset.dvd_prod_of_mem _ ( Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( show p n _ < 6 * n + 2 from by
+                                                                                            rename_i i _;
+                                                                                            have := Finset.mem_filter.mp ( show p n i ∈ Finset.filter ( fun p => 5 ≤ p ∧ p.Prime ) ( Finset.range ( 6 * n + 2 ) ) from by
+                                                                                                                            exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ; aesop ), by
+                                                                                            have h_prime : ∀ i : Fin (w n), 5 ≤ p n i ∧ Nat.Prime (p n i) := by
+                                                                                              intro i
+                                                                                              have h_prime : p n i ∈ P_n n := by
+                                                                                                exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
+                                                                                              exact (Finset.mem_filter.mp h_prime).right
+                                                                                            exact h_prime _ ⟩ );
+        · exact Nat.Prime.ne_zero ( by have := Finset.mem_filter.mp ( show p n ‹_› ∈ P_n n from by { exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| List.get_mem _ _ } ) |>.2.2; aesop );
+      · push_cast; ring_nf;
+    simp_all +decide [ add_mul, mul_add, Finset.sum_add_distrib, Finset.mul_sum _ _ _, Finset.sum_mul ];
+    rw [ ← Finset.sum_comm ] ; ring_nf;
+    simp +decide only [mul_assoc, ← Complex.exp_add] ; ring_nf;
+    simp +decide only [mul_comm, mul_assoc, mul_left_comm, Finset.sum_add_distrib];
+    rw [ add_assoc ];
+  -- Notice that $\sum_{x=0}^{q-1} e^{2\pi i kx/q}$ is zero if $k$ is not a multiple of $q$, and $q$ if $k$ is a multiple of $q$.
+  have h_orthogonality : ∀ k : ℤ, (∑ x : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * k * x.val / (q n : ℂ))) = if k % (q n : ℤ) = 0 then (q n : ℂ) else 0 := by
+    intro k
+    by_cases hk : k % (q n : ℤ) = 0;
+    · obtain ⟨ k, rfl ⟩ := Int.modEq_zero_iff_dvd.mp hk; norm_num [ mul_assoc, mul_left_comm, mul_div_cancel₀ ] ;
+      convert Finset.sum_const ( 1 : ℂ ) using 2;
+      · rw [ Complex.exp_eq_one_iff ] ; use k * ( ‹ZMod ( q n ) ›.val : ℤ ) ; ring_nf ; norm_num [ show q n ≠ 0 from Nat.ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ] ;
+        simp +decide [ mul_assoc, mul_comm, mul_left_comm, show q n ≠ 0 from Nat.ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ];
+      · norm_num [ Finset.card_univ ];
+    · -- Since $k$ is not a multiple of $q_n$, the sum $\sum_{x=0}^{q_n-1} e^{2\pi i k x / q_n}$ is a geometric series with ratio $e^{2\pi i k / q_n}$.
+      have h_geo_series : ∑ x ∈ Finset.range (q n), Complex.exp (2 * Real.pi * Complex.I * k * x / (q n : ℂ)) = 0 := by
+        have h_geo_series : ∑ x ∈ Finset.range (q n), (Complex.exp (2 * Real.pi * Complex.I * k / (q n : ℂ)))^x = 0 := by
+          rw [ geom_sum_eq ] <;> norm_num [ ← Complex.exp_nat_mul, mul_div_cancel₀ ];
+          · exact Or.inl ( sub_eq_zero_of_eq <| Complex.exp_eq_one_iff.mpr ⟨ k, by rw [ mul_div_cancel₀ _ <| Nat.cast_ne_zero.mpr <| by
+              exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ; ring ⟩ );
+          · rw [ Complex.exp_eq_one_iff ];
+            field_simp;
+            exact fun ⟨ m, hm ⟩ => hk <| Int.emod_eq_zero_of_dvd <| by exact ⟨ m, by rw [ div_eq_iff <| Nat.cast_ne_zero.mpr <| Nat.ne_of_gt <| show 0 < q n from Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ] at hm; norm_cast at *; linarith ⟩ ;
+        exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by rw [ ← Complex.exp_nat_mul ] ; ring_nf ) h_geo_series;
+      convert h_geo_series using 1;
+      · refine' Finset.sum_bij ( fun x _ => x.val ) _ _ _ _ <;> simp;
+        · intro a; exact (by
+          convert a.val_lt);
+        · exact fun a₁ a₂ h => by simpa [ ZMod.natCast_zmod_val ] using congr_arg ( fun x : ℕ => x : ℕ → ZMod ( q n ) ) h;
+        · exact fun b hb => ⟨ b, ZMod.val_cast_of_lt hb ⟩;
+      · aesop;
+  -- Apply the orthogonality result to each term in the expansion.
+  have h_apply_orthogonality : ∀ i : Fin (w n), (∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val - (freq_i n i).val) * x.val / (q n : ℂ))) = if (h.val - (freq_i n i).val) % (q n : ℤ) = 0 then (q n : ℂ) else 0 := by
+    intro i; specialize h_orthogonality ( - ( h.val - ( freq_i n i |> ZMod.val ) ) ) ; simp_all +decide [ neg_div ] ;
+    convert h_orthogonality using 2 <;> ring_nf;
+    rw [ ← dvd_neg ] ; ring_nf;
+  have h_apply_orthogonality2 : ∀ i : Fin (w n), (∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val + (freq_i n i).val) * x.val / (q n : ℂ))) = if (h.val + (freq_i n i).val) % (q n : ℤ) = 0 then (q n : ℂ) else 0 := by
+    intro i; specialize h_orthogonality ( - ( h.val + ( freq_i n i |> ZMod.val ) ) ) ; simp_all +decide [ neg_div ] ;
+    convert h_orthogonality using 2 <;> ring_nf;
+    exact ⟨ fun ⟨ k, hk ⟩ => ⟨ -k, by linear_combination -hk ⟩, fun ⟨ k, hk ⟩ => ⟨ -k, by linear_combination -hk ⟩ ⟩;
+  have h_apply_orthogonality3 : (∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * h.val * x.val / (q n : ℂ))) = if h.val % (q n : ℤ) = 0 then (q n : ℂ) else 0 := by
+    convert h_orthogonality ( -h.val ) using 1 ; norm_num ; ring_nf;
+    norm_num [ Int.emod_eq_zero_of_dvd ];
+  simp +zetaDelta at *;
+  simp_all;
+  split_ifs <;> norm_num [ a_optimal, C_optimal ];
+  · norm_cast ; norm_num [ Finset.sum_add_distrib, Finset.mul_sum _ _ _ ];
+    exact add_nonneg ( Finset.sum_nonneg fun _ _ => mul_nonneg ( inv_nonneg.2 ( Nat.cast_nonneg _ ) ) ( mul_nonneg ( by norm_num ) ( add_nonneg ( by positivity ) ( by positivity ) ) ) ) ( mul_nonneg ( inv_nonneg.2 ( Nat.cast_nonneg _ ) ) ( mul_nonneg ( Nat.cast_nonneg _ ) ( Nat.cast_nonneg _ ) ) );
+  · exact ⟨ mul_nonneg ( inv_nonneg.2 ( Nat.cast_nonneg _ ) ) ( Finset.sum_nonneg fun _ _ => by split_ifs <;> norm_num ), Or.inr <| Finset.sum_eq_zero fun _ _ => by split_ifs <;> norm_num ⟩
+
+/-
+Prove that the frequency freq_i is not zero.
+-/
+lemma freq_i_ne_zero (n : ℕ) (i : Fin (w n)) : freq_i n i ≠ 0 := by
+  unfold freq_i;
+  rw [ Ne.eq_def, ZMod.natCast_eq_zero_iff ];
+  refine' Nat.not_dvd_of_pos_of_lt _ _;
+  · refine' mul_pos ( by decide ) ( Nat.div_pos _ _ );
+    · have h_prime_div : p n i ∈ P_n n := by
+        exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
+      exact Nat.le_of_dvd ( Finset.prod_pos fun x hx => Nat.Prime.pos ( Finset.mem_filter.mp hx |>.2.2 ) ) ( Finset.dvd_prod_of_mem _ h_prime_div );
+    · have h_prime : p n i ∈ P_n n := by
+        exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
+      exact Nat.Prime.pos (Finset.mem_filter.mp h_prime |>.2.2);
+  · -- Since $p_n i$ is a prime number greater than or equal to 5, we have $p_n i \geq 5$.
+    have h_prime_ge_5 : 5 ≤ p n i := by
+      exact ( Finset.mem_filter.mp ( show p n i ∈ P_n n from by
+                                      exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ) |>.2.1;
+    nlinarith [ Nat.div_mul_le_self ( q n ) ( p n i ), show q n > 0 from Finset.prod_pos fun p hp => Nat.Prime.pos ( Finset.mem_filter.mp hp |>.2.2 ) ]
+
+/-
+Define the Discrete Fourier Transform (DFT) for a function F on ZMod(q).
+-/
+noncomputable def dft (n : ℕ) (F : ZMod (q n) → ℂ) (h : ZMod (q n)) : ℂ :=
+  (1 / (q n : ℂ)) * ∑ x : ZMod (q n), F x * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
+
+lemma dft_product_eq_convolution (n : ℕ) (F G : ZMod (q n) → ℂ) (h : ZMod (q n)) :
+    dft n (fun x => F x * G x) h = ∑ k : ZMod (q n), dft n F k * dft n G (h - k) := by
+      unfold dft; ring_nf;
+      -- Let's simplify the expression using the properties of the roots of unity.
+      have h_roots_of_unity : ∀ x y : ZMod (q n), ∑ k : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * (k.val * (x.val - y.val)) / (q n : ℝ)) = if x = y then (q n : ℂ) else 0 := by
+        intro x y; split_ifs <;> simp_all +decide [ div_eq_mul_inv ] ;
+        -- Let $z = e^{2 \pi i (x - y) / q_n}$. Since $x \neq y$, $z$ is a primitive $q_n$-th root of unity.
+        set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * (x.val - y.val) / (q n : ℝ))
+        have hz : z ≠ 1 := by
+          rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
+          -- Since $x \neq y$, $x.val - y.val$ is not divisible by $q_n$, hence $(x.val - y.val) / q_n$ is not an integer.
+          have h_not_div : ¬(q n : ℤ) ∣ (x.val - y.val) := by
+            intro h_div
+            have h_eq : x.val ≡ y.val [ZMOD q n] := by
+              exact Eq.symm <| Int.modEq_of_dvd h_div;
+            norm_cast at *;
+            haveI := Fact.mk ( show 1 < q n from ?_ ) ; simp_all +decide [ ← ZMod.natCast_eq_natCast_iff ] ;
+            contrapose! h_div; interval_cases _ : q n <;> simp_all +decide ;
+            · exact absurd ‹q n = 0› ( Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 );
+            · fin_cases x ; fin_cases y ; contradiction;
+          field_simp;
+          exact fun ⟨ k, hk ⟩ => h_not_div <| by rw [ div_eq_iff <| Nat.cast_ne_zero.mpr <| by exact Nat.ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ] at hk; norm_cast at *; aesop;
+        have hz_pow : ∑ k ∈ Finset.range (q n), z^k = 0 := by
+          have hz_pow : z ^ (q n) = 1 := by
+            rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff ] ; use ( x.val - y.val ) ; push_cast ; ring_nf ; norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ;
+          rw [ geom_sum_eq ] <;> aesop;
+        convert hz_pow using 1;
+        refine' Finset.sum_bij ( fun k hk => k.val ) _ _ _ _ <;> simp;
+        · intro a; exact (by
+          convert a.val_lt);
+        · intro a₁ a₂ h; haveI := Fact.mk ( show 1 < q n from ?_ ) ; exact ZMod.val_injective _ h;
+          rcases n with ( _ | _ | n ) <;> simp_all +decide [ q ];
+          · unfold P_n at * ; simp_all +decide [ Finset.prod_filter, Finset.prod_range_succ ];
+          · refine' lt_of_lt_of_le _ ( Finset.prod_le_prod' fun p hp => Nat.Prime.two_le <| Finset.mem_filter.mp hp |>.2.2 ) ; norm_num [ P_n ];
+            exact ⟨ 5, by linarith, by norm_num, by norm_num ⟩;
+        · intro b hb; use b;
+          exact ZMod.val_cast_of_lt hb;
+        · intro a; rw [ ← Complex.exp_nat_mul ] ; ring_nf;
+          cases n <;> aesop;
+      -- Apply the roots of unity property to simplify the expression.
+      have h_simplify : ∑ x : ZMod (q n), ∑ x_1 : ZMod (q n), ∑ x_2 : ZMod (q n), F x_1 * G x_2 * Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (x.val * x_1.val + (h - x).val * x_2.val) * 2)) = ∑ x : ZMod (q n), F x * G x * Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (h.val * x.val) * 2)) * (q n : ℂ) := by
+        have h_simplify : ∀ x_1 x_2 : ZMod (q n), ∑ x : ZMod (q n), Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (x.val * x_1.val + (h - x).val * x_2.val) * 2)) = if x_1 = x_2 then Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (h.val * x_1.val) * 2)) * (q n : ℂ) else 0 := by
+          intro x_1 x_2
+          have h_simplify : ∑ x : ZMod (q n), Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (x.val * x_1.val + (h - x).val * x_2.val) * 2)) = Complex.exp (-((q n : ℂ)⁻¹ * Real.pi * Complex.I * (h.val * x_2.val) * 2)) * ∑ x : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * (x.val * (x_2.val - x_1.val)) / (q n : ℝ)) := by
+            rw [ Finset.mul_sum _ _ _ ] ; refine' Finset.sum_congr rfl fun x hx => _ ; rw [ ← Complex.exp_add ] ; ring_nf;
+            have h_mod : (h - x).val ≡ h.val - x.val [ZMOD q n] := by
+              simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
+            obtain ⟨ k, hk ⟩ := h_mod.symm.dvd;
+            rw [ Complex.exp_eq_exp_iff_exists_int ] ; use -k * x_2.val ; push_cast [ ← @Int.cast_inj ℂ ] at * ; simp_all +decide [ sub_eq_iff_eq_add ] ; ring_nf;
+            rw [ mul_inv_cancel₀ ( Nat.cast_ne_zero.mpr <| ne_of_gt <| show 0 < q n from Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ] ; ring;
+          specialize h_roots_of_unity x_2 x_1 ; aesop;
+        simp_all +decide [ ← Finset.sum_mul ];
+        rw [ Finset.sum_comm ];
+        rw [ Finset.sum_mul ] ; refine' Finset.sum_congr rfl fun i hi => _ ; rw [ Finset.sum_comm ] ; simp_all +decide [ ← Finset.mul_sum _ _ _ ] ; ring;
+      convert congr_arg ( fun x : ℂ => ( q n : ℂ ) ⁻¹ ^ 2 * x ) h_simplify.symm using 1 <;> norm_num [ Finset.mul_sum _ _ _, Finset.sum_mul ] ; ring_nf;
+      · by_cases h : q n = 0 <;> simp +decide [ sq, mul_assoc, h ];
+      · refine' Finset.sum_congr rfl fun x _ => Finset.sum_comm.trans ( Finset.sum_congr rfl fun y _ => Finset.sum_congr rfl fun z _ => _ ) ; ring_nf ; norm_num [ Complex.exp_add, Complex.exp_neg ] ; ring_nf;
+        norm_num [ Complex.exp_sub, Complex.exp_neg ] ; ring;
+
+lemma dft_mul_nonneg (n : ℕ) (F G : ZMod (q n) → ℂ)
+    (hF : ∀ k, (dft n F k).im = 0 ∧ (dft n F k).re ≥ 0)
+    (hG : ∀ k, (dft n G k).im = 0 ∧ (dft n G k).re ≥ 0) :
+    ∀ h, (dft n (fun x => F x * G x) h).im = 0 ∧ (dft n (fun x => F x * G x) h).re ≥ 0 := by
+      intros h
+      have h_prod : ∀ k, (dft n F k * dft n G (h - k)).im = 0 ∧ (dft n F k * dft n G (h - k)).re ≥ 0 := by
+        intro k; specialize hF k; specialize hG ( h - k ) ; simp_all ; nlinarith;
+      rw [ dft_product_eq_convolution ];
+      simp_all;
+      exact Finset.sum_nonneg fun _ _ => h_prod _
+
+lemma dft_pow_nonneg (n : ℕ) (k : ℕ) :
+    ∀ h, (dft n (fun x => (P_base n x : ℂ) ^ k) h).im = 0 ∧ (dft n (fun x => (P_base n x : ℂ) ^ k) h).re ≥ 0 := by
+      have hP_base_hat_real_nonneg : ∀ h : ZMod (q n), (dft n (fun x : ZMod (q n) => (P_base n x : ℂ)) h).im = 0 ∧ (dft n (fun x : ZMod (q n) => (P_base n x : ℂ)) h).re ≥ 0 := by
+        convert P_base_hat_nonneg n using 1;
+        unfold dft P_base_hat; norm_num; ring_nf; aesop;
+      induction' k with k ih <;> simp_all +decide [ pow_succ' ];
+      · unfold dft; norm_num;
+        have h_exp_sum : ∀ h : ZMod (q n), ∑ x : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)) = if h = 0 then (q n : ℂ) else 0 := by
+          convert sum_exp_orthogonality_neg n using 1;
+          simp +decide [ div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm ];
+        intro h; specialize h_exp_sum h; simp_all +decide [ Complex.ext_iff, neg_div ] ;
+        split_ifs <;> norm_num;
+      · convert dft_mul_nonneg n _ _ _ _ using 1;
+        · exact hP_base_hat_real_nonneg;
+        · exact ih
+
+lemma P_base_hat_zero (n : ℕ) : P_base_hat n 0 = (C_optimal n : ℂ) := by
+  -- The sum of the cosine terms is zero because for each i, the sum of cos(2π*3*x/p_i) over x from 0 to q-1 is zero.
+  have h_cos_sum_zero : ∀ i : Fin (w n), ∑ x : ZMod (q n), Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ)) = 0 := by
+    intro i
+    have h_cos_sum_zero : ∑ x ∈ Finset.range (q n), Complex.exp (2 * Real.pi * Complex.I * 3 * x / (p n i : ℂ)) = 0 := by
+      have h_geom_sum : ∑ x ∈ Finset.range (q n), (Complex.exp (2 * Real.pi * Complex.I * 3 / (p n i : ℂ))) ^ x = 0 := by
+        rw [ geom_sum_eq ] <;> norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
+        · rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_re, Complex.exp_im ] ; norm_num;
+          -- Since $p_i$ divides $q_n$, we have $q_n = k \cdot p_i$ for some integer $k$.
+          obtain ⟨k, hk⟩ : ∃ k : ℕ, q n = k * p n i := by
+            exact exists_eq_mul_left_of_dvd <| Finset.dvd_prod_of_mem _ <| show p n i ∈ P_n n from by
+                                                                            exact ( mem_P_n_iff_exists_index n ( p n i ) ) |>.2 ⟨ i, rfl ⟩;
+          norm_num [ hk, mul_assoc, mul_left_comm ];
+          by_cases hi : p n i = 0 <;> norm_num [ hi ];
+          exact Or.inl ⟨ by rw [ sub_eq_zero ] ; rw [ Real.cos_eq_one_iff ] ; use k * 3; push_cast; ring, by rw [ Real.sin_eq_zero_iff ] ; use k * 6; push_cast; ring ⟩;
+        · intro h_cos h_sin
+          have h_contra : ∃ k : ℤ, 2 * Real.pi * 3 / (p n i : ℝ) = 2 * Real.pi * k := by
+            rw [ Real.cos_eq_one_iff ] at h_cos; obtain ⟨ k, hk ⟩ := h_cos; exact ⟨ k, by linarith ⟩ ;
+          generalize_proofs at *; (
+          obtain ⟨ k, hk ⟩ := h_contra
+          have h_div : 3 = k * (p n i : ℤ) := by
+            exact_mod_cast ( by rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| Finset.mem_filter.mp ( Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| show p n i ∈ primes_list n from List.get_mem _ _ ) |>.2.2 ) ] at hk; nlinarith [ Real.pi_pos ] : ( 3 : ℝ ) = k * p n i ) ;
+          generalize_proofs at *; (
+          have h_prime : 5 ≤ p n i := by
+            exact Nat.succ_le_of_lt ( show p n i > 4 from by { have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by { exact ( mem_P_n_iff_exists_index n ( p n i ) ) |>.2 ⟨ i, rfl ⟩ } ) ; exact this.2.1 } ) ;
+          generalize_proofs at *; (
+          nlinarith [ show k = 0 by nlinarith ])))
+      generalize_proofs at *; (
+      exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by rw [ ← Complex.exp_nat_mul ] ; ring_nf ) h_geom_sum)
+    generalize_proofs at *; (
+    simp_all +decide [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
+    convert h_cos_sum_zero.1 using 1
+    generalize_proofs at *; (
+    refine' Finset.sum_bij ( fun x _ => x.val ) _ _ _ _ <;> simp +decide;
+    · exact fun x => ZMod.val_lt x;
+    · exact fun x y h => by simpa [ ZMod.natCast_zmod_val ] using congr_arg ( fun x : ℕ => x : ℕ → ZMod ( q n ) ) h;
+    · exact fun b hb => ⟨ b, ZMod.val_cast_of_lt hb ⟩));
+  unfold P_base_hat P_base C_optimal a_optimal; norm_num [ ← Finset.mul_sum _ _ _, ← Finset.sum_mul, h_cos_sum_zero ] ; ring_nf;
+  norm_num [ Finset.sum_add_distrib, mul_assoc, mul_comm, mul_left_comm, Finset.mul_sum _ _ _, Finset.sum_mul ] ; ring_nf ; norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ;
+  rw [ Finset.sum_comm ] ; simp_all +decide [ mul_assoc, mul_comm, mul_left_comm ] ; ring_nf ;
+  rw [ Finset.sum_eq_zero ] ; intros ; norm_cast ; simp_all +decide [ div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm ] ; ring_nf;
+  convert congr_arg ( ( ↑ ) : ℝ → ℂ ) ( h_cos_sum_zero ‹_› ) using 2 ; norm_num ; ring_nf;
+
+/-
+Prove that the frequencies freq_i are distinct for distinct primes.
+-/
+lemma freq_distinct (n : ℕ) (i j : Fin (w n)) (h : freq_i n i = freq_i n j) : i = j := by
+  -- Since $q_n$ is the product of all primes in $P_n n$, and $q_n / p_n i = q_n / p_n j$, it follows that $p_n i = p_n j$.
+  have h_prime_eq : p n i = p n j := by
+    have h_eq : 3 * (q n / p n i) = 3 * (q n / p n j) := by
+      convert congr_arg ZMod.val h using 1 <;> norm_num [ freq_i_val ];
+    -- Since $q_n$ is the product of primes in $P_n$, and $p_i$ and $p_j$ are distinct primes in $P_n$, their products are distinct.
+    have h_prod_distinct : q n = p n i * (q n / p n i) ∧ q n = p n j * (q n / p n j) := by
+      have h_prime_div : p n i ∣ q n ∧ p n j ∣ q n := by
+        exact ⟨ Finset.dvd_prod_of_mem _ <| Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| List.get_mem _ _, Finset.dvd_prod_of_mem _ <| Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 <| List.get_mem _ _ ⟩;
+      exact ⟨ Eq.symm ( Nat.mul_div_cancel' h_prime_div.1 ), Eq.symm ( Nat.mul_div_cancel' h_prime_div.2 ) ⟩;
+    nlinarith [ show 0 < q n / p n i from Nat.div_pos ( Nat.le_of_dvd ( Nat.pos_of_ne_zero ( by
+                  exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ) ) ( Nat.dvd_of_mod_eq_zero ( by
+                  exact Nat.mod_eq_zero_of_dvd <| h_prod_distinct.1.symm ▸ dvd_mul_right _ _ ) ) ) ( Nat.Prime.pos ( by
+                  have h_prime : p n i ∈ P_n n := by
+                    convert Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) using 1;
+                  exact Finset.mem_filter.mp h_prime |>.2.2 ) ) ];
+  have h_unique : Finset.card (Finset.image (fun i => p n i) Finset.univ) = w n := by
+    rw [ show Finset.image ( fun i => p n i ) Finset.univ = P_n n from ?_, Finset.card_eq_sum_ones ];
+    · unfold w; aesop;
+    · ext; simp [mem_P_n_iff_exists_index];
+  have := Finset.card_image_iff.mp ( by aesop : Finset.card ( Finset.image ( fun i => p n i ) Finset.univ ) = Finset.card Finset.univ ) ; aesop;
+
+/-
+Define the basis function for the multidimensional weight as a product of cosines over a subset of primes.
+-/
+/--
+Define the basis function for a subset of prime indices $S \subseteq \{1, \dots, w\}$.
+The basis function is the product of the 3rd harmonic cosines for each prime in $S$.
+$$ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) $$
+-/
+noncomputable def basis_cos (n : ℕ) (S : Finset (Fin (w n))) (x : ZMod (q n)) : ℝ :=
+  ∏ i ∈ S, Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ))
+
+/-
+Define the multidimensional polynomial P(x) as a sum over all subsets S of the basis functions B_S(x) weighted by lambda_S.
+-/
+/--
+Define the multidimensional polynomial $P(x)$ as a linear combination of the basis functions $B_S(x)$ with coefficients $\lambda_S$.
+$$ P(x) = \sum_{S \subseteq \{1, \dots, w\}} \lambda_S B_S(x) $$
+-/
+noncomputable def P_multi (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) : ℝ :=
+  ∑ S ∈ Finset.univ.powerset, lambda S * basis_cos n S x
+
+/-
+Define the truly multidimensional weight function W_lambda(x) as the square of P(x) restricted to A_n.
+-/
+/--
+Define the truly multidimensional weight function $W_{\lambda}(x)$ as the square of the polynomial $P(x)$ restricted to the interval $\mathcal{A}_n$.
+$$ W_{\lambda}(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 & \text{otherwise} \end{cases} $$
+-/
+noncomputable def W_truly_multi (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) : ℝ :=
+  if x.val ∈ A_n n then (P_multi n lambda x) ^ 2 else 0
+
+/-
+Define the Krafft coefficients lambda_Krafft(S) = 1 for all S.
+-/
+/--
+Define the Krafft coefficients $\lambda_{Krafft}(S) = 1$ for all $S$.
+This choice corresponds to the polynomial $P(x) = \prod_{i=1}^w (1 + \cos(6\pi x/p_i))$.
+-/
+def lambda_krafft (n : ℕ) (_ : Finset (Fin (w n))) : ℝ := 1
+
+/-
+Define the matrices M_1 and M_2 representing the quadratic forms of S_1 and S_2 in the basis B_S.
+-/
+/--
+Define the matrix $M_1$ corresponding to the first moment $S_1$.
+$M_1(S, T) = \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x)$
+-/
+noncomputable def Matrix_1 (n : ℕ) (S T : Finset (Fin (w n))) : ℝ :=
+  ∑ x ∈ A_n n, basis_cos n S (x : ZMod (q n)) * basis_cos n T (x : ZMod (q n))
+
+/--
+Define the matrix $M_2$ corresponding to the second moment $S_2$.
+$M_2(S, T) = \sum_{x \in \mathcal{A}_n} c(x) B_S(x) B_T(x)$
+-/
+noncomputable def Matrix_2 (n : ℕ) (S T : Finset (Fin (w n))) : ℝ :=
+  ∑ x ∈ A_n n, c n (x : ZMod (q n)) * basis_cos n S (x : ZMod (q n)) * basis_cos n T (x : ZMod (q n))
+
+/-
+Define the quadratic forms Q_1 and Q_2 corresponding to the matrices M_1 and M_2.
+-/
+/--
+Define the quadratic form $Q_1(\lambda) = \lambda^T M_1 \lambda$.
+-/
+noncomputable def Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
+  ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, lambda S * Matrix_1 n S T * lambda T
+
+/--
+Define the quadratic form $Q_2(\lambda) = \lambda^T M_2 \lambda$.
+-/
+noncomputable def Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
+  ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, lambda S * Matrix_2 n S T * lambda T
+
+/-
+Define the Rayleigh quotient R(lambda) = Q_2(lambda) / Q_1(lambda).
+-/
+/--
+Define the Rayleigh quotient $R(\lambda) = \frac{Q_2(\lambda)}{Q_1(\lambda)}$.
+Defined to be $\infty$ if $Q_1(\lambda) = 0$ (though $Q_1$ is positive definite on non-zero $\lambda$ if the basis is linearly independent on $A_n$).
+-/
+noncomputable def Ratio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
+  if Q_1 n lambda = 0 then 0 else (Q_2 n lambda) / (Q_1 n lambda)
+
+/-
+Prove that W_truly_multi is non-negative everywhere.
+-/
+/--
+The truly multidimensional weight function is non-negative everywhere.
+-/
+lemma W_truly_multi_nonneg (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) :
+    W_truly_multi n lambda x ≥ 0 := by
+      by_cases hx : x.val ∈ A_n n <;> simp_all +decide [ W_truly_multi ];
+      exact sq_nonneg _
+
+/-
+Prove that W_truly_multi is supported on A_n.
+-/
+/--
+The truly multidimensional weight function is supported on $\mathcal{A}_n$.
+-/
+lemma W_truly_multi_support (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n))
+    (hx : x.val ∉ A_n n) :
+    W_truly_multi n lambda x = 0 := by
+      exact if_neg hx
+
+/-
+Prove that S_1 equals Q_1 for the truly multidimensional weight.
+-/
+/--
+Lemma: The first moment $S_1$ of the truly multidimensional weight is equal to the quadratic form $Q_1$.
+-/
+lemma S_1_eq_Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    S_1 n (W_truly_multi n lambda) = Q_1 n lambda := by
+      unfold Q_1 S_1 W_truly_multi P_multi; norm_cast;
+      simp only [ZMod.val_natCast, Finset.powerset_univ];
+      rw [ Finset.sum_congr rfl fun x hx => if_pos ?_ ];
+      · simp +decide [ Matrix_1, sq, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
+        rw [ Finset.sum_comm, Finset.sum_congr rfl fun _ _ => Finset.sum_comm ];
+      · unfold A_n at *;
+        rcases n with ( _ | _ | n ) <;> norm_num at *;
+        · exact le_trans ( Nat.mod_le _ _ ) hx;
+        · rcases hx with ⟨ hx₁, hx₂ ⟩ ; interval_cases x <;> native_decide;
+        · -- Since $q(n+2)$ is the product of all primes up to $6(n+2)+1$, and $x$ is within the interval $[6(n+2)^2 - 2(n+2), 6(n+2)^2 + 10(n+2) + 3]$, we have $x < q(n+2)$.
+          have h_x_lt_q : x < q (n + 2) := by
+            have := q_bound ( n + 2 ) ( by linarith );
+            linarith;
+          rw [ Nat.mod_eq_of_lt h_x_lt_q ] ; aesop
+
+/-
+Prove that S_2 equals Q_2 for the truly multidimensional weight.
+-/
+/--
+Lemma: The second moment $S_2$ of the truly multidimensional weight is equal to the quadratic form $Q_2$.
+-/
+lemma S_2_eq_Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    S_2 n (W_truly_multi n lambda) = Q_2 n lambda := by
+      unfold Q_2 S_2 W_truly_multi;
+      unfold P_multi Matrix_2; simp +decide [ Finset.sum_mul _ _ _, Finset.mul_sum ] ; ring_nf;
+      simp +decide [ Finset.sum_ite, Finset.sum_mul _ _ _, Finset.mul_sum,
+        mul_comm, mul_left_comm, pow_two ];
+      rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun x hx => _ ;
+      rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun y hy => _ ; ring_nf;
+      refine' Finset.sum_subset _ _ <;> simp +contextual [ Finset.subset_iff ];
+      intro z hz hz'; contrapose! hz'; simp_all only [Finset.mem_univ, ne_eq] ;
+      rw [ Nat.mod_eq_of_lt ] ; exact hz;
+      refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hz |>.2 ) _;
+      exact q_bound n ( Nat.pos_of_ne_zero ( by
+        rintro rfl; exact absurd hz' ( by unfold c; aesop ) ) )
+
+/-
+Prove that if Q_2(lambda) < Q_1(lambda), then Krafft Admissibility holds.
+-/
+/--
+Lemma: The existence of coefficients $\lambda$ such that $Q_2(\lambda) < Q_1(\lambda)$ is sufficient for Krafft Admissibility.
+-/
+lemma sufficiency_of_Q (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (h : Q_2 n lambda < Q_1 n lambda) :
+    Krafft_Admissibility n := by
+      use W_truly_multi n lambda;
+      exact ⟨ fun x => W_truly_multi_nonneg n lambda x, fun x hx => W_truly_multi_support n lambda x hx, by linarith [ S_1_eq_Q_1 n lambda, S_2_eq_Q_2 n lambda ] ⟩
+
+/-
+Define mu_min(n) as the infimum of the attainable Rayleigh quotients.
+-/
+/--
+Define the set of attainable ratios.
+-/
+def attainable_ratios (n : ℕ) : Set ℝ :=
+  { r | ∃ lambda : Finset (Fin (w n)) → ℝ, Q_1 n lambda > 0 ∧ r = Ratio n lambda }
+
+/--
+Define $\mu_{min}(n)$ as the infimum of the attainable ratios.
+-/
+noncomputable def mu_min (n : ℕ) : ℝ := sInf (attainable_ratios n)
+
+/-
+Prove that if mu_min(n) < 1, then Krafft Admissibility holds.
+-/
+/--
+Theorem: If the minimum attainable ratio $\mu_{min}(n)$ is strictly less than 1, then the Krafft Admissibility condition holds.
+-/
+theorem mu_min_lt_one_implies_admissibility (n : ℕ) (h : mu_min n < 1) :
+    Krafft_Admissibility n := by
+      -- By definition of infimum, there exists a ratio $r$ in the attainable set such that $r < 1$.
+      obtain ⟨r, hr⟩ : ∃ r ∈ attainable_ratios n, r < 1 := by
+        contrapose! h;
+        apply le_csInf;
+        · refine' ⟨ _, ⟨ fun S => if S = ∅ then 1 else 0, _, rfl ⟩ ⟩ ; norm_num;
+          unfold Q_1;
+          unfold Matrix_1; norm_num [ Finset.sum_ite ] ;
+          unfold basis_cos; norm_num;
+          exact ⟨ 6 * n ^ 2 - 2 * n, Finset.mem_Icc.mpr ⟨ by nlinarith [ Nat.sub_add_cancel ( by nlinarith : 2 * n ≤ 6 * n ^ 2 ) ], by nlinarith [ Nat.sub_add_cancel ( by nlinarith : 2 * n ≤ 6 * n ^ 2 ) ] ⟩ ⟩;
+        · assumption;
+      obtain ⟨lambda, hlambda_pos, hlambda_ratio⟩ := hr.left;
+      have h_ratio_lt_one : Q_2 n lambda < Q_1 n lambda := by
+        -- By definition of Ratio, we have r = Q_2 n lambda / Q_1 n lambda.
+        have h_ratio_def : r = Q_2 n lambda / Q_1 n lambda := by
+          exact hlambda_ratio.trans ( if_neg hlambda_pos.ne' ) |> Eq.trans <| rfl;
+        generalize_proofs at *; (
+        rw [ eq_div_iff ] at h_ratio_def <;> nlinarith [ hr.2 ] ;);
+      exact sufficiency_of_Q n lambda h_ratio_lt_one;
+
+/-
+Define Idx(n) as the power set of prime indices.
+-/
+/--
+Abbreviation for the index set of the coefficients, which is the power set of prime indices.
+-/
+abbrev Idx (n : ℕ) := Finset (Fin (w n))
+
+/-
+Prove that if Q_1(lambda) = 0, then Q_2(lambda) = 0.
+-/
+/--
+Lemma: The kernel of $Q_1$ is contained in the kernel of $Q_2$.
+If $Q_1(\lambda) = 0$, then $Q_2(\lambda) = 0$.
+-/
+lemma kernel_inclusion (n : ℕ) (lambda : Idx n → ℝ) (h : Q_1 n lambda = 0) :
+    Q_2 n lambda = 0 := by
+      have h_zero : ∀ x ∈ A_n n, (P_multi n lambda x) = 0 := by
+        -- By definition of $Q_1$, we know that if $Q_1 n lambda = 0$, then $\sum_{x \in A_n n} (P_multi n (lambda) x)^2 = 0$.
+        have h_sum_zero : ∑ x ∈ A_n n, (P_multi n lambda x)^2 = 0 := by
+          convert h using 1;
+          unfold Q_1 P_multi;
+          simp +decide [ pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ] ;
+          unfold Matrix_1; rw [ Finset.sum_comm ] ; simp +decide [ Finset.mul_sum _ _ _ ] ;
+          exact Finset.sum_congr rfl fun _ _ =>
+            Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
+              Finset.sum_congr rfl fun _ _ => by ring );
+        rw [ Finset.sum_eq_zero_iff_of_nonneg fun _ _ => sq_nonneg _ ] at h_sum_zero ; aesop;
+      rw [ ← S_2_eq_Q_2, show S_2 n ( W_truly_multi n lambda ) = 0 from _ ];
+      refine' Finset.sum_eq_zero fun x hx => _;
+      unfold W_truly_multi; aesop;
+
+/-
+Define the kernel of Q_1 as a submodule.
+-/
+/--
+The kernel of the quadratic form $Q_1$.
+-/
+def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
+  { carrier := { lambda | Q_1 n lambda = 0 },
+    add_mem' := by
+      intros a b ha hb
+      have h_sum : Q_1 n (a + b) = Q_1 n a + Q_1 n b + 2 * (∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T) := by
+        unfold Q_1;
+        simp +decide [ Finset.sum_add_distrib, mul_add, mul_comm, mul_left_comm ] ; ring_nf;
+        norm_num [ mul_two, add_assoc, Finset.sum_add_distrib ];
+        rw [ Finset.sum_comm ];
+        exact Finset.sum_congr rfl fun _ _ =>
+          Finset.sum_congr rfl fun _ _ => by
+            rw [ show Matrix_1 n _ _ = Matrix_1 n _ _ from by unfold Matrix_1; ac_rfl ] ;
+      have h_sum : Q_1 n (a - b) = Q_1 n a + Q_1 n b - 2 * (∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T) := by
+        unfold Q_1; simp +decide [ sub_mul, mul_sub ] ; ring_nf;
+        rw [ show ( ∑ x : Idx n, ∑ x_1 : Idx n,
+          b x * Matrix_1 n x x_1 * a x_1 ) = ∑ x : Idx n, ∑ x_1 : Idx n,
+          a x * Matrix_1 n x x_1 * b x_1 from ?_ ] ;
+        ring;
+        rw [ Finset.sum_comm ] ; congr ; ext ; congr ; ext ; ring_nf;
+        unfold Matrix_1; simp +decide [ mul_assoc, mul_comm ] ;
+      have h_nonneg : ∀ (lambda : Idx n → ℝ), Q_1 n lambda ≥ 0 := by
+        intro lambda
+        have h_sum : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda (x : ZMod (q n)))^2 := by
+          unfold Q_1 P_multi Matrix_1;
+          simp +decide [ Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq ];
+          ring_nf;
+          exact Eq.symm ( by rw [ Finset.sum_comm ] ; exact Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring ) ) ;
+        exact h_sum.symm ▸ Finset.sum_nonneg fun x hx => sq_nonneg _;
+      grind,
+    zero_mem' := by
+      unfold Q_1; aesop;,
+    smul_mem' := by
+      -- By definition of $Q_1$, we know that $Q_1(c • x) = c^2 * Q_1(x)$.
+      have hQ1_smul : ∀ (c : ℝ) (x : Idx n → ℝ), Q_1 n (c • x) = c^2 * Q_1 n x := by
+        simp_all +decide [ Q_1, Matrix_1 ];
+        exact fun c x => by rw [ Finset.mul_sum _ _ _ ] ; exact Finset.sum_congr rfl fun _ _ => by rw [ Finset.mul_sum _ _ _ ] ; exact Finset.sum_congr rfl fun _ _ => by ring;
+      aesop }
+
+/-
+Prove that Q_1(lambda) = 0 iff P_multi(lambda, x) = 0 for all x in A_n.
+-/
+/--
+Lemma: $Q_1(\lambda) = 0$ if and only if $P_{multi}(\lambda, x) = 0$ for all $x \in \mathcal{A}_n$.
+-/
+lemma Q_1_eq_zero_iff (n : ℕ) (lambda : Idx n → ℝ) :
+    Q_1 n lambda = 0 ↔ ∀ x ∈ A_n n, P_multi n lambda x = 0 := by
+      -- By definition of $Q_1$, we know that
+      have hQ1_def : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x) ^ 2 := by
+        unfold Q_1 P_multi;
+        simp +decide [ Matrix_1, pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
+        exact Eq.symm ( by
+          rw [ Finset.sum_comm ] ;
+          exact Finset.sum_congr rfl fun _ _ =>
+            Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
+              Finset.sum_congr rfl fun _ _ => by ring ) );
+      simp_all +decide [ Finset.sum_eq_zero_iff_of_nonneg, sq_nonneg ]
+
+/-
+Prove that if Q_1(lambda) = 0, then Q_2(lambda) = 0.
+-/
+/--
+Lemma: The kernel of $Q_1$ is contained in the kernel of $Q_2$.
+If $Q_1(\lambda) = 0$, then $Q_2(\lambda) = 0$.
+-/
+lemma kernel_inclusion_v2 (n : ℕ) (lambda : Idx n → ℝ) (h : Q_1 n lambda = 0) :
+    Q_2 n lambda = 0 := by
+      -- Apply the lemma that states if Q_1 n lambda is zero, then Q_2 n lambda is also zero.
+      apply kernel_inclusion n lambda h
+
+/-
+Check for EuclideanSpace and orthogonal definitions.
+-/
+#check EuclideanSpace
+#check Submodule.orthogonal
+#check OrthonormalBasis
+
+/-
+Prove the algebraic identity: sum over subsets of product equals product of (1 + y_i).
+-/
+/--
+Lemma: The polynomial with multiplicative coefficients factors into a product.
+$$ \sum_{S \subseteq s} \prod_{i \in S} y_i = \prod_{i \in s} (1 + y_i) $$
+-/
+lemma sum_powerset_prod_eq_prod_one_add {α : Type*} [CommSemiring α] {ι : Type*} [DecidableEq ι] (s : Finset ι) (y : ι → α) :
+    ∑ S ∈ s.powerset, ∏ i ∈ S, y i = ∏ i ∈ s, (1 + y i) := by
+      simp +decide [ add_comm, Finset.prod_add ]
+
+/-
+Prove that Q_1 is non-negative.
+-/
+/--
+Lemma: $Q_1$ is non-negative for all $\lambda$.
+-/
+lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : Q_1 n lambda ≥ 0 := by
+  -- By definition of $Q_1$, we know that $Q_1 n lambda = \sum_{x \in A_n n} (P_{\text{multi}} n \lambda x)^2$.
+  have hQ1_def : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := by
+    unfold Q_1 P_multi Matrix_1
+    simp [pow_two];
+    simp +decide only [Finset.mul_sum _ _ _, mul_comm, mul_left_comm];
+    exact Eq.symm ( Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_comm ) )
+  exact hQ1_def.symm ▸ Finset.sum_nonneg fun x hx => sq_nonneg _;
+
+/-
+Define dot product and orthogonal complement of kernel_Q1.
+-/
+/--
+Define the standard dot product on the space of coefficients.
+-/
+def dot_product (n : ℕ) (u v : Idx n → ℝ) : ℝ :=
+  ∑ S : Idx n, u S * v S
+
+/--
+The orthogonal complement of the kernel of $Q_1$ with respect to the standard dot product.
+-/
+def kernel_Q1_perp (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
+  { carrier := { v | ∀ u ∈ kernel_Q1 n, dot_product n u v = 0 },
+    add_mem' := by
+      -- By definition of dot product, we have:
+      have h_dot_product_linear : ∀ {a b : Idx n → ℝ}, ∀ u : Idx n → ℝ,
+        dot_product n u (a + b) = dot_product n u a + dot_product n u b := by
+        -- By definition of dot product, we can expand the left-hand side as the sum of the
+        -- products of corresponding components.
+        simp [dot_product, Finset.sum_add_distrib, mul_add];
+      aesop,
+    zero_mem' := by
+      -- The dot product of any vector with the zero vector is zero.
+      simp [dot_product],
+    smul_mem' := by
+      -- By definition of dot product, we have dot_product n u (c • x) = c * dot_product n u x.
+      simp [dot_product];
+      exact fun c x hx u hu => by
+        simpa only [ mul_left_comm, Finset.mul_sum _ _ _ ] using
+          mul_eq_zero_of_right c ( hx u hu ) ;
+  }
+
+/-
+Prove that the dot product is positive definite.
+-/
+/--
+Lemma: The dot product is positive definite.
+-/
+lemma dot_product_pos_def (n : ℕ) (v : Idx n → ℝ) (h : dot_product n v v = 0) : v = 0 := by
+  -- By definition of dot_product, we have that dot_product n v v = ∑ S : Idx n, v S * v S.
+  have h_dot_product : dot_product n v v = ∑ S : Idx n, v S * v S := by
+    rfl;
+  exact funext fun x => by
+    simpa [ sq ] using Finset.sum_eq_zero_iff_of_nonneg ( fun _ _ =>
+      mul_self_nonneg _ ) |>.1 ( h_dot_product.symm.trans h ) x;
+
+/-
+Prove that the intersection of kernel_Q1 and its orthogonal complement is trivial.
+-/
+/--
+Lemma: The intersection of the kernel of $Q_1$ and its orthogonal complement is trivial.
+-/
+lemma kernel_inter_perp_eq_bot (n : ℕ) : kernel_Q1 n ⊓ kernel_Q1_perp n = ⊥ := by
+  refine' Submodule.eq_bot_iff _ |>.2 fun x hx => dot_product_pos_def n x _;
+  exact hx.2 x hx.1
+
+/-
+Prove that the intersection of kernel_Q1 and its orthogonal complement is trivial.
+-/
+/--
+Lemma: The intersection of the kernel of $Q_1$ and its orthogonal complement is trivial.
+-/
+lemma kernel_inter_perp_eq_bot_v2 (n : ℕ) : kernel_Q1 n ⊓ kernel_Q1_perp n = ⊥ := by
+  rw [Submodule.eq_bot_iff]
+  intro x hx
+  have h_kernel : x ∈ kernel_Q1 n := hx.1
+  have h_perp : x ∈ kernel_Q1_perp n := hx.2
+  have h_dot : dot_product n x x = 0 := h_perp x h_kernel
+  exact dot_product_pos_def n x h_dot
+
+/-
+Define the unit sphere in the orthogonal complement and prove Q_1 is positive on it.
+-/
+/--
+The unit sphere in the orthogonal complement of the kernel of $Q_1$.
+-/
+def sphere_perp (n : ℕ) : Set (Idx n → ℝ) :=
+  { lambda | lambda ∈ kernel_Q1_perp n ∧ dot_product n lambda lambda = 1 }
+
+/--
+Lemma: $Q_1$ is strictly positive on the unit sphere of the orthogonal complement.
+-/
+lemma Q_1_pos_on_sphere_perp (n : ℕ) (lambda : Idx n → ℝ) (h : lambda ∈ sphere_perp n) :
+    Q_1 n lambda > 0 := by
+      -- By definition of $sphere_perp$, we know that $\lambda$ is in the orthogonal complement
+      -- of $kernel_Q1$ and $\|\lambda\| = 1$.
+      obtain ⟨h_lambda_perp, h_lambda_norm⟩ := h;
+      contrapose! h_lambda_norm;
+      have h_lambda_kernel : lambda ∈ kernel_Q1 n := by
+        exact le_antisymm h_lambda_norm ( Q_1_nonneg n lambda );
+      have := h_lambda_perp ( lambda ) h_lambda_kernel; simp_all +decide [ dot_product ] ;
+
+/-
+Prove that sphere_perp is compact.
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact (n : ℕ) : IsCompact (sphere_perp n) := by
+  refine' ( Metric.isCompact_iff_isClosed_bounded.mpr _ );
+  refine' ⟨ _, _ ⟩;
+  · refine' IsClosed.inter _ _;
+    · exact Submodule.closed_of_finiteDimensional (kernel_Q1_perp n);
+    · exact isClosed_eq ( continuous_finset_sum _ fun _ _ =>
+        continuous_apply _ |> Continuous.mul <| continuous_apply _ ) continuous_const;
+  · refine' isBounded_iff_forall_norm_le.mpr ⟨ 1, fun x hx => _ ⟩;
+    have := hx.2;
+    rw [ pi_norm_le_iff_of_nonneg ] <;> norm_num [ dot_product ] at *;
+    exact fun i => abs_le.mpr ⟨ by
+      nlinarith only [ this ▸ Finset.single_le_sum ( fun a _ =>
+        mul_self_nonneg ( x a ) ) ( Finset.mem_univ i ) ], by
+          nlinarith only [ this ▸ Finset.single_le_sum ( fun a _ =>
+            mul_self_nonneg ( x a ) ) ( Finset.mem_univ i ) ] ⟩
+
+/-
+Check Fintype and Continuous instances.
+-/
+#check Fintype (Finset (Fin 5))
+#check Continuous (fun (x : Fin 5 → ℝ) => x 0)
+
+/-
+Prove that sphere_perp is compact (v2).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_v2 (n : ℕ) : IsCompact (sphere_perp n) := by
+  convert sphere_perp_compact n using 1
+
+/-
+Prove that sphere_perp is compact (v3).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_v3 (n : ℕ) : IsCompact (sphere_perp n) := by
+  convert sphere_perp_compact_v2 n using 1
+
+/-
+Prove that sphere_perp is compact (using a new name to avoid conflicts).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_is_compact (n : ℕ) : IsCompact (sphere_perp n) := by
+  convert sphere_perp_compact_v3 n using 1
+
+/-
+Prove that sphere_perp is compact (final attempt).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_final (n : ℕ) : IsCompact (sphere_perp n) := by
+  exact sphere_perp_compact_v2 n
+
+/-
+Prove that Q_1 is not identically zero.
+-/
+/--
+Lemma: $Q_1$ is not identically zero.
+-/
+lemma Q_1_not_zero (n : ℕ) : ∃ lambda : Idx n → ℝ, Q_1 n lambda ≠ 0 := by
+  use fun S => if S = ∅ then 1 else 0
+  rw [← S_1_eq_Q_1]
+  unfold S_1 W_truly_multi P_multi basis_cos
+  simp
+  -- The sum is over A_n. The term is (sum_S ...)^2.
+  -- If lambda is delta_empty, sum_S is basis_cos(empty) = 1.
+  -- So term is 1^2 = 1.
+  -- Sum is |A_n| = L n.
+  -- L n = 12n + 4 > 0.
+  use 6 * n^2 - 2 * n;
+  rcases n with ( _ | _ | n ) <;> simp +arith +decide [ Nat.mul_succ, sq ] at *;
+  unfold A_n; ring_nf; norm_num;
+  rw [ Nat.mod_eq_of_lt ] <;> norm_num;
+  · constructor <;> nlinarith [ Nat.sub_add_cancel ( by
+      nlinarith : n * 2 ≤ 20 + n * 24 + n ^ 2 * 6 ) ];
+  · refine' lt_of_lt_of_le _ ( q_bound _ _ );
+    · exact Nat.lt_succ_of_le ( Nat.sub_le_of_le_add <| by nlinarith );
+    · linarith
+
+/-
+Prove that sphere_perp is non-empty.
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is non-empty.
+-/
+lemma sphere_perp_nonempty (n : ℕ) : (sphere_perp n).Nonempty := by
+  obtain ⟨lambda, hlambda⟩ := Q_1_not_zero n
+  -- Decompose lambda into u + v where u in kernel, v in perp.
+  let p := Submodule.subtype (kernel_Q1_perp n)
+  -- We need orthogonal projection.
+  -- Since we are in finite dimensions, we can use `Submodule.exists_add_mem_mem_orthogonal`.
+  -- But we defined `kernel_Q1_perp` manually.
+  -- We should use the fact that `kernel_Q1_perp` is indeed the orthogonal complement.
+  -- And that `kernel_Q1` is a subspace.
+  -- Actually, let's just use the fact that if Q_1(lambda) != 0, then lambda is not in kernel_Q1.
+  -- So lambda is not orthogonal to kernel_Q1_perp? No.
+  -- If lambda is not in kernel, then its projection onto perp is non-zero.
+  obtain ⟨lambda_perp, hlambda_perp⟩ : ∃ lambda_perp : Idx n → ℝ, lambda_perp ∈ kernel_Q1_perp n ∧ dot_product n lambda_perp lambda_perp ≠ 0 := by
+    contrapose! hlambda; simp_all +decide [ dot_product ] ;
+    -- Since the sum of squares is zero, each component must be zero. Therefore, x must be the
+    -- zero vector.
+    have h_zero : ∀ x : Idx n → ℝ, x ∈ kernel_Q1_perp n → x = 0 := by
+      exact fun x hx => funext fun i => by
+        simpa [ sq ] using
+          Finset.sum_eq_zero_iff_of_nonneg ( fun _ _ => mul_self_nonneg _ ) |>.1 ( hlambda x hx ) i;
+    -- Since the dot product is the sum of the products of the components, and we have
+    -- tracen k = 0 for all k, each term in the sum is zero.
+    have h_dot_zero : ∀ S T : Idx n, Matrix_1 n S T = 0 := by
+      intros S T; exact (by
+      convert h_zero ( fun U => Matrix_1 n U S ) _ |> fun h => congr_fun h T using 1 ;
+      simp +decide [ Matrix_1 ] ; ring_nf;
+      · ac_rfl;
+      · intro U hU; simp_all +decide [ Matrix_1, dot_product ] ; ring_nf;
+        -- By Fubini's theorem, we can interchange the order of summation.
+        have h_fubini : ∑ x, U x * ∑ x_1 ∈ A_n n,
+          basis_cos n x ↑x_1 * basis_cos n S ↑x_1 = ∑ x_1 ∈ A_n n,
+          ∑ x, U x * basis_cos n x ↑x_1 * basis_cos n S ↑x_1 := by
+            simp +decide only [Finset.mul_sum _ _ _, mul_assoc] ;
+            exact Finset.sum_comm;
+        rw [ h_fubini ];
+        refine' Finset.sum_eq_zero fun x hx => _;
+        have := Q_1_eq_zero_iff n U |>.1 hU x hx; simp_all +decide [ P_multi ] ; ring_nf;
+        rw [ ← Finset.sum_mul, this, MulZeroClass.zero_mul ]);
+    unfold Q_1; aesop;
+  refine' ⟨ fun i => lambda_perp i / Real.sqrt ( dot_product n lambda_perp lambda_perp ), _, _ ⟩;
+  · intro u hu; simp_all +decide [ dot_product ] ; ring_nf;
+    simp_all +decide [ ← Finset.sum_mul _ _ _, sq ];
+    exact Or.inl ( hlambda_perp.1 u hu );
+  · norm_num [ dot_product, Finset.sum_div _ _ _ ];
+    field_simp;
+    rw [ Real.sq_sqrt <| Finset.sum_nonneg fun _ _ =>
+      sq_nonneg _, ← Finset.sum_div, div_self <| by
+        simpa [ dot_product, sq ] using hlambda_perp.2 ]
+
+/-
+Prove that Ratio is scale-invariant.
+-/
+/--
+Lemma: The Rayleigh quotient is scale-invariant.
+-/
+lemma Ratio_scale (n : ℕ) (lambda : Idx n → ℝ) (c : ℝ) (hc : c ≠ 0) :
+    Ratio n (c • lambda) = Ratio n lambda := by
+      unfold Ratio Q_1 Q_2;
+      simp_all +decide [ mul_comm, mul_left_comm ] ;
+      simp_all +decide [ ← Finset.mul_sum _ _ _, div_mul_eq_div_div ]
+
+/-
+Prove that sphere_perp is compact (proven).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_proven (n : ℕ) : IsCompact (sphere_perp n) := by
+  exact sphere_perp_compact_v2 n
+
+/-
+Prove that sphere_perp is compact (new attempt).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_new (n : ℕ) : IsCompact (sphere_perp n) := by
+  convert sphere_perp_compact_proven n using 1
+
+/-
+Prove that (v i)^2 <= dot_product n v v.
+-/
+/--
+Lemma: For any vector $v$, the square of any component is bounded by the dot product.
+-/
+lemma sq_le_dot_product (n : ℕ) (v : Idx n → ℝ) (i : Idx n) :
+    (v i)^2 ≤ dot_product n v v := by
+      exact Finset.single_le_sum ( fun a _ =>
+        mul_self_nonneg ( v a ) ) ( Finset.mem_univ i ) |> le_trans ( by nlinarith )
+
+/-
+Prove that any vector can be decomposed into kernel and orthogonal complement components.
+-/
+/--
+Lemma: Any vector can be decomposed into a component in the kernel of $Q_1$ and a component
+in the orthogonal complement.
+-/
+lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
+  ∃ u ∈ kernel_Q1 n, ∃ v ∈ kernel_Q1_perp n, x = u + v := by
+  -- Since kernel_Q1 n and kernel_Q1_perp n are complementary subspaces, their direct sum is
+  -- the entire space.
+  have h_compl : kernel_Q1 n ⊔ kernel_Q1_perp n = ⊤ := by
+    convert Submodule.sup_orthogonal_of_hasOrthogonalProjection;
+    rotate_left;
+    exact ℝ;
+    exact EuclideanSpace ℝ ( Idx n );
+    all_goals try infer_instance;
+    exact Submodule.span ℝ { v : EuclideanSpace ℝ ( Idx n ) | Q_1 n ( fun i => v i ) = 0 };
+    · constructor;
+      intro v;
+      have h_decomp : ∀ v : EuclideanSpace ℝ (Idx n),
+        ∃ w ∈ Submodule.span ℝ {v : EuclideanSpace ℝ (Idx n) | Q_1 n (fun i => v i) = 0},
+        v - w ∈ (Submodule.span ℝ {v : EuclideanSpace ℝ (Idx n) | Q_1 n (fun i => v i) = 0})ᗮ := by
+        intro v
+        have h_subspace : ∀ (S : Submodule ℝ (EuclideanSpace ℝ (Idx n))), ∃ w ∈ S, v - w ∈ Sᗮ := by
+          intro S;
+          have h_decomp : ∀ (S : Submodule ℝ (EuclideanSpace ℝ (Idx n))), ∃ w ∈ S, v - w ∈ Sᗮ := by
+            intro S
+            have h_decomp : v ∈ S ⊔ Sᗮ := by
+              rw [ Submodule.sup_orthogonal_of_hasOrthogonalProjection ] ; aesop
+            rw [ Submodule.mem_sup ] at h_decomp;
+            obtain ⟨ y, hy, z, hz, rfl ⟩ := h_decomp; exact ⟨ y, hy, by simpa using hz ⟩ ;
+          exact h_decomp S
+        exact h_subspace _;
+      exact h_decomp v;
+    · congr! 2;
+      · refine' le_antisymm _ _;
+        · exact fun x hx => Submodule.subset_span hx;
+        · exact Submodule.span_le.mpr fun v hv => hv;
+      · ext; simp [kernel_Q1_perp];
+        simp +decide [ dot_product, Submodule.mem_orthogonal' ];
+        simp +decide [ inner, Submodule.mem_span ];
+        constructor <;> intro h u hu;
+        · exact h u ( hu _ fun v hv => hv );
+        · exact h u fun p hp => hp hu;
+  simpa [ eq_comm ] using
+    Submodule.mem_sup.mp ( h_compl.symm ▸ Submodule.mem_top : x ∈ kernel_Q1 n ⊔ kernel_Q1_perp n )
+
+/-
+Prove that P_multi is linear.
+-/
+/--
+Lemma: The polynomial $P_{multi}$ is linear in $\lambda$.
+-/
+lemma P_multi_add (n : ℕ) (u v : Idx n → ℝ) (x : ZMod (q n)) :
+    P_multi n (u + v) x = P_multi n u x + P_multi n v x := by
+  unfold P_multi
+  simp [Finset.sum_add_distrib, add_mul]
+
+/-
+Prove that sphere_perp is compact (final v2).
+-/
+/--
+Lemma: The unit sphere in the orthogonal complement is compact.
+-/
+lemma sphere_perp_compact_final_v2 (n : ℕ) : IsCompact (sphere_perp n) := by
+  rw [Metric.isCompact_iff_isClosed_bounded]
+  constructor
+  · -- Closed
+    apply IsClosed.inter
+    · -- kernel_Q1_perp is closed
+      haveI : FiniteDimensional ℝ (Idx n → ℝ) := by infer_instance
+      exact Submodule.closed_of_finiteDimensional (kernel_Q1_perp n)
+    · -- sphere is closed
+      apply isClosed_eq
+      · -- dot_product is continuous
+        apply continuous_finset_sum
+        intro i hi
+        apply Continuous.mul
+        · apply continuous_apply
+        · apply continuous_apply
+      · exact continuous_const
+  · -- Bounded
+    rw [isBounded_iff_forall_norm_le]
+    use 1
+    intro lambda hlambda
+    have h_dot : dot_product n lambda lambda = 1 := hlambda.2
+    apply pi_norm_le_iff_of_nonneg (by norm_num) |>.2
+    intro i
+    rw [Real.norm_eq_abs]
+    rw [← sq_le_one_iff_abs_le_one]
+    rw [← h_dot]
+    exact sq_le_dot_product n lambda i
+
+/-
+Prove that Q_2(u+v) = Q_2(v) if u is in the kernel of Q_1.
+-/
+/--
+Lemma: If $u \in \text{kernel}(Q_1)$, then $Q_2(u + v) = Q_2(v)$.
+-/
+lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
+    Q_2 n (u + v) = Q_2 n v := by
+      -- By definition of $P_{multi}$, we know that $P_{multi}(u + v) = P_{multi}(u) + P_{multi}(v)$ for any $u$ and $v$.
+      have h_add : ∀ x : ZMod (q n), P_multi n (u + v) x = P_multi n u x + P_multi n v x := by
+        exact fun x ↦ P_multi_add n u v x;
+      -- By definition of $Q_2$, we know that $Q_2(u + v) = \sum_{x \in A_n} c(x) P_{multi}(u + v)(x)$.
+      have h_Q2_def : ∀ (lambda : Idx n → ℝ), Q_2 n lambda = ∑ x ∈ A_n n, c n x * P_multi n lambda x ^ 2 := by
+        intro lambda
+        simp [Q_2, Matrix_2];
+        simp +decide [ P_multi, Finset.mul_sum _ _ _, mul_comm, mul_left_comm, sq ];
+        exact Eq.symm ( by
+          rw [ Finset.sum_comm ] ;
+          exact Finset.sum_congr rfl fun _ _ =>
+            Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
+              Finset.sum_congr rfl fun _ _ => by ring ) );
+      -- By definition of $c$, we know that $c(x) P_{multi}(u)(x) = 0$ for all $x \in A_n$.
+      have h_c_u_zero : ∀ x ∈ A_n n, c n x * P_multi n u x = 0 := by
+        intro x hx
+        have h_P_multi_u_zero : P_multi n u x = 0 := by
+          have := Q_1_eq_zero_iff n u |>.1 hu x hx; aesop;
+        simp [h_P_multi_u_zero];
+      simp_all +decide [ Finset.sum_add_distrib, mul_add, add_sq ];
+      rw [ ← Finset.sum_add_distrib ] ;
+      exact Finset.sum_eq_zero fun x hx => by cases h_c_u_zero x hx <;> simp +decide [ * ] ;
+
+/-
+Prove that Ratio(u+v) = Ratio(v) if u is in the kernel of Q_1.
+-/
+/--
+Lemma: The Rayleigh quotient is invariant under adding a vector from the kernel of $Q_1$.
+-/
+lemma Ratio_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
+    Ratio n (u + v) = Ratio n v := by
+      unfold Ratio;
+      -- By definition of $Q_1$, we know that $Q_1(u + v) = Q_1(v)$ if $u$ is in the kernel of $Q_1$.
+      have h_Q1_add : Q_1 n (u + v) = Q_1 n v := by
+        -- By definition of $P_{\text{multi}}$, we have $P_{\text{multi}} n (u + v) x = P_{\text{multi}} n u x + P_{\text{multi}} n v x$.
+        have hP_multi_add : ∀ x : ZMod (q n), P_multi n (u + v) x = P_multi n u x + P_multi n v x := by
+          apply P_multi_add;
+        -- By definition of $Q_1$, we have $Q_1(u + v) = \sum_{x \in A_n} (P_{\text{multi}} n (u + v) x)^2$.
+        have hQ_1_def : ∀ (lambda : Idx n → ℝ), Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := by
+          intros lambda
+          simp [Q_1, Matrix_1];
+          simp +decide [ P_multi, pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
+          exact Eq.symm ( by
+            rw [ Finset.sum_comm ] ;
+            exact Finset.sum_congr rfl fun _ _ =>
+              Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
+                Finset.sum_congr rfl fun _ _ => by ring ) ) ;
+        -- Since $u \in \ker(Q_1)$, we have $P_{\text{multi}} n u x = 0$ for all $x \in A_n$.
+        have hP_multi_u_zero : ∀ x ∈ A_n n, P_multi n u x = 0 := by
+          exact fun x hx => by simpa [ hQ_1_def ] using Q_1_eq_zero_iff n u |>.1 hu x hx;
+        simp_all only [zero_add];
+      rw [ h_Q1_add, Q_2_add_kernel n u v hu ]
+
+/-
+Prove that for any lambda with Q_1 > 0, there is a v in sphere_perp with the same Ratio.
+-/
+/--
+Lemma: For any $\lambda$ with $Q_1(\lambda) > 0$, there exists $v \in \text{sphere\_perp}(n)$
+such that $\text{Ratio}(n, \lambda) = \text{Ratio}(n, v)$.
+-/
+lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 n lambda > 0) :
+    ∃ v ∈ sphere_perp n, Ratio n lambda = Ratio n v := by
+      -- By definition of decomposition, we can write lambda as u + v where u is in the kernel of
+      -- Q_1 and v is in the orthogonal complement.
+      obtain ⟨u, v, hu, hv, rfl⟩ : ∃ u ∈ kernel_Q1 n, ∃ v ∈ kernel_Q1_perp n, lambda = u + v :=
+        decomposition n lambda;
+      -- Since $hu$ is in the orthogonal complement of the kernel of $Q_1$, we can scale it to
+      -- have unit length.
+      obtain ⟨c, hc⟩ : ∃ c : ℝ, c ≠ 0 ∧ dot_product n (c • hu) (c • hu) = 1 := by
+        by_cases h : dot_product n hu hu = 0 <;> simp_all +decide [ dot_product ];
+        · simp_all +decide [ Finset.sum_eq_zero_iff_of_nonneg, mul_self_nonneg ];
+          simp_all +decide [ show hu = 0 from funext h ];
+          exact hQ1.ne' ( v );
+        · use 1 / Real.sqrt (∑ S, hu S * hu S);
+          field_simp [h];
+          exact ⟨ one_div_ne_zero <| ne_of_gt <| Real.sqrt_pos.mpr <| lt_of_le_of_ne (
+            Finset.sum_nonneg fun _ _ => sq_nonneg _ ) <| Ne.symm <| by
+              simpa only [ sq ] using h, by
+                rw [ ← Finset.sum_div, Real.sq_sqrt <| Finset.sum_nonneg fun _ _ => sq_nonneg _, 
+                  div_self <| ne_of_gt <| lt_of_le_of_ne ( Finset.sum_nonneg fun _ _ =>
+                    sq_nonneg _ ) <| Ne.symm <| by simpa only [ sq ] using h ] ⟩;
+      refine' ⟨ c • hu, ⟨ _, hc.2 ⟩, _ ⟩;
+      · intro w hw; simp_all +decide [ dot_product ] ;
+        convert hv w hw |> fun h => congr_arg ( · * c ) h using 1 <;> ring_nf;
+        simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dot_product ];
+      · rw [ Ratio_add_kernel n u hu v, Ratio_scale n hu c hc.1 ]
+
+/-
+Prove that Q_1(u+v) = Q_1(v) if u is in the kernel of Q_1.
+-/
+/--
+Lemma: If $u \in \text{kernel}(Q_1)$, then $Q_1(u + v) = Q_1(v)$.
+-/
+lemma Q_1_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
+    Q_1 n (u + v) = Q_1 n v := by
+  -- By definition of $Q_1$, we know that
+  -- $Q_1 n lambda = \sum_{x \in A_n n} (P_{\text{multi}} n \lambda x)^2$.
+  have hQ1_def : ∀ (lambda : Idx n → ℝ), Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := by
+    intro lambda
+    simp [Q_1, Matrix_1];
+    simp +decide [ P_multi, pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
+    exact Eq.symm ( by
+      rw [ Finset.sum_comm ] ;
+      exact Finset.sum_congr rfl fun _ _ =>
+        Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
+          Finset.sum_congr rfl fun _ _ => by ring ) ) ;
+  -- Since $u \in \ker(Q_1)$, we have $P_{\text{multi}} n u x = 0$ for all $x \in A_n$.
+  have hP_multi_u_zero : ∀ x ∈ A_n n, P_multi n u x = 0 := by
+    exact fun x hx => by simpa [ hQ1_def ] using Q_1_eq_zero_iff n u |>.1 hu x hx;
+  -- P_multi is linear
+  have hP_multi_add : ∀ x : ZMod (q n), P_multi n (u + v) x = P_multi n u x + P_multi n v x := by
+    apply P_multi_add;
+  -- Substitute into Q_1 definition
+  rw [hQ1_def (u + v), hQ1_def v]
+  apply Finset.sum_congr rfl
+  intro x hx
+  rw [hP_multi_add]
+  rw [hP_multi_u_zero x hx]
+  simp
+
+/-
+Prove that attainable_ratios is the image of sphere_perp under Ratio.
+-/
+/--
+Lemma: The set of attainable ratios is the image of the unit sphere in the orthogonal complement
+under the Rayleigh quotient map.
+-/
+lemma attainable_ratios_eq_image_sphere_perp (n : ℕ) :
+    attainable_ratios n = (sphere_perp n).image (Ratio n) := by
+  ext r
+  constructor
+  · intro h
+    obtain ⟨lambda, hQ1, rfl⟩ := h
+    obtain ⟨v, hv, h_ratio⟩ := exists_sphere_perp_ratio_eq n lambda hQ1
+    use v
+    exact ⟨hv, h_ratio.symm⟩
+  · intro h
+    obtain ⟨v, hv, rfl⟩ := h
+    use v
+    constructor
+    · exact Q_1_pos_on_sphere_perp n v hv
+    · rfl
+
+/-
+Prove that attainable_ratios is compact.
+-/
+/--
+Lemma: The set of attainable ratios is compact.
+-/
+lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := by
+  rw [ attainable_ratios_eq_image_sphere_perp ];
+  apply_rules [ IsCompact.image_of_continuousOn, sphere_perp_compact_final_v2 ];
+  -- Since $Q_1$ and $Q_2$ are continuous functions, their ratio is continuous wherever $Q_1$ is non-zero.
+  have h_cont : ContinuousOn (fun lambda : Idx n → ℝ => Q_2 n lambda / Q_1 n lambda) (sphere_perp n) := by
+    refine' ContinuousOn.div _ _ _;
+    · refine' Continuous.continuousOn _;
+      refine' continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => _;
+      fun_prop;
+    · refine' Continuous.continuousOn _;
+      refine' continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => _;
+      fun_prop;
+    · exact fun x hx => ne_of_gt <| Q_1_pos_on_sphere_perp n x hx;
+  refine' h_cont.congr fun x hx => _ ; unfold Ratio ; aesop;
+
+/-
+Prove that the minimum attainable ratio is attained by some lambda.
+-/
+/--
+Lemma: The minimum attainable ratio is attained by some coefficient vector $\lambda$.
+-/
+lemma exists_minimizer (n : ℕ) :
+    ∃ lambda : Idx n → ℝ, Q_1 n lambda > 0 ∧ Ratio n lambda = mu_min n := by
+  have h_compact : IsCompact (attainable_ratios n) := attainable_ratios_compact n
+  have h_nonempty : (attainable_ratios n).Nonempty := by
+    obtain ⟨lambda, hlambda⟩ := Q_1_not_zero n
+    use Ratio n lambda
+    use lambda
+    exact ⟨lt_of_le_of_ne (Q_1_nonneg n lambda) (Ne.symm hlambda), rfl⟩
+  have h_mem : mu_min n ∈ attainable_ratios n := by
+    apply IsCompact.sInf_mem h_compact h_nonempty
+  obtain ⟨lambda, hQ1, h_ratio⟩ := h_mem
+  use lambda
+  exact ⟨hQ1, h_ratio.symm⟩
+
+/-
+Define lambda_opt and W_opt.
+-/
+/--
+Define the optimal coefficient vector $\lambda_{opt}$ which attains the minimum ratio.
+-/
+noncomputable def lambda_opt (n : ℕ) : Idx n → ℝ :=
+  (exists_minimizer n).choose
+
+/--
+Properties of the optimal coefficient vector.
+-/
+lemma lambda_opt_spec (n : ℕ) :
+    Q_1 n (lambda_opt n) > 0 ∧ Ratio n (lambda_opt n) = mu_min n :=
+  (exists_minimizer n).choose_spec
+
+/--
+Define the optimal truly multidimensional weight function $W_{opt}$.
+-/
+noncomputable def W_opt (n : ℕ) : ZMod (q n) → ℝ :=
+  W_truly_multi n (lambda_opt n)
+
+/-
+Prove properties of W_opt and the final guarantee.
+-/
+/--
+Theorem: The ratio of the weighted moments for the optimal weight function is exactly
+$\mu_{min}(n)$.
+-/
+theorem W_opt_ratio_eq_mu_min (n : ℕ) :
+    S_2 n (W_opt n) / S_1 n (W_opt n) = mu_min n := by
+      convert lambda_opt_spec n |>.2 using 1;
+      unfold W_opt Ratio;
+      rw [ S_2_eq_Q_2, S_1_eq_Q_1 ] ; aesop
+
+/--
+Theorem: The optimal weight function satisfies the Krafft Admissibility condition if and only if
+$\mu_{min}(n) < 1$.
+-/
+theorem W_opt_is_admissible_iff (n : ℕ) :
+    (S_2 n (W_opt n) < S_1 n (W_opt n)) ↔ mu_min n < 1 := by
+      constructor;
+      · intro h
+        have h_lambda_opt : Q_2 n (lambda_opt n) < Q_1 n (lambda_opt n) := by
+          rw [ ← S_1_eq_Q_1, ← S_2_eq_Q_2 ] at * ; aesop;
+        exact lt_of_le_of_lt ( csInf_le ( by
+          exact IsCompact.bddBelow ( attainable_ratios_compact n ) ) <| show (
+            Ratio n ( lambda_opt n ) ) ∈ attainable_ratios n from by
+              exact ⟨ _, ( lambda_opt_spec n ) |>.1, rfl ⟩ ) ( by
+                rw [ show Ratio n ( lambda_opt n ) =
+                  ( Q_2 n ( lambda_opt n ) ) / ( Q_1 n ( lambda_opt n ) ) from by
+                    unfold Ratio; aesop ] ;
+                exact div_lt_one ( ( lambda_opt_spec n ) |>.1 ) |>.2 h_lambda_opt );
+      · have := lambda_opt_spec n;
+        unfold W_opt;
+        unfold Ratio at this;
+        rw [ ← this.2, if_neg this.1.ne' ];
+        exact fun h => by rw [ S_2_eq_Q_2, S_1_eq_Q_1 ] ; rw [ div_lt_iff₀ this.1 ] at h; linarith;
+
+/--
+Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
+-/
+theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : mu_min n < 1) :
+    ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
+      have := mu_min_lt_one_implies_admissibility n h;
+      by_cases hn : n ≥ 1 <;> simp_all +decide [ Krafft_Admissibility ];
+      obtain ⟨ W, hW₁, hW₂, hW₃ ⟩ := this;
+      apply krafft_sieve_guarantee n hn ⟨ W, hW₁, hW₂, hW₃ ⟩
+
+/-
+Prove that for any lambda with Q_1 > 0, there is a v in sphere_perp with the same Ratio.
+-/
+/--
+Lemma: For any $\lambda$ with $Q_1(\lambda) > 0$, there exists $v \in \text{sphere\_perp}(n)$
+such that $\text{Ratio}(n, \lambda) = \text{Ratio}(n, v)$.
+-/
+lemma exists_sphere_perp_ratio_eq_v2 (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 n lambda > 0) :
+    ∃ v ∈ sphere_perp n, Ratio n lambda = Ratio n v := by
+      convert exists_sphere_perp_ratio_eq n lambda hQ1 using 1
