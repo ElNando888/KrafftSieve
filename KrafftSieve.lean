@@ -1,1 +1,2 @@
-import KrafftSieve.Turan
+import KrafftSieve.ThirdHarmonic
+import KrafftSieve.Turan_OptimalWeights

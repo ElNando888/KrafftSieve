@@ -42,8 +42,10 @@ $$ \hat{W}(h) = \frac{1}{q} \sum_{x=0}^{q-1} W(x) e^{-2\pi i h x / q} $$
 --/
 noncomputable def W_hat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
-    exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
-  (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (W x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
+    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+  (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
+    (W x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /--
 #### Define $\hat{g}_i(h)$ (Fourier Transform of the Local Hit):
@@ -52,8 +54,10 @@ $$ \hat{g}_i(h) = \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x / q} $$
 --/
 noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
-    exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
-  (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (g n i x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
+    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+  (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
+    (g n i x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /-
 Lemma: Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
@@ -62,11 +66,15 @@ $\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n)$.
 lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
     ∑ x : ZMod (q n), W x = S_1 n W := by
-      rw [ ← Finset.sum_subset ( show Finset.image ( fun x ↦ x : ℕ → ZMod ( q n ) ) ( A_n n ) ⊆ Finset.univ from Finset.subset_univ _ ) ];
+      rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (A_n n) ⊆
+        Finset.univ from Finset.subset_univ _)];
       · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp;
-        · intro x hx; rw [ Nat.mod_eq_of_lt ] ; aesop;
+        · intro x hx; rw [ Nat.mod_eq_of_lt ] ; simp_all only [ge_iff_le];
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) ( q_bound n hn );
-        · intro a ha b hb hab; rw [ ZMod.natCast_eq_natCast_iff ] ; aesop;
+        · intro a ha b hb hab;
+          rw [ ZMod.natCast_eq_natCast_iff ]
+          simp_all only [ge_iff_le]
+          exact hab;
         · intro b hb;
           refine' ⟨ b, hb, Nat.mod_eq_of_lt _ ⟩;
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hb |>.2 ) ( q_bound n hn );
@@ -93,40 +101,68 @@ $$ \sum_{x} f(x) \overline{g(x)} = q \sum_{h} \hat{f}(h) \overline{\hat{g}(h)} $
 -/
 lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
     ∑ x : ZMod (q n), f x * starRingEnd ℂ (g x) =
-    (q n : ℂ) * ∑ h : ZMod (q n), (1 / (q n : ℂ) * ∑ x, f x * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))) *
-    starRingEnd ℂ (1 / (q n : ℂ) * ∑ x, g x * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))) := by
+    (q n : ℂ) * ∑ h : ZMod (q n),
+      (1 / (q n : ℂ) * ∑ x, f x * Complex.exp
+        (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))) *
+      starRingEnd ℂ (1 / (q n : ℂ) * ∑ x, g x * Complex.exp
+        (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))) := by
       -- Apply the Plancherel theorem to the functions $f$ and $g$.
-      have h_plancherel : ∑ x : ZMod (q n), f x * (starRingEnd ℂ (g x)) = ∑ h : ZMod (q n), (∑ x : ZMod (q n), f x * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val) / (q n : ℂ))) * (∑ y : ZMod (q n), (starRingEnd ℂ (g y)) * Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val) / (q n : ℂ))) / (q n : ℂ) := by
-        have h_ortho : ∀ x y : ZMod (q n), (∑ h : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val * (x.val - y.val)) / (q n : ℂ))) = if x = y then (q n : ℂ) else 0 := by
+      have h_plancherel : ∑ x : ZMod (q n), f x * (starRingEnd ℂ (g x)) = ∑ h : ZMod (q n),
+        (∑ x : ZMod (q n), f x * Complex.exp
+          (-2 * Real.pi * Complex.I * (h.val * x.val) / (q n : ℂ))) *
+        (∑ y : ZMod (q n), (starRingEnd ℂ (g y)) * Complex.exp
+          (2 * Real.pi * Complex.I * (h.val * y.val) / (q n : ℂ))) / (q n : ℂ) := by
+        have h_ortho : ∀ x y : ZMod (q n),
+          (∑ h : ZMod (q n), Complex.exp
+            (-2 * Real.pi * Complex.I * (h.val * (x.val - y.val)) / (q n : ℂ))) =
+            if x = y then (q n : ℂ) else 0 := by
           intro x y; split_ifs with hxy; simp_all ;
-          have h_ortho : ∑ h ∈ Finset.range (q n), Complex.exp (-2 * Real.pi * Complex.I * (h * (x.val - y.val)) / (q n)) = 0 := by
+          have h_ortho : ∑ h ∈ Finset.range (q n),
+            Complex.exp (-2 * Real.pi * Complex.I * (h * (x.val - y.val)) / (q n)) = 0 := by
             -- Let $z = e^{-2\pi i (x.val - y.val) / q_n}$. Since $x \neq y$, $z$ is a primitive $q_n$-th root of unity.
             set z : ℂ := Complex.exp (-2 * Real.pi * Complex.I * (x.val - y.val) / (q n))
             have hz : z ≠ 1 := by
               rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
               field_simp;
-              intro h; obtain ⟨ k, hk ⟩ := h; rw [ neg_eq_iff_eq_neg ] at hk; rw [ div_eq_iff ] at hk <;> norm_cast at * <;> simp_all ;
-              · rw [ Int.subNatNat_eq_coe ] at hk ; replace hk := congr_arg ( fun z => z : ℤ → ZMod ( q n ) ) hk ; simp_all ;
+              intro h; obtain ⟨k, hk⟩ := h; rw [neg_eq_iff_eq_neg] at hk
+              rw [div_eq_iff] at hk <;> norm_cast at * <;> simp_all
+              · rw [Int.subNatNat_eq_coe] at hk
+                replace hk := congr_arg (fun z => z : ℤ → ZMod (q n)) hk; simp_all
                 exact hxy <| sub_eq_zero.mp hk;
-              · exact Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
+              · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
+                  Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
             have hz_pow : ∑ h ∈ Finset.range (q n), z ^ h = 0 := by
-              rw [ geom_sum_eq ] <;> norm_num [ hz ];
-              rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨ - ( x.val - y.val ), by push_cast; ring_nf; norm_num [ show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2 ] ⟩ ] ; norm_num;
-            exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by rw [ ← Complex.exp_nat_mul ] ; ring_nf ) hz_pow;
+              rw [geom_sum_eq] <;> norm_num [hz];
+              rw [← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨-(x.val - y.val), by
+                push_cast; ring_nf; norm_num [show q n ≠ 0 from Finset.prod_ne_zero_iff.mpr
+                  fun p hp => Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2]⟩] ; norm_num;
+            exact Eq.trans (Finset.sum_congr rfl fun _ _ => by
+              rw [← Complex.exp_nat_mul] ; ring_nf) hz_pow;
           convert h_ortho using 1;
           refine' Finset.sum_bij ( fun h _ => h.val ) _ _ _ _ <;> simp +decide [ ZMod.val ];
           · cases h : q n <;> simp_all +decide [ ZMod ];
-            exact absurd h <| ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
+            exact absurd h <| ne_of_gt <| Finset.prod_pos fun p hp =>
+              Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
           · rcases k : q n with ( _ | _ | k ) <;> simp_all +decide [ ZMod ];
-            · exact absurd k <| ne_of_gt <| Finset.prod_pos fun p hp => Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
+            · exact absurd k <| ne_of_gt <| Finset.prod_pos fun p hp =>
+                Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
             · exact fun a₁ a₂ h => Fin.ext h;
           · cases h : q n <;> simp_all +decide [ ZMod ];
             exact fun b hb => ⟨ ⟨ b, by linarith ⟩, rfl ⟩;
         -- By Fubini's theorem, we can interchange the order of summation.
-        have h_fubini : ∑ h : ZMod (q n), (∑ x : ZMod (q n), f x * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val) / (q n : ℂ))) * (∑ y : ZMod (q n), (starRingEnd ℂ (g y)) * Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val) / (q n : ℂ))) = ∑ x : ZMod (q n), ∑ y : ZMod (q n), f x * (starRingEnd ℂ (g y)) * (∑ h : ZMod (q n), Complex.exp (-2 * Real.pi * Complex.I * (h.val * (x.val - y.val)) / (q n : ℂ))) := by
+        have h_fubini : ∑ h : ZMod (q n),
+          (∑ x : ZMod (q n), f x * Complex.exp
+            (-2 * Real.pi * Complex.I * (h.val * x.val) / (q n : ℂ))) *
+          (∑ y : ZMod (q n), (starRingEnd ℂ (g y)) * Complex.exp
+            (2 * Real.pi * Complex.I * (h.val * y.val) / (q n : ℂ))) =
+          ∑ x : ZMod (q n), ∑ y : ZMod (q n), f x * (starRingEnd ℂ (g y)) *
+            (∑ h : ZMod (q n), Complex.exp
+              (-2 * Real.pi * Complex.I * (h.val * (x.val - y.val)) / (q n : ℂ))) := by
           simp +decide only [Finset.sum_mul _ _ _, Finset.mul_sum];
           rw [ Finset.sum_comm ];
-          exact Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by rw [ mul_mul_mul_comm ] ; rw [ ← Complex.exp_add ] ; ring_nf );
+          exact Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans
+            (Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by
+              rw [mul_mul_mul_comm] ; rw [← Complex.exp_add] ; ring_nf);
         simp_all +decide [ ← Finset.sum_div _ _ _, ← Finset.sum_mul ];
       rw [ h_plancherel, Finset.mul_sum _ _ _ ] ; congr ; ext ; ring_nf;
       by_cases h : q n = 0 <;> simp +decide [ h, mul_assoc, mul_comm, mul_left_comm ];
@@ -146,15 +182,18 @@ $$ S_2(n) = q \sum_{i=1}^w \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $
 -/
 lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
-    (S_2 n W : ℂ) = (q n : ℂ) * ∑ i : Fin (w n), ∑ h : ZMod (q n), W_hat n W h * starRingEnd ℂ (g_hat n i h) := by
-      convert plancherel_theorem_custom n ( fun x => W x ) ( fun x => ∑ i : Fin ( w n ), g n i x ) using 1;
+    (S_2 n W : ℂ) = (q n : ℂ) * ∑ i : Fin (w n), ∑ h : ZMod (q n),
+      W_hat n W h * starRingEnd ℂ (g_hat n i h) := by
+      convert plancherel_theorem_custom n (fun x => W x) (fun x => ∑ i : Fin (w n), g n i x)
+        using 1;
       · convert rfl using 2;
-        unfold S_2; norm_num [ Finset.sum_mul _ _ _ ] ; ring_nf;
-        convert sum_W_eq_S1 n hn ( fun x => W x * ∑ i, g n i x ) _ using 1;
+        unfold S_2; norm_num [Finset.sum_mul _ _ _] ; ring_nf;
+        convert sum_W_eq_S1 n hn (fun x => W x * ∑ i, g n i x) _ using 1;
         · norm_cast;
         · aesop;
-      · simp +decide [ W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul ];
-        exact Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ => by ac_rfl ) )
+      · simp +decide [W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul];
+        exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans
+          (Finset.sum_congr rfl fun _ _ => by ac_rfl))
 
 /-
 Lemma: Dirac Comb Non-Zero Values
@@ -164,18 +203,39 @@ $$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k
 -/
 lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
     g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
-    ((2 : ℝ) / (p n i : ℝ) * Real.cos (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ)) : ℂ) := by
-      -- By definition of $g_i$, we know that $\hat{g}_i(h) = \frac{2}{p_i} \cos(2\pi k r^K_i / p_i)$ for $h = k(q/p_i)$.
-      have h_g_hat_i : ∀ h : ZMod (q n), h.val = k.val * (q n / p n i) → g_hat n i h = (1 / (q n : ℂ)) * ∑ x ∈ Finset.range (q n), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x : ℕ) / (q n : ℂ)) := by
+    ((2 : ℝ) / (p n i : ℝ) * Real.cos
+      (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ)) : ℂ) := by
+      -- By definition of $g_i$, we know that
+      -- $\hat{g}_i(h) = \frac{2}{p_i} \cos(2\pi k r^K_i / p_i)$ for $h = k(q/p_i)$.
+      have h_g_hat_i : ∀ h : ZMod (q n), h.val = k.val * (q n / p n i) →
+        g_hat n i h = (1 / (q n : ℂ)) * ∑ x ∈ Finset.range (q n),
+          (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+          Complex.exp (-2 * Real.pi * Complex.I * (h.val * x : ℕ) / (q n : ℂ)) := by
         intro h hh; unfold g_hat; norm_num [ ZMod.cast_id, ZMod.natCast_zmod_val, hh ] ;
         refine' Or.inl ( Finset.sum_bij ( fun x _ => x.val ) _ _ _ _ ) <;> norm_num;
         · intro a; exact ZMod.val_lt a;
-        · intro a₁ a₂ h; haveI := Fact.mk ( show Nat.Prime 2 from by decide ) ; exact ZMod.val_injective _ h;
+        · intro a₁ a₂ h
+          haveI := Fact.mk (show Nat.Prime 2 from by decide)
+          exact ZMod.val_injective _ h;
         · exact fun b hb => ⟨ b, ZMod.val_cast_of_lt hb ⟩;
         · unfold g; aesop;
-      -- Let's simplify the sum $\sum_{x=0}^{q_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
-      have h_sum_simplified : ∑ x ∈ Finset.range (q n), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * (q n / p n i) * x) / (q n : ℂ)) = ∑ x ∈ Finset.range (p n i), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) * (q n / p n i) := by
-        have h_sum_simplified : ∀ m : ℕ, ∑ x ∈ Finset.range (m * p n i), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * (q n / p n i) * x) / (q n : ℂ)) = ∑ x ∈ Finset.range (p n i), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) * m := by
+      -- Let's simplify the sum
+      -- $\sum_{x=0}^{q_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
+      have h_sum_simplified : ∑ x ∈ Finset.range (q n),
+        (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+        Complex.exp (-2 * Real.pi * Complex.I *
+          (k.val * (q n / p n i) * x) / (q n : ℂ)) =
+        ∑ x ∈ Finset.range (p n i),
+          (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+          Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) *
+          (q n / p n i) := by
+        have h_sum_simplified : ∀ m : ℕ, ∑ x ∈ Finset.range (m * p n i),
+          (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+          Complex.exp (-2 * Real.pi * Complex.I *
+            (k.val * (q n / p n i) * x) / (q n : ℂ)) =
+          ∑ x ∈ Finset.range (p n i),
+            (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+            Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) * m := by
           intro m
           induction' m with m ih;
           · norm_num;
@@ -184,14 +244,15 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
             refine' Finset.sum_congr rfl fun x hx => _ ; split_ifs <;> ring_nf;
             by_cases h : p n i = 0 <;> simp_all +decide [ mul_assoc, mul_comm, mul_left_comm ];
             exact Complex.exp_eq_exp_iff_exists_int.mpr ⟨ -m * k, by push_cast; ring ⟩;
-        convert h_sum_simplified ( q n / p n i ) using 1;
-        · rw [ Nat.div_mul_cancel ];
-          exact Finset.dvd_prod_of_mem _ ( Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( show p n i < 6 * n + 2 from by
-                                                                                            have := Finset.mem_range.mp ( Finset.mem_filter.mp ( show p n i ∈ P_n n from by
-                                                                                                                                                  exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) |>.1 ) ; aesop; ), by
-                                                                                            have h_prime : p n i ∈ P_n n := by
-                                                                                              exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
-                                                                                            exact ⟨ Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2 ⟩ ⟩ );
+        convert h_sum_simplified (q n / p n i) using 1;
+        · rw [Nat.div_mul_cancel];
+          exact Finset.dvd_prod_of_mem _ (Finset.mem_filter.mpr ⟨Finset.mem_range.mpr
+            (show p n i < 6 * n + 2 from by
+              have := Finset.mem_range.mp (Finset.mem_filter.mp (show p n i ∈ P_n n from by
+                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)) |>.1); aesop;), by
+            have h_prime : p n i ∈ P_n n := by
+              exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _);
+            exact ⟨Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2⟩⟩);
         · rw [ Nat.cast_div ];
           · exact Finset.dvd_prod_of_mem _ ( Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( show p n i < 6 * n + 2 from by
                                                                                               have := Finset.mem_range.mp ( Finset.mem_filter.mp ( show p n i ∈ P_n n from by
@@ -199,24 +260,41 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
                                                                                               have h_prime : p n i ∈ P_n n := by
                                                                                                 exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
                                                                                               exact ⟨ Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2 ⟩ ⟩ );
-          · exact Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| by have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
-                                                                                                  exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ; aesop;
-      -- Let's simplify the sum $\sum_{x=0}^{p_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
-      have h_sum_final : ∑ x ∈ Finset.range (p n i), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) = Complex.exp (-2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) + Complex.exp (2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) := by
-        have h_sum_final : ∑ x ∈ Finset.range (p n i), (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) * Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) = ∑ x ∈ ({r_K n i, (p n i - r_K n i) % (p n i)} : Finset ℕ), Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) := by
-          have h_sum_final : ∀ x ∈ Finset.range (p n i), (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔ x = r_K n i ∨ x = (p n i - r_K n i) % (p n i) := by
+          · exact Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| by
+              have := Finset.mem_filter.mp (show p n i ∈ P_n n from by
+                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _))
+              aesop;
+      -- Let's simplify the sum
+      -- $\sum_{x=0}^{p_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
+      have h_sum_final : ∑ x ∈ Finset.range (p n i),
+        (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+        Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) =
+        Complex.exp (-2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) +
+        Complex.exp (2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) := by
+        have h_sum_final : ∑ x ∈ Finset.range (p n i),
+          (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+          Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) =
+          ∑ x ∈ ({r_K n i, (p n i - r_K n i) % (p n i)} : Finset ℕ),
+            Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) := by
+          have h_sum_final : ∀ x ∈ Finset.range (p n i),
+            (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔
+            x = r_K n i ∨ x = (p n i - r_K n i) % (p n i) := by
             intro x hx
-            have h_cong : (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔ x ≡ r_K n i [MOD p n i] ∨ x ≡ p n i - r_K n i [MOD p n i] := by
-              simp +decide [ ← ZMod.natCast_eq_natCast_iff, Nat.cast_sub ( show r_K n i ≤ p n i from Nat.div_le_of_le_mul <| by linarith [ show p n i ≥ 5 from by
-                                                                                                                                            have h_prime : p n i ∈ P_n n := by
-                                                                                                                                              exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
-                                                                                                                                            exact (Finset.mem_filter.mp h_prime).right.left ] ) ];
+            have h_cong : (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔
+              x ≡ r_K n i [MOD p n i] ∨ x ≡ p n i - r_K n i [MOD p n i] := by
+              simp +decide [← ZMod.natCast_eq_natCast_iff, Nat.cast_sub
+                (show r_K n i ≤ p n i from Nat.div_le_of_le_mul <| by
+                  linarith [show p n i ≥ 5 from by
+                    have h_prime : p n i ∈ P_n n := by
+                      exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
+                    exact (Finset.mem_filter.mp h_prime).right.left ] ) ];
             simp_all +decide [ Nat.ModEq, Nat.mod_eq_of_lt ];
             rw [ Nat.mod_eq_of_lt ];
-            exact Nat.div_lt_of_lt_mul <| by linarith [ show p n i ≥ 5 from by
-                                                          have h_prime : p n i ∈ P_n n := by
-                                                            exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
-                                                          exact Finset.mem_filter.mp h_prime |>.2.1 ] ;
+            exact Nat.div_lt_of_lt_mul <| by
+              linarith [ show p n i ≥ 5 from by
+                have h_prime : p n i ∈ P_n n := by
+                  exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
+                exact Finset.mem_filter.mp h_prime |>.2.1 ] ;
           rw [ ← Finset.sum_subset ( show { r_K n i, ( p n i - r_K n i ) % p n i } ⊆ Finset.range ( p n i ) from ?_ ) ];
           · refine' Finset.sum_congr rfl fun x hx => _;
             simp +zetaDelta at *;
