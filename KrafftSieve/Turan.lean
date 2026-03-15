@@ -199,7 +199,8 @@ Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the impleme
 so $p_0$ corresponds to the user's $p_1$.
 --/
 def p (n : ℕ) (i : Fin (w n)) : ℕ := (primes_list n).get (i.cast (by
-unfold w primes_list; aesop;))
+  unfold w primes_list;
+  simp_all only [Finset.length_sort];))
 
 /--
 #### Definition of valid residues r.
@@ -824,7 +825,8 @@ index $i \in \{1, \dots, w\}$.
 - Otherwise, $g_i(x) = 0$.
 --/
 noncomputable def g (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : ℝ :=
-  if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0
+  if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i))
+    ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0
 
 /--
 #### Define the global additive hit counter c(x)
