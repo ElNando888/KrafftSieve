@@ -17,35 +17,43 @@ This document outlines the formal verification (via Lean 4) of a novel sieve arc
 
 \section{Part I: The Discrete Geometry and Additive Moments}
 
-\subsection{Phase 1: The Additive Turán Sieve Architecture}
+\subsection{The Additive Turán Sieve Architecture}
 
 We formalized the shift from a multiplicative inclusion-exclusion sieve to an additive variance sieve. We defined the local hit function $g_i(x)$ and the global hit counter $c(x)$. We formally proved the \textit{Additive Sieve Isomorphism}, confirming that an index $x \in \mathcal{A}_n$ yields a Twin Prime pair $(6x-1, 6x+1)$ if and only if $c(x) = 0$.
 
-\subsection{Phase 2: Additive Moments Expansion}
+\subsection{Additive Moments Expansion}
 
 To avoid the absolute-value barriers of classical sieves, we expanded the First Moment ($M_1$) and Second Moment ($M_2$) of the additive hit counter. We established strict upper bounds for both the local hit densities and the cross-term densities, formally proving that additive cross-terms factor cleanly without invoking modular inverses. 
 
-\subsection{Phase 3: Moment Evaluations}
+\subsection{Moment Evaluations}
 
 Using the sum of the prime reciprocals $H(n)$ in the sieve window, we formalized the algebraic upper bounds for the expected number of hits and their variance across the target interval $\mathcal{A}_n$. This confirmed that unweighted moments are insufficient to force a positive lower bound for survivors.
 
 \section{Part II: The Continuous Harmonic Analysis}
 
-\subsection{Phase 4: The Weighted Sieve Principle}
+\subsection{The Weighted Sieve Principle}
 
 We abandoned the unweighted Cauchy-Schwarz inequality and introduced an arbitrary, non-negative spatial weight function $W(x)$. We formally proved the \textit{Weighted Existence Principle}: if the weighted hit mass $S_2(n)$ is strictly less than the weighted interval mass $S_1(n)$, a Twin Prime survivor $c(x)=0$ is unconditionally guaranteed.
 
-\subsection{Phase 5: Fourier Expansion of the Weighted Moments}
+\subsection{Fourier Expansion of the Weighted Moments}
 
 Exploiting the compact support of $W(x)$ inside $\mathcal{A}_n$, we applied Plancherel's Theorem to transition the discrete spatial sums into the continuous frequency domain. This teleported the sieve equations into a mathematically tractable space, defined entirely by the Fourier coefficients $\hat{W}(h)$ and $\hat{g}_i(h)$.
 
-\subsection{Phase 6: Resonant Frequency Collapse}
+\subsection{Resonant Frequency Collapse}
 
 We proved that the Fourier transform of the Krafft hit function, $\hat{g}_i(h)$, acts as a sparse Dirac comb, evaluating to zero almost everywhere. This allowed us to mathematically collapse the massive double sum of the sieve into a \textit{Resonant Sieve Equation}, isolating the Main Term ($h=0$) from the high-frequency harmonic Error Terms ($h \neq 0$).
 
-\subsection{Phase 7: The Krafft Negative Resonance}
+\subsection{The Krafft Negative Resonance}
 
 We formally evaluated the third harmonic ($k=3$) of the Krafft residue choice $r^K_i = \lfloor(p_i+1)/6\rfloor$. We verified that for all primes $p_i \ge 5$, the $k=3$ interference pattern collapses into exactly $-\cos(\pi/p_i)$. Finally, we defined the \textit{Krafft Admissibility} condition. The engine certified that if an analytic weight function $W(x)$ exists that sufficiently isolates this third-harmonic negative resonance, $S_2 < S_1$ is achieved, and a Twin Prime index is unconditionally guaranteed within $\mathcal{A}_n$.
+
+\section{Part III: The Resonant Sieve Equation}
+
+.
+
+\section{Part IV: The Topological Reduction to the Minimum Ratio}
+
+.
 
 \vspace{1em}
 \hrule

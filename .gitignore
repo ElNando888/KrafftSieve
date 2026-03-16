@@ -3,3 +3,9 @@
 /manuscript
 *.puml
 GetDeps.lean
+*.aux
+*.log
+*.pdf
+*.fls
+*.fdb_latexmk
+*.synctex.gz
