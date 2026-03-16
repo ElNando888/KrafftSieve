@@ -92,7 +92,7 @@ lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → �
     S_1 n W = (q n : ℝ) * (W_hat n W 0).re := by
       rw [ ← sum_W_eq_S1 ];
       · unfold W_hat; norm_num; ring_nf; aesop;
-      · assumption;
+      · assumption
       · assumption
 
 /-
@@ -190,8 +190,9 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
       · convert rfl using 2;
         unfold S_2; norm_num [Finset.sum_mul _ _ _] ; ring_nf;
         convert sum_W_eq_S1 n hn (fun x => W x * ∑ i, g n i x) _ using 1;
-        · norm_cast;
-        · aesop;
+        · norm_cast
+        · intro x a
+          simp_all only [ge_iff_le, not_false_eq_true, zero_mul]
       · simp +decide [W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul];
         exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans
           (Finset.sum_congr rfl fun _ _ => by ac_rfl))
@@ -219,7 +220,9 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
           haveI := Fact.mk (show Nat.Prime 2 from by decide)
           exact ZMod.val_injective _ h;
         · exact fun b hb => ⟨ b, ZMod.val_cast_of_lt hb ⟩;
-        · unfold g; aesop;
+        · unfold g; intro a; split
+          next h_1 => simp_all only [Complex.ofReal_one, one_mul]
+          next h_1 => simp_all only [not_or, Complex.ofReal_zero, zero_mul]
       -- Let's simplify the sum
       -- $\sum_{x=0}^{q_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
       have h_sum_simplified : ∑ x ∈ Finset.range (q n),
@@ -315,7 +318,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
                     have h_in_P : p n i ∈ P_n n := by
                       exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
                     exact (Finset.mem_filter.mp h_in_P).2.2)))
-              aesop;
+              simp_all only [or_self, iff_true]
           · grind +ring;
           · simp +decide [Finset.insert_subset_iff]
             exact ⟨Nat.div_lt_of_lt_mul <| by
@@ -622,8 +625,10 @@ theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
           have h_split : ∀ h : ZMod (q n), g_hat n i h ≠ 0 →
               ∃ k ∈ Finset.range (p n i),
                 h = (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) := by
-            intro h hh; contrapose! hh; simp_all ;
-            convert dirac_comb_zero n i h _ ; aesop;
+            intro h hh; contrapose! hh; simp_all;
+            convert dirac_comb_zero n i h _
+            intro k
+            simp_all only [Nat.cast_mul, ne_eq, Fin.is_lt, not_false_eq_true]
           rw [← Finset.sum_subset (Finset.subset_univ (Finset.image
             (fun k : ℕ => (k * (q n / p n i) : ℕ) : ℕ → ZMod (q n))
             (Finset.range (p n i))))]
@@ -771,11 +776,11 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
               -Complex.cos (Real.pi / (p n i : ℝ)) := by
           intro i
           have := exact_krafft_cosine n i
-          norm_cast at *;
-        simp_all +decide [ Finset.mul_sum _ _ _, mul_assoc, mul_left_comm, sub_eq_add_neg ];
+          norm_cast at *
+        simp_all +decide [ Finset.mul_sum _ _ _, mul_assoc, mul_left_comm, sub_eq_add_neg ]
       · grind;
-      · intro h;
-        norm_num +zetaDelta at *;
+      · intro h
+        norm_num +zetaDelta at *
         have h_in_P : p n i ∈ P_n n := by
           exact (mem_P_n_iff_exists_index n _) |>.2 ⟨i, rfl⟩
         have := Finset.mem_filter.mp h_in_P

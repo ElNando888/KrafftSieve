@@ -304,7 +304,8 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
           exact Finset.sum_congr rfl fun _ _ => by
             rw [ Finset.mul_sum _ _ _ ]
             exact Finset.sum_congr rfl fun _ _ => by ring;
-      aesop }
+      intro c x a
+      simp_all only [Set.mem_setOf_eq, mul_zero] }
 
 /-
 Prove that Q_1(lambda) = 0 iff P_multi(lambda, x) = 0 for all x in A_n.
@@ -571,7 +572,7 @@ lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
         intro x hx
         have h_P_multi_u_zero : P_multi n u x = 0 := by
           have := Q_1_eq_zero_iff n u |>.1 hu x hx
-          aesop
+          simp_all only
         simp [h_P_multi_u_zero]
       simp_all +decide [ Finset.sum_add_distrib, mul_add, add_sq ]
       rw [ ← Finset.sum_add_distrib ]
@@ -693,7 +694,7 @@ lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := b
     · exact fun x hx => ne_of_gt <| Q_1_pos_on_sphere_perp n x hx
   refine' h_cont.congr fun x hx => _
   unfold Ratio
-  aesop
+  simp_all only [ite_eq_right_iff, div_zero, implies_true]
 
 /-
 Prove that the minimum attainable ratio is attained by some lambda.
@@ -747,14 +748,15 @@ theorem W_opt_is_admissible_iff (n : ℕ) :
       · intro h
         have h_lambda_opt : Q_2 n (lambda_opt n) < Q_1 n (lambda_opt n) := by
           rw [ ← S_1_eq_Q_1, ← S_2_eq_Q_2 ] at *
-          aesop
+          exact h
         exact lt_of_le_of_lt ( csInf_le ( by
           exact IsCompact.bddBelow ( attainable_ratios_compact n ) ) <| show (
             Ratio n ( lambda_opt n ) ) ∈ attainable_ratios n from by
               exact ⟨ _, ( lambda_opt_spec n ) |>.1, rfl ⟩ ) ( by
                 rw [ show Ratio n ( lambda_opt n ) =
                   ( Q_2 n ( lambda_opt n ) ) / ( Q_1 n ( lambda_opt n ) ) from by
-                    unfold Ratio; aesop ]
+                    unfold Ratio
+                    simp_all only [ite_eq_right_iff, div_zero, implies_true] ]
                 exact div_lt_one ( ( lambda_opt_spec n ) |>.1 ) |>.2 h_lambda_opt )
       · have this := lambda_opt_spec n
         unfold W_opt

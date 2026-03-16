@@ -122,7 +122,7 @@ lemma interval_projection_bound (n : ℕ) (x : ℕ) (hx : x ∈ A_n n) :
       unfold A_n at hx
       rcases n with (_ | _ | n) <;> norm_num at *
       · linarith [Nat.sub_add_cancel (by nlinarith : 2 * (‹_› : ℕ) ≤ 6 * ‹_› ^ 2)]
-      · grind;
+      · grind
       · linarith [ sq n ]
 
 /-
@@ -270,9 +270,9 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
             · cases H <;> simp_all +arith +decide [ A_n ];
               · have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
                   exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) )
-                aesop;
-              · nlinarith only [ hx, h_pi_lt ];
-          · rw [ Nat.dvd_prime h.2 ] at H;
+                aesop
+              · nlinarith only [ hx, h_pi_lt ]
+          · rw [ Nat.dvd_prime h.2 ] at H
             -- Since $p n i$ is a prime number in $P_n$, it must be at least 5. However,
             -- $6x + 1$ is greater than $6n + 2$, which is the upper bound for $P_n$.
             -- Therefore, $p n i$ cannot be $6x + 1$.
@@ -284,8 +284,8 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
             cases H <;> simp_all +arith +decide [ A_n ];
             · have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
                 exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) )
-              aesop;
-            · nlinarith only [ hn, hx, h_contra ];
+              aesop
+            · nlinarith only [ hn, hx, h_contra ]
         have := krafft_algebraic_equivalence ( p n i ) ( Finset.mem_filter.mp (
           show p n i ∈ P_n n from by
             exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) |>.2.2 ) ( by
@@ -337,8 +337,8 @@ functions, if $c(x) < 1$, then $c(x) = 0$.
 -/
 lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
     c n x ≥ 0 ∧ (c n x < 1 → c n x = 0) := by
-      unfold c;
-      unfold g; aesop;
+      unfold c; unfold g
+      aesop
 
 /-
 If S_2(n) < S_1(n), then there exists x in A_n such that W(x) > 0 and c(x) = 0.
