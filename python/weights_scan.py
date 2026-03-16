@@ -83,7 +83,7 @@ def weight(n, x, lower_bound, upper_bound, primes, alpha, nconv=2, use_log_weigh
 
 def run_test(nconv=2):
     """Sweeps through tuning parameters to find the optimal ratio of Hits to Mass."""
-    print(f"{'n':<3} | {'Best Alpha':<14} | {'S1 (Mass)':<14} | {'S2 (Hits)':<14} | {'Ratio S2/S1':<14} | S2 < S1?")
+    print(f"{'n':<3} | {'Best Alpha':<10} | {'S1 (Mass)':<14} | {'S2 (Hits)':<14} | {'Ratio S2/S1':<14} | S2 < S1? (nconv={nconv})")
     print("-" * 80)
     
     for n in range(2, 103):
@@ -119,7 +119,11 @@ def run_test(nconv=2):
                     best_S2 = S2_test
                     
         success = best_S2 < best_S1
-        print(f"{n:<3} | {best_alpha:<14.3f} | {best_S1:<14.4f} | {best_S2:<14.4f} | {best_ratio:<14.4f} | {success}")
+        s1 = f"{best_S1:.8e}" if best_S1 > 10000000 else f"{best_S1:<14.4f}"
+        s2 = f"{best_S2:.8e}" if best_S2 > 10000000 else f"{best_S2:<14.4f}"
+        print(f"{n:<3} | {best_alpha:<10.3f} | {s1} | {s2} | {best_ratio:<14.4f} | {success}", flush=True)
 
 if __name__ == '__main__':
-    run_test(nconv=2)
+    for nconv in range(2, 20):
+        run_test(nconv)
+

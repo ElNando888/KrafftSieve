@@ -47,18 +47,37 @@ We proved that the Fourier transform of the Krafft hit function, $\hat{g}_i(h)$,
 
 We formally evaluated the third harmonic ($k=3$) of the Krafft residue choice $r^K_i = \lfloor(p_i+1)/6\rfloor$. We verified that for all primes $p_i \ge 5$, the $k=3$ interference pattern collapses into exactly $-\cos(\pi/p_i)$. Finally, we defined the \textit{Krafft Admissibility} condition. The engine certified that if an analytic weight function $W(x)$ exists that sufficiently isolates this third-harmonic negative resonance, $S_2 < S_1$ is achieved, and a Twin Prime index is unconditionally guaranteed within $\mathcal{A}_n$.
 
-\section{Part III: The Resonant Sieve Equation}
+\section{Part III: Experimental Exploration}
 
-.
+\subsection{Initial Weights and Classical Selberg Tuning}
+
+Experimental verification began with a Python-based sweep (\texttt{weights\_scan.py}) of ``classic'' Selberg-style weights. The initial architecture utilized a simple resonator squaring (\texttt{nconv=2}) to guarantee non-negativity: $W(x) \propto |1 - \alpha \cdot \Sigma(x)|^2$. While computationally efficient, this model yielded success ($S_2 < S_1$) for only a narrow window of $n$ (primarily $n \le 6$ and $n=8$), failing to demonstrate the universal scaling required for the Twin Prime Conjecture.
+
+\subsection{Binomial Expansion and Linked Weights}
+
+To probe the potential of multi-dimensional tuning without fully implementing a high-rank Fourier tensor, the resonator was raised to an arbitrary power $k$ (the convolution index). This transition, visible in the \texttt{res\_all.txt} logs, allowed for a broader search space. However, we observed that increasing $k$ acted only as a proxy for multidimensionality. Because the terms remain linked by the binomial coefficients—mathematically equivalent to the self-convolution of the weight function—the optimization remains restricted. 
+
+\subsection{Transition to Multi-Dimensionality}
+
+The experimental findings confirmed that while the 1D resonator captures the Krafft resonance, its rigid algebraic structure prevents the selective high-frequency cancellation needed for larger $n$. These results served as the primary motivation for the transition to a ``true'' multi-dimensional weight function, where the Fourier coefficients $\hat{W}(h)$ can be tuned independently to maximize the resonance overlap.
 
 \section{Part IV: The Topological Reduction to the Minimum Ratio}
 
-.
+\subsection{Formalization of the Sieve Guarantee}
 
-\vspace{1em}
-\hrule
-\vspace{1em}
+The geometric and harmonic frameworks were unified within the \texttt{KrafftSieve} Lean 4 library. We formally defined the \textit{Krafft Admissibility} condition (\texttt{Krafft\_Admissibility}): the existence of a non-negative weight function $W(x)$ supported on $\mathcal{A}_n$ such that the weighted hit mass $S_2$ is strictly less than the weighted interval mass $S_1$. The \textit{Krafft Sieve Guarantee} (\texttt{krafft\_sieve\_guarantee}) theorem machine-verifies that admissibility unconditionally implies the existence of a Twin Prime index $x \in \mathcal{A}_n$.
 
-\noindent \textit{Conclusion:} The discrete, geometric, and logical frameworks of the Krafft Sieve are complete and machine-verified. The final resolution of the Twin Prime Conjecture within these intervals relies exclusively on the continuous optimization of the analytic weight function $\hat{W}(h)$.
+\subsection{Quadratic Form Reduction}
+
+By expanding the multidimensional weight function into a basis of product-harmonic cosines (\texttt{basis\_cos}), we transformed the sieve moments into quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$ over the space of coefficient vectors $\lambda \in \mathbb{R}^{2^w}$. This reduction represents $S_1$ and $S_2$ as $\lambda^T M_1 \lambda$ and $\lambda^T M_2 \lambda$, where $M_1$ and $M_2$ are the corresponding moment matrices.
+
+\subsection{The Minimum Ratio and Optimal Weights}
+
+The problem was further reduced to the optimization of the Rayleigh quotient $R(\lambda) = Q_2(\lambda)/Q_1(\lambda)$. We defined $\mu_{min}(n)$ as the infimum of these ratios. Crucially, we formally proved the \textit{Existence of Minimizers} (\texttt{exists\_minimizer}) by establishing the compactness of the unit sphere in the coefficient space (orthogonal to the kernel of $Q_1$). 
+
+\subsection{Conclusion: The Linear Algebra Barrier}
+
+The formal bridge is now complete. \texttt{W\_opt\_is\_admissible\_iff} confirms that the Twin Prime Conjecture holds within $\mathcal{A}_n$ if and only if the minimum Rayleigh ratio satisfies $\mu_{min}(n) < 1$. The remaining task is decoupled from the sieve logic and reduced entirely to a high-dimensional linear algebra problem: demonstrating that the interference pattern of the Krafft resonance can effectively suppress the main term below the unity threshold.
+
 
 \end{document}
