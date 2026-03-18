@@ -15,9 +15,13 @@
 This document outlines the formal verification (via Lean 4) of a novel sieve architecture
 designed to detect Twin Primes within the highly structured intervals
 $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. By transitioning from a classical multiplicative
-inclusion-exclusion framework to a weighted additive Fourier architecture, we rigorously bypass
+inclusion-exclusion framework to a weighted additive Fourier architecture, we bypass
 the Chinese Remainder Theorem phase cancellations and isolate a universal negative resonance
-guaranteed by the $6x \pm 1$ Krafft geometry.
+guaranteed by the $6x \pm 1$ Krafft geometry. We further formalize the reduction of the
+existence principle to a high-dimensional quadratic form optimization, proving that the
+Twin Prime Conjecture holds if the minimum Rayleigh ratio of the weighted moments
+satisfies $\mu_{min}(n) < 1$, effectively decoupling the sieve logic from the
+linear algebra problem of harmonic suppression.
 \end{abstract}
 
 \section{Part I: The Discrete Geometry and Additive Moments}
