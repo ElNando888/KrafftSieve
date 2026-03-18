@@ -12,72 +12,130 @@
 \maketitle
 
 \begin{abstract}
-This document outlines the formal verification (via Lean 4) of a novel sieve architecture designed to detect Twin Primes within the highly structured intervals $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. By transitioning from a classical multiplicative inclusion-exclusion framework to a weighted additive Fourier architecture, we rigorously bypass the Chinese Remainder Theorem phase cancellations and isolate a universal negative resonance guaranteed by the $6x \pm 1$ Krafft geometry.
+This document outlines the formal verification (via Lean 4) of a novel sieve architecture
+designed to detect Twin Primes within the highly structured intervals
+$\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. By transitioning from a classical multiplicative
+inclusion-exclusion framework to a weighted additive Fourier architecture, we rigorously bypass
+the Chinese Remainder Theorem phase cancellations and isolate a universal negative resonance
+guaranteed by the $6x \pm 1$ Krafft geometry.
 \end{abstract}
 
 \section{Part I: The Discrete Geometry and Additive Moments}
 
 \subsection{The Additive Turán Sieve Architecture}
 
-We formalized the shift from a multiplicative inclusion-exclusion sieve to an additive variance sieve. We defined the local hit function $g_i(x)$ and the global hit counter $c(x)$. We formally proved the \textit{Additive Sieve Isomorphism}, confirming that an index $x \in \mathcal{A}_n$ yields a Twin Prime pair $(6x-1, 6x+1)$ if and only if $c(x) = 0$.
+We formalized the shift from a multiplicative inclusion-exclusion sieve to an additive variance
+sieve. We defined the local hit function $g_i(x)$ and the global hit counter $c(x)$. We formally
+proved the \textit{Additive Sieve Isomorphism}, confirming that an index $x \in \mathcal{A}_n$ yields a
+Twin Prime pair $(6x-1, 6x+1)$ if and only if $c(x) = 0$.
 
 \subsection{Additive Moments Expansion}
 
-To avoid the absolute-value barriers of classical sieves, we expanded the First Moment ($M_1$) and Second Moment ($M_2$) of the additive hit counter. We established strict upper bounds for both the local hit densities and the cross-term densities, formally proving that additive cross-terms factor cleanly without invoking modular inverses. 
+To avoid the absolute-value barriers of classical sieves, we expanded the First Moment ($M_1$) and
+Second Moment ($M_2$) of the additive hit counter. We established strict upper bounds for both the
+local hit densities and the cross-term densities, formally proving that additive cross-terms factor
+cleanly without invoking modular inverses. 
 
 \subsection{Moment Evaluations}
 
-Using the sum of the prime reciprocals $H(n)$ in the sieve window, we formalized the algebraic upper bounds for the expected number of hits and their variance across the target interval $\mathcal{A}_n$. This confirmed that unweighted moments are insufficient to force a positive lower bound for survivors.
+Using the sum of the prime reciprocals $H(n)$ in the sieve window, we formalized the algebraic
+upper bounds for the expected number of hits and their variance across the target interval $\mathcal{A}_n$.
+This confirmed that unweighted moments are insufficient to force a positive lower bound for survivors.
 
 \section{Part II: The Continuous Harmonic Analysis}
 
 \subsection{The Weighted Sieve Principle}
 
-We abandoned the unweighted Cauchy-Schwarz inequality and introduced an arbitrary, non-negative spatial weight function $W(x)$. We formally proved the \textit{Weighted Existence Principle}: if the weighted hit mass $S_2(n)$ is strictly less than the weighted interval mass $S_1(n)$, a Twin Prime survivor $c(x)=0$ is unconditionally guaranteed.
+We abandoned the unweighted Cauchy-Schwarz inequality and introduced an arbitrary, non-negative
+spatial weight function $W(x)$. We formally proved the \textit{Weighted Existence Principle}: if the
+weighted hit mass $S_2(n)$ is strictly less than the weighted interval mass $S_1(n)$, a Twin Prime
+survivor $c(x)=0$ is unconditionally guaranteed.
 
 \subsection{Fourier Expansion of the Weighted Moments}
 
-Exploiting the compact support of $W(x)$ inside $\mathcal{A}_n$, we applied Plancherel's Theorem to transition the discrete spatial sums into the continuous frequency domain. This teleported the sieve equations into a mathematically tractable space, defined entirely by the Fourier coefficients $\hat{W}(h)$ and $\hat{g}_i(h)$.
+Exploiting the compact support of $W(x)$ inside $\mathcal{A}_n$, we applied Plancherel's Theorem to
+transition the discrete spatial sums into the continuous frequency domain. This teleported the sieve
+equations into a mathematically tractable space, defined entirely by the Fourier coefficients
+$\hat{W}(h)$ and $\hat{g}_i(h)$.
 
 \subsection{Resonant Frequency Collapse}
 
-We proved that the Fourier transform of the Krafft hit function, $\hat{g}_i(h)$, acts as a sparse Dirac comb, evaluating to zero almost everywhere. This allowed us to mathematically collapse the massive double sum of the sieve into a \textit{Resonant Sieve Equation}, isolating the Main Term ($h=0$) from the high-frequency harmonic Error Terms ($h \neq 0$).
+We proved that the Fourier transform of the Krafft hit function, $\hat{g}_i(h)$, acts as a sparse
+Dirac comb, evaluating to zero almost everywhere. This allowed us to mathematically collapse the
+massive double sum of the sieve into a \textit{Resonant Sieve Equation}, isolating the Main Term
+($h=0$) from the high-frequency harmonic Error Terms ($h \neq 0$).
 
 \subsection{The Krafft Negative Resonance}
 
-We formally evaluated the third harmonic ($k=3$) of the Krafft residue choice $r^K_i = \lfloor(p_i+1)/6\rfloor$. We verified that for all primes $p_i \ge 5$, the $k=3$ interference pattern collapses into exactly $-\cos(\pi/p_i)$. Finally, we defined the \textit{Krafft Admissibility} condition. The engine certified that if an analytic weight function $W(x)$ exists that sufficiently isolates this third-harmonic negative resonance, $S_2 < S_1$ is achieved, and a Twin Prime index is unconditionally guaranteed within $\mathcal{A}_n$.
+We formally evaluated the third harmonic ($k=3$) of the Krafft residue choice
+$r^K_i = \lfloor(p_i+1)/6\rfloor$. We verified that for all primes $p_i \ge 5$, the $k=3$
+interference pattern collapses into exactly $-\cos(\pi/p_i)$. Finally, we defined the
+\textit{Krafft Admissibility} condition. The engine certified that if an analytic weight function
+$W(x)$ exists that sufficiently isolates this third-harmonic negative resonance, $S_2 < S_1$ is
+achieved, and a Twin Prime index is unconditionally guaranteed within $\mathcal{A}_n$.
 
 \section{Part III: Experimental Exploration}
 
 \subsection{Initial Weights and Classical Selberg Tuning}
 
-Experimental verification began with a Python-based sweep (\texttt{weights\_scan.py}) of ``classic'' Selberg-style weights. The initial architecture utilized a simple resonator squaring (\texttt{nconv=2}) to guarantee non-negativity: $W(x) \propto |1 - \alpha \cdot \Sigma(x)|^2$. While computationally efficient, this model yielded success ($S_2 < S_1$) for only a narrow window of $n$ (primarily $n \le 6$ and $n=8$), failing to demonstrate the universal scaling required for the Twin Prime Conjecture.
+Experimental verification began with a Python-based sweep (\texttt{weights\_scan.py}) of
+``classic'' Selberg-style weights. The initial architecture utilized a simple resonator squaring
+(``\texttt{nconv=2}'') to guarantee non-negativity: $W(x) \propto |1 - \alpha \cdot \Sigma(x)|^2$.
+While computationally efficient, this model yielded success ($S_2 < S_1$) for only a narrow window
+of $n$ (primarily $n \le 6$ and $n=8$), failing to demonstrate the universal scaling required for
+the Twin Prime Conjecture.
 
 \subsection{Binomial Expansion and Linked Weights}
 
-To probe the potential of multi-dimensional tuning without fully implementing a high-rank Fourier tensor, the resonator was raised to an arbitrary power $k$ (the convolution index). This transition, visible in the \texttt{res\_all.txt} logs, allowed for a broader search space. However, we observed that increasing $k$ acted only as a proxy for multidimensionality. Because the terms remain linked by the binomial coefficients—mathematically equivalent to the self-convolution of the weight function—the optimization remains restricted. 
+To probe the potential of multi-dimensional tuning without fully implementing a high-rank Fourier
+tensor, the resonator was raised to an arbitrary power $k$ (the convolution index). This transition,
+visible in the \texttt{res\_out.txt} logs, allowed for a broader search space. However, we observed
+that increasing $k$ acted only as a proxy for multidimensionality. Because the terms remain linked by
+the binomial coefficients—mathematically equivalent to the self-convolution of the weight
+function—the optimization remains restricted. 
 
 \subsection{Transition to Multi-Dimensionality}
 
-The experimental findings confirmed that while the 1D resonator captures the Krafft resonance, its rigid algebraic structure prevents the selective high-frequency cancellation needed for larger $n$. These results served as the primary motivation for the transition to a ``true'' multi-dimensional weight function, where the Fourier coefficients $\hat{W}(h)$ can be tuned independently to maximize the resonance overlap.
+The experimental findings confirmed that while the 1D resonator captures the Krafft resonance,
+its rigid algebraic structure prevents the selective high-frequency cancellation needed for larger $n$.
+These results served as the primary motivation for the transition to a ``true'' multi-dimensional
+weight function, where the Fourier coefficients $\hat{W}(h)$ can be tuned independently to maximize
+the resonance overlap.
 
 \section{Part IV: The Topological Reduction to the Minimum Ratio}
 
 \subsection{Formalization of the Sieve Guarantee}
 
-The geometric and harmonic frameworks were unified within the \texttt{KrafftSieve} Lean 4 library. We formally defined the \textit{Krafft Admissibility} condition (\texttt{Krafft\_Admissibility}): the existence of a non-negative weight function $W(x)$ supported on $\mathcal{A}_n$ such that the weighted hit mass $S_2$ is strictly less than the weighted interval mass $S_1$. The \textit{Krafft Sieve Guarantee} (\texttt{krafft\_sieve\_guarantee}) theorem machine-verifies that admissibility unconditionally implies the existence of a Twin Prime index $x \in \mathcal{A}_n$.
+The geometric and harmonic frameworks were unified within the \texttt{KrafftSieve} Lean 4 library.
+We formally defined the \textit{Krafft Admissibility} condition (\texttt{Krafft\_Admissibility}):
+the existence of a non-negative weight function $W(x)$ supported on $\mathcal{A}_n$ such that the
+weighted hit mass $S_2$ is strictly less than the weighted interval mass $S_1$. The
+\textit{Krafft Sieve Guarantee} (\texttt{krafft\_sieve\_guarantee}) theorem machine-verifies that
+admissibility unconditionally implies the existence of a Twin Prime index $x \in \mathcal{A}_n$.
 
 \subsection{Quadratic Form Reduction}
 
-By expanding the multidimensional weight function into a basis of product-harmonic cosines (\texttt{basis\_cos}), we transformed the sieve moments into quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$ over the space of coefficient vectors $\lambda \in \mathbb{R}^{2^w}$. This reduction represents $S_1$ and $S_2$ as $\lambda^T M_1 \lambda$ and $\lambda^T M_2 \lambda$, where $M_1$ and $M_2$ are the corresponding moment matrices.
+By expanding the multidimensional weight function into a basis of product-harmonic cosines
+(``\texttt{basis\_cos}''), we transformed the sieve moments into quadratic forms $Q_1(\lambda)$ and
+$Q_2(\lambda)$ over the space of coefficient vectors $\lambda \in \mathbb{R}^{2^w}$. This reduction
+represents $S_1$ and $S_2$ as $\lambda^T M_1 \lambda$ and $\lambda^T M_2 \lambda$, where $M_1$ and
+$M_2$ are the corresponding moment matrices.
 
 \subsection{The Minimum Ratio and Optimal Weights}
 
-The problem was further reduced to the optimization of the Rayleigh quotient $R(\lambda) = Q_2(\lambda)/Q_1(\lambda)$. We defined $\mu_{min}(n)$ as the infimum of these ratios. Crucially, we formally proved the \textit{Existence of Minimizers} (\texttt{exists\_minimizer}) by establishing the compactness of the unit sphere in the coefficient space (orthogonal to the kernel of $Q_1$). 
+The problem was further reduced to the optimization of the Rayleigh quotient
+$R(\lambda) = Q_2(\lambda)/Q_1(\lambda)$. We defined $\mu_{min}(n)$ as the infimum of these ratios.
+Crucially, we formally proved the \textit{Existence of Minimizers} (\texttt{exists\_minimizer})
+by establishing the compactness of the unit sphere in the coefficient space (orthogonal to the
+kernel of $Q_1$). 
 
 \subsection{Conclusion: The Linear Algebra Barrier}
 
-The formal bridge is now complete. \texttt{W\_opt\_is\_admissible\_iff} confirms that the Twin Prime Conjecture holds within $\mathcal{A}_n$ if and only if the minimum Rayleigh ratio satisfies $\mu_{min}(n) < 1$. The remaining task is decoupled from the sieve logic and reduced entirely to a high-dimensional linear algebra problem: demonstrating that the interference pattern of the Krafft resonance can effectively suppress the main term below the unity threshold.
+The formal bridge is now complete. \texttt{W\_opt\_is\_admissible\_iff} confirms that the Twin Prime
+Conjecture holds within $\mathcal{A}_n$ if and only if the minimum Rayleigh ratio satisfies
+$\mu_{min}(n) < 1$. The remaining task is decoupled from the sieve logic and reduced entirely to
+a high-dimensional linear algebra problem: demonstrating that the interference pattern of the
+Krafft resonance can effectively suppress the main term below the unity threshold.
 
 
 \end{document}
