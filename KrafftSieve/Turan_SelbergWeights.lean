@@ -311,10 +311,8 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
               Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 (
                 List.get_mem _ _ ) )
 
-/-
-Lemma 1.3: For x in A_n, c(x) = 0 iff 6x-1 and 6x+1 are prime.
--/
-/-- Lemma 1.3 (Additive Sieve Isomorphism):
+/--
+Lemma 1.3 (Additive Sieve Isomorphism):
 Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$
 and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
 $$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
@@ -327,10 +325,8 @@ lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ 
       unfold g; simp_all
       unfold A_i at this; simp_all only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and])
 
-/-
-Prove that c(x) >= 0 and if c(x) < 1 then c(x) = 0.
--/
-/-- Lemma 4.4 (Non-negative Hits):
+/--
+Lemma 4.4 (Non-negative Hits):
 Using the definition of $g_i(x)$ and $c(x)$, prove that for any $x$, the hit counter is
 non-negative: $c(x) \ge 0$. Furthermore, note that because $c(x)$ is a sum of indicator
 functions, if $c(x) < 1$, then $c(x) = 0$.
@@ -340,10 +336,8 @@ lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
       unfold c; unfold g
       aesop
 
-/-
-If S_2(n) < S_1(n), then there exists x in A_n such that W(x) > 0 and c(x) = 0.
--/
-/-- Theorem 4.5 (The Weighted Existence Principle):
+/--
+Theorem 4.5 (The Weighted Existence Principle):
 Assume there exists a specific configuration such that $S_2(n) < S_1(n)$. Prove that there must
 exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
 -/

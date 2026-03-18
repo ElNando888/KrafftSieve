@@ -1,4 +1,5 @@
 /.lake
+/.agents
 /Old
 /manuscript
 *.puml
