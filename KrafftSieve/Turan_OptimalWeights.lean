@@ -411,17 +411,28 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
           exact ⟨ y, hy, by simpa using hz ⟩
         exact h_decomp_S _
       exact h_decomp v
-    · congr! 2;
-      · refine' le_antisymm (_ : kernel_Q1 n ≤ Submodule.span ℝ {v | (Q_1 n fun i ↦ v i) = 0})
-          (_ : Submodule.span ℝ {v | (Q_1 n fun i ↦ v i) = 0} ≤ kernel_Q1 n);
-        · exact fun x hx => Submodule.subset_span hx;
-        · exact Submodule.span_le.mpr fun v hv => hv;
-      · ext; simp [kernel_Q1_perp];
-        simp +decide [ dot_product, Submodule.mem_orthogonal' ];
-        simp +decide [ inner, Submodule.mem_span ];
-        constructor <;> intro h u hu;
-        · exact h u ( hu _ fun v hv => hv );
-        · exact h u fun p hp => hp hu;
+    · constructor <;> intro h
+      · exact Submodule.sup_orthogonal_of_hasOrthogonalProjection
+      · convert h using 1;
+        constructor <;> intro h <;> rw [ Submodule.eq_top_iff' ] at * <;> simp_all +decide [ Submodule.mem_sup, Submodule.mem_orthogonal ];
+        intro x;
+        obtain ⟨ y, hy, z, hz, h ⟩ := h ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm x )
+        refine' ⟨ fun i => y i, _, fun i => z i, _, _ ⟩
+        · refine' Submodule.span_induction _ _ _ _ hy
+          · intro x_2 h_2
+            simp_all only [WithLp.equiv_symm_apply, Set.mem_setOf_eq]
+            exact h_2
+          · exact show Q_1 n ( fun _ => 0 ) = 0 from by unfold Q_1; norm_num
+          · exact fun x y hx hy hx' hy' => by simpa [ hx', hy' ] using Submodule.add_mem _ hx' hy'
+          · simp +decide [ kernel_Q1, Q_1 ]
+            simp +contextual [ mul_assoc, mul_comm, mul_left_comm ]
+            simp +contextual [ ← Finset.mul_sum _ _ _ ]
+        · intro u hu; specialize hz ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm u )
+          simp_all +decide [ inner ]
+          convert hz _ using 1
+          · exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
+          · exact Submodule.subset_span hu
+        · convert congr_arg ( fun f => ( WithLp.equiv 2 ( Idx n → ℝ ) ) f ) h using 1
   simpa [ eq_comm ] using
     Submodule.mem_sup.mp ( h_compl.symm ▸ Submodule.mem_top :
       x ∈ kernel_Q1 n ⊔ kernel_Q1_perp n )
