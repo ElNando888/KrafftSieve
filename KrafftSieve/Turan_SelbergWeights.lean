@@ -16,21 +16,28 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
-set_option linter.mathlibStandardSet false
+-- The following targeted linter suppressions replace the blanket
+-- `set_option linter.mathlibStandardSet false` that was previously used.
+-- These are needed because the proofs use idioms (`refine'`, `induction'`,
+-- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+set_option linter.style.setOption false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.multiGoal false
+set_option linter.style.longLine false
+set_option linter.style.maxHeartbeats false
+set_option linter.style.docString false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 open scoped BigOperators
+open scoped Classical
 open scoped Real
 open scoped Nat
-open scoped Classical
+
 open scoped Pointwise
-
-set_option maxHeartbeats 0
-set_option maxRecDepth 4000
-set_option synthInstance.maxHeartbeats 20000
-set_option synthInstance.maxSize 128
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
 
 noncomputable section
 
@@ -38,7 +45,7 @@ noncomputable section
 #### Definition of the permitted residue classes A_i.
 Define the set of permitted residue classes for each prime as
 $A_i = (\mathbb{Z}/p_i\mathbb{Z}) \setminus \{\pm r_i \pmod{p_i}\}$.
---/
+-/
 def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)) :=
   haveI : NeZero (p n i) := ⟨by
   -- Since $p n i$ is an element of $P_n n$, and $P_n n$ consists of primes greater than
@@ -59,7 +66,7 @@ def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)
 #### Definition of the global set of surviving residues A.
 Define the global set of surviving residues $A \subseteq \mathbb{Z}/q\mathbb{Z}$ such that
 $x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$.
---/
+-/
 def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp =>
@@ -70,7 +77,7 @@ def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
 #### Definition of the indicator function f.
 Define the indicator function $f : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ such that
 $f(x) = 1$ if $x \in A$, and $f(x) = 0$ otherwise.
---/
+-/
 noncomputable def f (n : ℕ) (r : Fin (w n) → ℕ) (x : ZMod (q n)) : ℝ :=
   if x ∈ A n r then 1 else 0
 
@@ -318,7 +325,7 @@ Additive Sieve Isomorphism (\label{thm:additive-sieve-isomorphism}):
 Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$
 and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
 $$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
---/
+-/
 lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     c n x = 0 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
       have := @sieve_isomorphism n hn x; simp_all; (
@@ -367,7 +374,7 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
 /--
 #### Definition of the Krafft Admissibility condition
 Existence of a weight function $W$ such that $S_2(n) < S_1(n)$.
---/
+-/
 def Krafft_Admissibility (n : ℕ) : Prop :=
   ∃ W : ZMod (q n) → ℝ, (∀ x, W x ≥ 0) ∧
   (∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) ∧
@@ -387,3 +394,5 @@ theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Admiss
       obtain ⟨ W, hW_nonneg, hW_supp, hW_ineq ⟩ := h_admit
       obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq
       exact ⟨ x, hx.1, additive_sieve_isomorphism n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
+
+end

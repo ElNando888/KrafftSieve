@@ -15,31 +15,37 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
 import KrafftSieve.Basic
-
-set_option linter.mathlibStandardSet false
+-- The following targeted linter suppressions replace the blanket
+-- `set_option linter.mathlibStandardSet false` that was previously used.
+-- These are needed because the proofs use idioms (`refine'`, `induction'`,
+-- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+set_option linter.style.setOption false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.multiGoal false
+set_option linter.style.longLine false
+set_option linter.style.maxHeartbeats false
+set_option linter.style.docString false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 open scoped BigOperators
+open scoped Classical
 open scoped Real
 open scoped Nat
-open scoped Classical
+
 open scoped Pointwise
-
-set_option maxHeartbeats 0
-set_option maxRecDepth 4000
-set_option synthInstance.maxHeartbeats 20000
-set_option synthInstance.maxSize 128
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
 
 noncomputable section
 
 /--
-#### Define $\hat{W}(h)$ (Fourier Transform of the Weight):
+Define $\hat{W}(h)$ (Fourier Transform of the Weight):
 Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(x)$ over 
 $\mathbb{Z}/q\mathbb{Z}$:
 $$ \hat{W}(h) = \frac{1}{q} \sum_{x=0}^{q-1} W(x) e^{-2\pi i h x / q} $$
---/
+-/
 noncomputable def W_hat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp =>
@@ -48,10 +54,10 @@ noncomputable def W_hat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : �
     (W x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /--
-#### Define $\hat{g}_i(h)$ (Fourier Transform of the Local Hit):
+Define $\hat{g}_i(h)$ (Fourier Transform of the Local Hit):
 Define $\hat{g}_i(h)$ as the Discrete Fourier Transform of the local hit function $g_i(x)$:
 $$ \hat{g}_i(h) = \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x / q} $$
---/
+-/
 noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨by
     exact Finset.prod_ne_zero_iff.mpr fun p hp =>
@@ -204,6 +210,7 @@ For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, 
 transform evaluates to:
 $$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
+set_option maxHeartbeats 800000 in
 lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
     g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
     ((2 : ℝ) / (p n i : ℝ) * Real.cos
@@ -426,6 +433,7 @@ For any frequency $h$ that is NOT a multiple of $q/p_i$, the Fourier transform o
 hit function is zero:
 $$ \hat{g}_i(h) = 0 $$
 -/
+set_option maxHeartbeats 800000 in
 lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
     (h_not_multiple : ∀ k : Fin (p n i), h ≠ (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) :
     g_hat n i h = 0 := by
@@ -608,6 +616,7 @@ hit mass $S_2(n)$:
 $$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} +
   q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
+set_option maxHeartbeats 800000 in
 theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
     (S_2 n W : ℂ) = (S_1 n W : ℂ) * ∑ i : Fin (w n), ((2 : ℝ) / (p n i : ℝ) : ℂ) +
@@ -762,6 +771,7 @@ to:
 $$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} -
   q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
 -/
+set_option maxHeartbeats 800000 in
 lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0)
     (h_spectral : ∀ i : Fin (w n), ∀ k ∈ (Finset.range (p n i)).erase 0, k ≠ 3 →
@@ -788,3 +798,5 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
         have := Finset.mem_filter.mp h_in_P
         norm_num at this
         interval_cases p n i <;> norm_num at *;
+
+end

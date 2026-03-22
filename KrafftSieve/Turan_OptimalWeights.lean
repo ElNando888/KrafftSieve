@@ -16,25 +16,32 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Turan_SelbergWeights
 
-set_option linter.mathlibStandardSet false
+-- The following targeted linter suppressions replace the blanket
+-- `set_option linter.mathlibStandardSet false` that was previously used.
+-- These are needed because the proofs use idioms (`refine'`, `induction'`,
+-- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+set_option linter.style.setOption false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.multiGoal false
+set_option linter.style.longLine false
+set_option linter.style.maxHeartbeats false
+set_option linter.style.docString false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 open scoped BigOperators
+open scoped Classical
 open scoped Real
 open scoped Nat
-open scoped Classical
+
 open scoped Pointwise
-
-set_option maxHeartbeats 0
-set_option maxRecDepth 4000
-set_option synthInstance.maxHeartbeats 20000
-set_option synthInstance.maxSize 128
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
 
 noncomputable section
 
-/-- 
+/--
 Define the basis function for a subset of prime indices $S \subseteq \{1, \dots, w\}$.
 The basis function is the product of the 3rd harmonic cosines for each prime in $S$.
 $$ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) $$
@@ -42,7 +49,7 @@ $$ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) $$
 noncomputable def basis_cos (n : ℕ) (S : Finset (Fin (w n))) (x : ZMod (q n)) : ℝ :=
   ∏ i ∈ S, Real.cos (2 * Real.pi * 3 * (x.val : ℝ) / (p n i : ℝ))
 
-/-- 
+/--
 Define the multidimensional polynomial $P(x)$ as a linear combination of
 the basis functions $B_S(x)$ with coefficients $\lambda_S$.
 $$ P(x) = \sum_{S \subseteq \{1, \dots, w\}} \lambda_S B_S(x) $$
@@ -50,7 +57,7 @@ $$ P(x) = \sum_{S \subseteq \{1, \dots, w\}} \lambda_S B_S(x) $$
 noncomputable def P_multi (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) : ℝ :=
   ∑ S ∈ Finset.univ.powerset, lambda S * basis_cos n S x
 
-/-- 
+/--
 Define the truly multidimensional weight function $W_{\lambda}(x)$ as the square of the
 polynomial $P(x)$ restricted to the interval $\mathcal{A}_n$.
 $$ W_{\lambda}(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\
@@ -59,7 +66,7 @@ $$ W_{\lambda}(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\
 noncomputable def W_truly_multi (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) : ℝ :=
   if x.val ∈ A_n n then (P_multi n lambda x) ^ 2 else 0
 
-/-- 
+/--
 Define the matrix $M_1$ corresponding to the first moment $S_1$.
 $M_1(S, T) = \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x)$
 -/
@@ -74,7 +81,7 @@ noncomputable def Matrix_2 (n : ℕ) (S T : Finset (Fin (w n))) : ℝ :=
   ∑ x ∈ A_n n, c n (x : ZMod (q n)) * basis_cos n S (x : ZMod (q n)) *
     basis_cos n T (x : ZMod (q n))
 
-/-- 
+/--
 Define the quadratic form $Q_1(\lambda) = \lambda^T M_1 \lambda$.
 -/
 noncomputable def Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
@@ -86,7 +93,7 @@ Define the quadratic form $Q_2(\lambda) = \lambda^T M_2 \lambda$.
 noncomputable def Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
   ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, lambda S * Matrix_2 n S T * lambda T
 
-/-- 
+/--
 Define the Rayleigh quotient $R(\lambda) = \frac{Q_2(\lambda)}{Q_1(\lambda)}$.
 Defined to be $\infty$ if $Q_1(\lambda) = 0$ (though $Q_1$ is positive definite on
 non-zero $\lambda$ if the basis is linearly independent on $A_n$).
@@ -94,7 +101,7 @@ non-zero $\lambda$ if the basis is linearly independent on $A_n$).
 noncomputable def Ratio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
   if Q_1 n lambda = 0 then 0 else (Q_2 n lambda) / (Q_1 n lambda)
 
-/-- 
+/--
 The truly multidimensional weight function is non-negative everywhere.
 -/
 lemma W_truly_multi_nonneg (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) :
@@ -102,7 +109,7 @@ lemma W_truly_multi_nonneg (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : 
       by_cases hx : x.val ∈ A_n n <;> simp_all +decide [ W_truly_multi ];
       exact sq_nonneg _
 
-/-- 
+/--
 The truly multidimensional weight function is supported on $\mathcal{A}_n$.
 -/
 lemma W_truly_multi_support (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n))
@@ -110,7 +117,7 @@ lemma W_truly_multi_support (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x :
     W_truly_multi n lambda x = 0 := by
       exact if_neg hx
 
-/-- 
+/--
 Lemma: The first moment $S_1$ of the truly multidimensional weight is equal to
 the quadratic form $Q_1$.
 -/
@@ -133,7 +140,7 @@ lemma S_1_eq_Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
             linarith;
           rw [ Nat.mod_eq_of_lt h_x_lt_q ] ; aesop
 
-/-- 
+/--
 Lemma: The second moment $S_2$ of the truly multidimensional weight is equal to
 the quadratic form $Q_2$.
 -/
@@ -152,7 +159,7 @@ lemma S_2_eq_Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
       exact q_bound n ( Nat.pos_of_ne_zero ( by
         rintro rfl; exact absurd hz' ( by unfold c; aesop ) ) )
 
-/-- 
+/--
 Lemma: The existence of coefficients $\lambda$ such that $Q_2(\lambda) < Q_1(\lambda)$
 is sufficient for Krafft Admissibility.
 -/
@@ -163,7 +170,7 @@ lemma sufficiency_of_Q (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (h : Q_2 
               fun x hx => W_truly_multi_support n lambda x hx,
               by linarith [ S_1_eq_Q_1 n lambda, S_2_eq_Q_2 n lambda ] ⟩
 
-/-- 
+/--
 Define the set of attainable ratios.
 -/
 def attainable_ratios (n : ℕ) : Set ℝ :=
@@ -174,7 +181,7 @@ Define $\mu_{min}(n)$ as the infimum of the attainable ratios.
 -/
 noncomputable def mu_min (n : ℕ) : ℝ := sInf (attainable_ratios n)
 
-/-- 
+/--
 Theorem: If the minimum attainable ratio $\mu_{min}(n)$ is strictly less than 1,
 then the Krafft Admissibility condition holds.
 -/
@@ -202,12 +209,12 @@ theorem mu_min_lt_one_implies_admissibility (n : ℕ) (h : mu_min n < 1) :
         rw [ eq_div_iff ] at h_ratio_def <;> nlinarith [ hr.2 ] ;);
       exact sufficiency_of_Q n lambda h_ratio_lt_one;
 
-/-- 
+/--
 Abbreviation for the index set of the coefficients, which is the power set of prime indices.
 -/
 abbrev Idx (n : ℕ) := Finset (Fin (w n))
 
-/-- 
+/--
 The kernel of the quadratic form $Q_1$.
 -/
 def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
@@ -259,7 +266,7 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
       intro c x a
       simp_all only [Set.mem_setOf_eq, mul_zero] }
 
-/-- 
+/--
 Lemma: $Q_1(\lambda) = 0$ if and only if $P_{multi}(\lambda, x) = 0$ for all $x \in \mathcal{A}_n$.
 -/
 lemma Q_1_eq_zero_iff (n : ℕ) (lambda : Idx n → ℝ) :
@@ -275,7 +282,7 @@ lemma Q_1_eq_zero_iff (n : ℕ) (lambda : Idx n → ℝ) :
               Finset.sum_congr rfl fun _ _ => by ring ) )
       simp_all +decide [ Finset.sum_eq_zero_iff_of_nonneg, sq_nonneg ]
 
-/-- 
+/--
 Lemma: $Q_1$ is non-negative for all $\lambda$.
 -/
 lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : Q_1 n lambda ≥ 0 := by
@@ -288,7 +295,7 @@ lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : Q_1 n lambda ≥ 0 := by
     exact Eq.symm (Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm))
   exact hQ1_def.symm ▸ Finset.sum_nonneg fun x hx => sq_nonneg _;
 
-/-- 
+/--
 Define the standard dot product on the space of coefficients.
 -/
 def dot_product (n : ℕ) (u v : Idx n → ℝ) : ℝ :=
@@ -318,7 +325,7 @@ def kernel_Q1_perp (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
           mul_eq_zero_of_right c ( hx u hu ) ;
   }
 
-/-- 
+/--
 The unit sphere in the orthogonal complement of the kernel of $Q_1$.
 -/
 def sphere_perp (n : ℕ) : Set (Idx n → ℝ) :=
@@ -338,7 +345,7 @@ lemma Q_1_pos_on_sphere_perp (n : ℕ) (lambda : Idx n → ℝ) (h : lambda ∈ 
       have := h_lambda_perp ( lambda ) h_lambda_kernel
       simp_all +decide [ dot_product ]
 
-/-- 
+/--
 Lemma: $Q_1$ is not identically zero.
 -/
 lemma Q_1_not_zero (n : ℕ) : ∃ lambda : Idx n → ℝ, Q_1 n lambda ≠ 0 := by
@@ -361,7 +368,7 @@ lemma Q_1_not_zero (n : ℕ) : ∃ lambda : Idx n → ℝ, Q_1 n lambda ≠ 0 :=
     · exact Nat.lt_succ_of_le ( Nat.sub_le_of_le_add <| by nlinarith );
     · linarith
 
-/-- 
+/--
 Lemma: The Rayleigh quotient is scale-invariant.
 -/
 lemma Ratio_scale (n : ℕ) (lambda : Idx n → ℝ) (c : ℝ) (hc : c ≠ 0) :
@@ -370,7 +377,7 @@ lemma Ratio_scale (n : ℕ) (lambda : Idx n → ℝ) (c : ℝ) (hc : c ≠ 0) :
       simp_all +decide [ mul_comm, mul_left_comm ] ;
       simp_all +decide [ ← Finset.mul_sum _ _ _, div_mul_eq_div_div ]
 
-/-- 
+/--
 Lemma: For any vector $v$, the square of any component is bounded by the dot product.
 -/
 lemma sq_le_dot_product (n : ℕ) (v : Idx n → ℝ) (i : Idx n) :
@@ -378,7 +385,7 @@ lemma sq_le_dot_product (n : ℕ) (v : Idx n → ℝ) (i : Idx n) :
       exact Finset.single_le_sum ( fun a _ =>
         mul_self_nonneg ( v a ) ) ( Finset.mem_univ i ) |> le_trans ( by nlinarith )
 
-/-- 
+/--
 Lemma: Any vector can be decomposed into a component in the kernel of $Q_1$ and a component
 in the orthogonal complement.
 -/
@@ -437,7 +444,7 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
     Submodule.mem_sup.mp ( h_compl.symm ▸ Submodule.mem_top :
       x ∈ kernel_Q1 n ⊔ kernel_Q1_perp n )
 
-/-- 
+/--
 Lemma: The polynomial $P_{multi}$ is linear in $\lambda$.
 -/
 lemma P_multi_add (n : ℕ) (u v : Idx n → ℝ) (x : ZMod (q n)) :
@@ -445,7 +452,7 @@ lemma P_multi_add (n : ℕ) (u v : Idx n → ℝ) (x : ZMod (q n)) :
   unfold P_multi
   simp [Finset.sum_add_distrib, add_mul]
 
-/-- 
+/--
 Lemma: The unit sphere in the orthogonal complement is compact.
 -/
 lemma sphere_perp_compact (n : ℕ) : IsCompact (sphere_perp n) := by
@@ -477,7 +484,7 @@ lemma sphere_perp_compact (n : ℕ) : IsCompact (sphere_perp n) := by
     rw [← h_dot]
     exact sq_le_dot_product n lambda i
 
-/-- 
+/--
 Lemma: If $u \in \text{kernel}(Q_1)$, then $Q_2(u + v) = Q_2(v)$.
 -/
 lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
@@ -509,8 +516,7 @@ lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
       rw [ ← Finset.sum_add_distrib ]
       exact Finset.sum_eq_zero fun x hx => by cases h_c_u_zero x hx <;> simp +decide [ * ]
 
-
-/-- 
+/--
 Lemma: The Rayleigh quotient is invariant under adding a vector from the kernel of $Q_1$.
 -/
 lemma Ratio_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
@@ -542,7 +548,7 @@ lemma Ratio_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) 
         simp_all only [zero_add]
       rw [ h_Q1_add, Q_2_add_kernel n u v hu ]
 
-/-- 
+/--
 Lemma: For any $\lambda$ with $Q_1(\lambda) > 0$, there exists $v \in \text{sphere\_perp}(n)$
 such that $\text{Ratio}(n, \lambda) = \text{Ratio}(n, v)$.
 -/
@@ -573,7 +579,7 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 
         simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dot_product ];
       · rw [ Ratio_add_kernel n u hu v, Ratio_scale n hu c hc.1 ]
 
-/-- 
+/--
 Lemma: The set of attainable ratios is the image of the unit sphere in the orthogonal complement
 under the Rayleigh quotient map.
 -/
@@ -593,7 +599,7 @@ lemma attainable_ratios_eq_image_sphere_perp (n : ℕ) :
     · exact Q_1_pos_on_sphere_perp n v hv
     · rfl
 
-/-- 
+/--
 Lemma: The set of attainable ratios is compact.
 -/
 lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := by
@@ -615,7 +621,7 @@ lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := b
   unfold Ratio
   simp_all only [ite_eq_right_iff, div_zero, implies_true]
 
-/-- 
+/--
 Lemma: The minimum attainable ratio is attained by some coefficient vector $\lambda$.
 -/
 lemma exists_minimizer (n : ℕ) :
@@ -632,7 +638,7 @@ lemma exists_minimizer (n : ℕ) :
   use lambda
   exact ⟨hQ1, h_ratio.symm⟩
 
-/-- 
+/--
 Define the optimal coefficient vector $\lambda_{opt}$ which attains the minimum ratio.
 -/
 noncomputable def lambda_opt (n : ℕ) : Idx n → ℝ :=
@@ -689,3 +695,5 @@ theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : mu_min n < 1) :
       by_cases hn : n ≥ 1 <;> simp_all +decide [ Krafft_Admissibility ];
       obtain ⟨ W, hW₁, hW₂, hW₃ ⟩ := this;
       apply krafft_sieve_guarantee n hn ⟨ W, hW₁, hW₂, hW₃ ⟩
+
+end

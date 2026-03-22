@@ -16,42 +16,39 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Defs
 
-set_option linter.mathlibStandardSet false
+open scoped BigOperators Real Nat Pointwise
 
-open scoped BigOperators
-open scoped Real
-open scoped Nat
-open scoped Classical
-open scoped Pointwise
-
-set_option maxHeartbeats 0
-set_option maxRecDepth 4000
-set_option synthInstance.maxHeartbeats 20000
-set_option synthInstance.maxSize 128
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+-- The following targeted linter suppressions replace the blanket
+-- `set_option linter.mathlibStandardSet false` that was previously used.
+-- These are needed because the proofs use idioms (`refine'`, `induction'`,
+-- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+set_option linter.style.setOption false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.multiGoal false
+set_option linter.style.longLine false
+set_option linter.style.maxHeartbeats false
+set_option linter.style.docString false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 noncomputable section
 
-/-
-Instance proof that q is non-zero.
--/
+open Classical in
+/-- Instance proof that q is non-zero. -/
 instance q_ne_zero (n : ℕ) : NeZero (q n) := ⟨by
   apply Finset.prod_ne_zero_iff.mpr
   intro p hp
   have hp_prime : p.Prime := (Finset.mem_filter.mp hp).2.2
   exact hp_prime.ne_zero⟩
 
-/-
-A number p is in P_n if and only if it equals p_i for some index i.
--/
+/-- A number p is in P_n if and only if it equals p_i for some index i. -/
 lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
   p_val ∈ P_n n ↔ ∃ i : Fin (w n), p n i = p_val := by
     constructor <;> intro h;
-    · -- By definition of $P_n$, since $p_val \in P_n$, it must be one of the primes in the
-      -- sorted list.
-      have h_in_sorted : p_val ∈ primes_list n := by
+    · have h_in_sorted : p_val ∈ primes_list n := by
         exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.2 h;
       obtain ⟨ i, hi ⟩ := List.mem_iff_get.1 h_in_sorted; use ⟨ i, by
         exact i.2.trans_le ( by simp +decide [ primes_list, w ] ) ⟩
@@ -61,26 +58,19 @@ lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
     · obtain ⟨ i, rfl ⟩ := h;
       exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
 
-/-
-P_n is a subset of P_{n+1}.
--/
+/-- P_n is a subset of P_{n+1}. -/
 lemma P_n_mono (n : ℕ) : P_n n ⊆ P_n (n + 1) := by
-  exact fun x hx => Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( by 
-    linarith [ Finset.mem_range.mp ( Finset.mem_filter.mp hx |>.1 ), 
+  exact fun x hx => Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( by
+    linarith [ Finset.mem_range.mp ( Finset.mem_filter.mp hx |>.1 ),
       Finset.mem_filter.mp hx |>.2.2.two_le ] ),
     Finset.mem_filter.mp hx |>.2.1, Finset.mem_filter.mp hx |>.2.2 ⟩
 
-/-
-q(n) divides q(n+1).
--/
+/-- q(n) divides q(n+1). -/
 lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
-  -- Since $P_n \subseteq P_{n+1}$, the product of elements in $P_n$ divides the product of
-  -- elements in $P_{n+1}$.
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
-/--
-q(n) is at least 10^20 for n >= 10.
---/
+set_option maxHeartbeats 400000 in
+/-- q(n) is at least 10^20 for n >= 10. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
   induction' n, hn using Nat.le_induction with n hn ih;
   · native_decide +revert;
@@ -89,9 +79,8 @@ lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
       exact Finset.prod_pos fun p hp =>
         Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ( q_mono n )
 
-/-
-For n >= 1, 6n^2 + 10n + 3 < q(n).
--/
+set_option maxHeartbeats 800000 in
+/-- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
 theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
   by_cases hn10 : n < 10
   · interval_cases n <;> native_decide
@@ -103,20 +92,14 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
         _ ≤ 6 * 1000000000^2 + 10 * 1000000000 + 3 := by nlinarith
         _ < 10^20 := by native_decide
     · have hn_large : n > 1000000000 := by linarith
-      -- For n > 10^9, q(n) is extremely large.
-      -- We assume this holds.
-      -- Since $q(n)$ is the product of primes in $P_n$, and for $n > 1,000,000,000$, there are
-      -- many primes in $P_n$, $q(n)$ is extremely large.
       have h_q_large : q n ≥ 5 ^ (Nat.log 2 n) := by
         have h_q_large : q n ≥ 5 ^ (Finset.card (Finset.filter (fun p => 5 ≤ p ∧ p.Prime) (Finset.range (6 * n + 2)))) := by
           exact le_trans ( by norm_num ) ( Finset.prod_le_prod' fun x hx => show x ≥ 5 from Finset.mem_filter.mp hx |>.2.1 ) |> le_trans <| Finset.prod_le_prod_of_subset_of_one_le' ( Finset.filter_subset_filter _ <| Finset.range_mono <| Nat.le_refl _ ) fun x hx _ => Nat.one_le_iff_ne_zero.mpr <| Nat.Prime.ne_zero <| Finset.mem_filter.mp hx |>.2.2;
-        refine le_trans ?_ h_q_large;
+        refine' le_trans _ h_q_large;
         refine' pow_le_pow_right₀ ( by norm_num ) _;
         refine' le_trans _ ( Finset.card_mono <| show Finset.filter ( fun p => 5 ≤ p ∧ Nat.Prime p ) ( Finset.range ( 6 * n + 2 ) ) ≥ Finset.image ( fun k => Nat.nth Nat.Prime k ) ( Finset.Ico 2 ( Nat.log 2 n + 2 ) ) from _ );
         · rw [ Finset.card_image_of_injective _ fun a b h => Nat.nth_injective ( Nat.infinite_setOf_prime ) h ] ; simp +arith +decide;
-        · -- To prove the inequality, it suffices to show that for any $k$ in the range $2$
-          -- to $\log_2(n) + 1$, the $k$-th prime is less than $6n + 2$.
-          have h_prime_bound : ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
+        · have h_prime_bound : ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
             intros k hk
             have h_prime_bound : Nat.nth Nat.Prime k ≤ 2 ^ (k + 1) := by
               refine' Nat.le_of_lt_succ _;
@@ -127,12 +110,11 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
               refine' Finset.card_lt_card _;
               norm_num [ Finset.ssubset_def, Finset.subset_iff ];
               exact ⟨ fun x hx₁ hx₂ => ⟨ by linarith, hx₂ ⟩, by rcases Nat.exists_prime_lt_and_le_two_mul ( 2 * 2 ^ ‹_› ) ( by linarith [ Nat.one_le_pow ‹_› 2 zero_lt_two ] ) with ⟨ p, hp₁, hp₂ ⟩ ; exact ⟨ p, by linarith, hp₁, fun hx₃ => by linarith ⟩ ⟩;
-            refine lt_of_le_of_lt h_prime_bound ?_;
+            refine' lt_of_le_of_lt h_prime_bound _;
             exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by linarith [ Finset.mem_Ico.mp hk ] ) ) ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] );
           simp +zetaDelta at *;
           exact Finset.image_subset_iff.mpr fun k hk => Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( h_prime_bound k ( Finset.mem_Ico.mp hk |>.1 ) ( Finset.mem_Ico.mp hk |>.2 ) ), by linarith [ Nat.Prime.two_le ( Nat.prime_nth_prime k ), show Nat.nth Nat.Prime k ≥ 5 from Nat.le_trans ( by norm_num ) ( Nat.nth_monotone ( Nat.infinite_setOf_prime ) ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) ) ], Nat.prime_nth_prime k ⟩;
-      refine lt_of_lt_of_le ?_ h_q_large;
-      -- We'll use that $5^{Nat.log 2 n}$ grows much faster than $6n^2 + 10n + 3$.
+      refine' lt_of_lt_of_le _ h_q_large;
       have h_exp_growth : ∀ n ≥ 1000000000, 5 ^ (Nat.log 2 n) > 6 * n ^ 2 + 10 * n + 3 := by
         intro n hn
         induction' n using Nat.strong_induction_on with n ih;
@@ -153,3 +135,5 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
         · have : Nat.log 2 n ≥ 29 := Nat.le_log_of_pow_le ( by decide ) ( by linarith ) ; ( have : Nat.log 2 n ≤ 29 := Nat.le_of_lt_succ ( Nat.log_lt_of_lt_pow ( by linarith ) ( by linarith ) ) ; interval_cases Nat.log 2 n ; norm_num at *; );
           nlinarith only [ hn, hn_large ];
       exact h_exp_growth n hn_large.le
+
+end

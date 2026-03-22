@@ -30,100 +30,69 @@ import Mathlib.NumberTheory.Bertrand
 import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Tactic
 
-set_option linter.mathlibStandardSet false
-
-open scoped BigOperators
-open scoped Real
-open scoped Nat
-open scoped Classical
-open scoped Pointwise
-
-set_option maxHeartbeats 0
-set_option maxRecDepth 4000
-set_option synthInstance.maxHeartbeats 20000
-set_option synthInstance.maxSize 128
-
-set_option relaxedAutoImplicit false
-set_option autoImplicit false
+open scoped BigOperators Real Nat Pointwise
 
 noncomputable section
 
-/--
-#### Definition of the set of primes P_n.
-Let $\mathcal{P}_n$ denote the set of primes $p$ such that $5 \le p < 6n+2$.
---/
-def P_n (n : ℕ) : Finset ℕ := (Finset.range (6 * n + 2)).filter (fun p => 5 ≤ p ∧ p.Prime)
+/-- Definition of the set of primes P_n.
+Let $\mathcal{P}_n$ denote the set of primes $p$ such that $5 \le p < 6n+2$. -/
+def P_n (n : ℕ) : Finset ℕ :=
+  (Finset.range (6 * n + 2)).filter (fun p => 5 ≤ p ∧ p.Prime)
 
-/--
-#### Definition of the primorial q.
-Define the primorial $q = \prod_{p \in \mathcal{P}_n} p$.
---/
+/-- Definition of the primorial q.
+Define the primorial $q = \prod_{p \in \mathcal{P}_n} p$. -/
 def q (n : ℕ) : ℕ := (P_n n).prod (fun p => p)
 
-/--
-#### Definition of w as the cardinality of P_n.
-Let $w = |\mathcal{P}_n|$ be the number of distinct prime factors of $q$.
---/
+/-- Definition of w as the cardinality of P_n.
+Let $w = |\mathcal{P}_n|$ be the number of distinct prime factors of $q$. -/
 def w (n : ℕ) : ℕ := (P_n n).card
 
-/--
-#### Definition of the sorted list of primes and the accessor function p_i.
-Index the primes in $\mathcal{P}_n$ as $p_1, p_2, \dots, p_w$.
---/
+/-- Definition of the sorted list of primes and the accessor function p_i.
+Index the primes in $\mathcal{P}_n$ as $p_1, p_2, \dots, p_w$. -/
 def primes_list (n : ℕ) : List ℕ := (P_n n).sort (· ≤ ·)
 
-/--
-Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the implementation,
-so $p_0$ corresponds to the user's $p_1$.
---/
+/-- Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the implementation,
+so $p_0$ corresponds to the user's $p_1$. -/
 def p (n : ℕ) (i : Fin (w n)) : ℕ := (primes_list n).get (i.cast (by
-  unfold w primes_list;
-  simp_all only [Finset.length_sort];))
+  unfold w primes_list
+  simp_all only [Finset.length_sort]))
 
-/--
-#### Define r^K
-Define the Krafft tuple r^K such that for each 1 <= i <= w, r^K_i = floor((p_i+1)/6).
---/
+/-- Define r^K
+Define the Krafft tuple r^K such that for each 1 <= i <= w,
+r^K_i = floor((p_i+1)/6). -/
 def r_K (n : ℕ) (i : Fin (w n)) : ℕ := (p n i + 1) / 6
 
-/--
-#### Define A_n
-Define the target interval of indices: A_n = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}.
---/
-def A_n (n : ℕ) : Finset ℕ := Finset.Icc (6 * n^2 - 2 * n) (6 * n^2 + 10 * n + 3)
+/-- Define A_n
+Define the target interval of indices:
+A_n = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}. -/
+def A_n (n : ℕ) : Finset ℕ :=
+  Finset.Icc (6 * n ^ 2 - 2 * n) (6 * n ^ 2 + 10 * n + 3)
 
-/--
-#### Define the local hit function g_i(x)
-Define the local hit function $g_i : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ for each prime
-index $i \in \{1, \dots, w\}$.
+/-- Define the local hit function g_i(x)
+Define the local hit function $g_i : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$
+for each prime index $i \in \{1, \dots, w\}$.
 - $g_i(x) = 1$ if $x \equiv r^K_i \pmod{p_i}$ or $x \equiv -r^K_i \pmod{p_i}$.
-- Otherwise, $g_i(x) = 0$.
---/
+- Otherwise, $g_i(x) = 0$. -/
 noncomputable def g (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : ℝ :=
   if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i))
-    ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0
+    ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i))
+  then 1 else 0
 
-/--
-#### Define the global additive hit counter c(x)
-Define the global additive hit counter $c : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ as the
-sum of all local hits:
-$$ c(x) = \sum_{i=1}^w g_i(x) $$
---/
+/-- Define the global additive hit counter c(x)
+Define the global additive hit counter
+$c : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ as the sum of all local hits:
+$$ c(x) = \sum_{i=1}^w g_i(x) $$ -/
 noncomputable def c (n : ℕ) (x : ZMod (q n)) : ℝ :=
   ∑ i : Fin (w n), g n i x
 
-/--
-#### Define the total weighted mass of the interval S_1(n)
+/-- Define the total weighted mass of the interval S_1(n)
 Define the total weighted mass of the interval $S_1(n)$:
-$$ S_1(n) = \sum_{x \in \mathcal{A}_n} W(x) $$
---/
+$$ S_1(n) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
 noncomputable def S_1 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n))
 
-/--
-#### Define the weighted hit count S_2(n)
+/-- Define the weighted hit count S_2(n)
 Define the weighted hit count $S_2(n)$:
-$$ S_2(n) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$
---/
+$$ S_2(n) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
 noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n)) * c n (x : ZMod (q n))
