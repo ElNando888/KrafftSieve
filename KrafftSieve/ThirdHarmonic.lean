@@ -799,4 +799,46 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
         norm_num at this
         interval_cases p n i <;> norm_num at *;
 
+
+/-- Sum of reciprocals of primes in the sieve window -/
+def H_spec (n : ℕ) : ℝ := ∑ p ∈ P_n n, (1 : ℝ) / p
+
+/-- The main term of the sieve: 2H(n) -/
+def mainTerm (n : ℕ) : ℝ := 2 * H_spec n
+
+/-- The resonance strength for a single prime p: cos(π/p) -/
+def resonanceStrength (p : ℕ) : ℝ := Real.cos (Real.pi / p)
+
+/-- The total resonance capacity: Σ (2/p)·cos(π/p) -/
+def resonanceCapacity (n : ℕ) : ℝ :=
+  ∑ p ∈ P_n n, (2 : ℝ) / p * resonanceStrength p
+
+/--
+The Harmonic Deficit (Parity Barrier Collision)
+The resonance capacity of any purely one-dimensional 3rd harmonic weight system is strictly
+overpowered by the sieve aggregate main density. This formalizes the collision with the 
+Sieve Parity limit.
+-/
+lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
+    resonanceCapacity n < mainTerm n := by
+  -- By definition of $resonanceCapacity$, we know that each term in the sum is strictly less
+  -- than the corresponding term in the sum for $mainTerm$.
+  have h_lt : ∀ p ∈ P_n n, (2 : ℝ) / p * Real.cos (Real.pi / p) < (2 : ℝ) / p := by
+    intros p hp
+    have h_cos_lt_one : Real.cos (Real.pi / p) < 1 := by
+      nlinarith [ Real.sin_sq_add_cos_sq ( Real.pi / p ), 
+      Real.sin_pos_of_pos_of_lt_pi ( show 0 < Real.pi / p from
+        div_pos Real.pi_pos <| Nat.cast_pos.2 <| Nat.Prime.pos <| Finset.mem_filter.1 hp |>.2.2 ) <|
+        div_lt_self Real.pi_pos <| Nat.one_lt_cast.2 <| Nat.Prime.one_lt <|
+        Finset.mem_filter.1 hp |>.2.2 ]
+    exact mul_lt_of_lt_one_right (by
+    exact div_pos zero_lt_two ( Nat.cast_pos.mpr ( Nat.Prime.pos (by unfold P_n at hp; aesop) ) ))
+      h_cos_lt_one;
+  -- Since the sum of strictly less terms is strictly less than the sum of the corresponding terms,
+  --we can apply this to conclude the proof.
+  have h_sum_lt : ∑ p ∈ P_n n, (2 : ℝ) / p * Real.cos (Real.pi / p) < ∑ p ∈ P_n n, (2 : ℝ) / p := by
+    exact Finset.sum_lt_sum_of_nonempty ( Finset.nonempty_of_ne_empty hn ) h_lt;
+  convert h_sum_lt using 1 ; norm_num [ div_eq_mul_inv, Finset.mul_sum _ _ _ ] ; ring_nf!;
+  unfold mainTerm H_spec; norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ] ;
+
 end
