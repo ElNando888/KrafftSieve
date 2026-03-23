@@ -27,10 +27,6 @@ set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
-set_option linter.style.multiGoal false
-set_option linter.style.longLine false
-set_option linter.style.maxHeartbeats false
-set_option linter.style.docString false
 set_option linter.style.induction false
 set_option linter.style.emptyLine false
 
@@ -70,7 +66,7 @@ lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
 set_option maxHeartbeats 400000 in
-/-- q(n) is at least 10^20 for n >= 10. -/
+/- q(n) is at least 10^20 for n >= 10. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
   induction' n, hn using Nat.le_induction with n hn ih;
   · native_decide +revert;
@@ -80,7 +76,7 @@ lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
         Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ( q_mono n )
 
 set_option maxHeartbeats 800000 in
-/-- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
+/- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
 theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
   by_cases hn10 : n < 10
   · interval_cases n <;> native_decide
@@ -93,27 +89,49 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
         _ < 10^20 := by native_decide
     · have hn_large : n > 1000000000 := by linarith
       have h_q_large : q n ≥ 5 ^ (Nat.log 2 n) := by
-        have h_q_large : q n ≥ 5 ^ (Finset.card (Finset.filter (fun p => 5 ≤ p ∧ p.Prime) (Finset.range (6 * n + 2)))) := by
-          exact le_trans ( by norm_num ) ( Finset.prod_le_prod' fun x hx => show x ≥ 5 from Finset.mem_filter.mp hx |>.2.1 ) |> le_trans <| Finset.prod_le_prod_of_subset_of_one_le' ( Finset.filter_subset_filter _ <| Finset.range_mono <| Nat.le_refl _ ) fun x hx _ => Nat.one_le_iff_ne_zero.mpr <| Nat.Prime.ne_zero <| Finset.mem_filter.mp hx |>.2.2;
+        have h_q_large : q n ≥ 5 ^ (Finset.card (Finset.filter (fun p => 5 ≤ p ∧ p.Prime)
+        (Finset.range (6 * n + 2)))) := by
+          exact le_trans ( by norm_num ) ( Finset.prod_le_prod' fun x hx =>
+            show x ≥ 5 from Finset.mem_filter.mp hx |>.2.1 ) |> le_trans <|
+            Finset.prod_le_prod_of_subset_of_one_le' ( Finset.filter_subset_filter _ <|
+            Finset.range_mono <| Nat.le_refl _ ) fun x hx _ => Nat.one_le_iff_ne_zero.mpr <|
+            Nat.Prime.ne_zero <| Finset.mem_filter.mp hx |>.2.2;
         refine' le_trans _ h_q_large;
         refine' pow_le_pow_right₀ ( by norm_num ) _;
-        refine' le_trans _ ( Finset.card_mono <| show Finset.filter ( fun p => 5 ≤ p ∧ Nat.Prime p ) ( Finset.range ( 6 * n + 2 ) ) ≥ Finset.image ( fun k => Nat.nth Nat.Prime k ) ( Finset.Ico 2 ( Nat.log 2 n + 2 ) ) from _ );
-        · rw [ Finset.card_image_of_injective _ fun a b h => Nat.nth_injective ( Nat.infinite_setOf_prime ) h ] ; simp +arith +decide;
-        · have h_prime_bound : ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
+        refine' le_trans _ ( Finset.card_mono <|
+          show Finset.filter ( fun p => 5 ≤ p ∧ Nat.Prime p ) ( Finset.range ( 6 * n + 2 ) ) ≥
+          Finset.image (fun k => Nat.nth Nat.Prime k) (Finset.Ico 2 ( Nat.log 2 n + 2 )) from _ );
+        · rw [ Finset.card_image_of_injective _ fun a b h =>
+            Nat.nth_injective ( Nat.infinite_setOf_prime ) h ]
+          simp +arith +decide
+        · have h_prime_bound :
+          ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
             intros k hk
             have h_prime_bound : Nat.nth Nat.Prime k ≤ 2 ^ (k + 1) := by
               refine' Nat.le_of_lt_succ _;
               refine' Nat.nth_lt_of_lt_count _;
-              refine' Nat.le_induction _ _ k ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) <;> intros <;> simp_all +decide [ Nat.pow_succ' ];
+              refine' Nat.le_induction _ _ k ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) <;>
+                intros <;> simp_all +decide only [ Nat.pow_succ' ];
               rw [ Nat.count_eq_card_filter_range ] at *;
               refine' lt_of_le_of_lt ( Nat.succ_le_of_lt ‹_› ) _;
               refine' Finset.card_lt_card _;
               norm_num [ Finset.ssubset_def, Finset.subset_iff ];
-              exact ⟨ fun x hx₁ hx₂ => ⟨ by linarith, hx₂ ⟩, by rcases Nat.exists_prime_lt_and_le_two_mul ( 2 * 2 ^ ‹_› ) ( by linarith [ Nat.one_le_pow ‹_› 2 zero_lt_two ] ) with ⟨ p, hp₁, hp₂ ⟩ ; exact ⟨ p, by linarith, hp₁, fun hx₃ => by linarith ⟩ ⟩;
+              exact ⟨ fun x hx₁ hx₂ => ⟨ by linarith, hx₂ ⟩, by
+                rcases Nat.exists_prime_lt_and_le_two_mul ( 2 * 2 ^ ‹_› )
+                  ( by linarith [ Nat.one_le_pow ‹_› 2 zero_lt_two ] ) with ⟨ p, hp₁, hp₂ ⟩ ;
+                exact ⟨ p, by linarith, hp₁, fun hx₃ => by linarith ⟩ ⟩;
             refine' lt_of_le_of_lt h_prime_bound _;
-            exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by linarith [ Finset.mem_Ico.mp hk ] ) ) ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] );
+            exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by
+              linarith [ Finset.mem_Ico.mp hk ] ) )
+              ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] );
           simp +zetaDelta at *;
-          exact Finset.image_subset_iff.mpr fun k hk => Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( h_prime_bound k ( Finset.mem_Ico.mp hk |>.1 ) ( Finset.mem_Ico.mp hk |>.2 ) ), by linarith [ Nat.Prime.two_le ( Nat.prime_nth_prime k ), show Nat.nth Nat.Prime k ≥ 5 from Nat.le_trans ( by norm_num ) ( Nat.nth_monotone ( Nat.infinite_setOf_prime ) ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) ) ], Nat.prime_nth_prime k ⟩;
+          exact Finset.image_subset_iff.mpr fun k hk => Finset.mem_filter.mpr
+            ⟨ Finset.mem_range.mpr ( h_prime_bound k ( Finset.mem_Ico.mp hk |>.1 )
+              ( Finset.mem_Ico.mp hk |>.2 ) ),
+              by linarith [ Nat.Prime.two_le ( Nat.prime_nth_prime k ),
+                show Nat.nth Nat.Prime k ≥ 5 from
+                  Nat.le_trans ( by norm_num ) ( Nat.nth_monotone ( Nat.infinite_setOf_prime )
+                    ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) ) ], Nat.prime_nth_prime k ⟩;
       refine' lt_of_lt_of_le _ h_q_large;
       have h_exp_growth : ∀ n ≥ 1000000000, 5 ^ (Nat.log 2 n) > 6 * n ^ 2 + 10 * n + 3 := by
         intro n hn
@@ -122,17 +140,25 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
         · have h_exp_growth : 5 ^ (Nat.log 2 n) ≥ 5 ^ (Nat.log 2 (n / 2) + 1) := by
             rw [ show Nat.log 2 n = Nat.log 2 ( n / 2 ) + 1 from ?_ ];
             rw [ Nat.log_eq_iff ] <;> norm_num;
-            rw [ Nat.sub_add_cancel ( Nat.log_pos ( by norm_num ) ( by linarith ) ) ] ; exact ⟨ Nat.pow_le_of_le_log ( by linarith ) ( by linarith ), Nat.lt_pow_of_log_lt ( by linarith ) ( by linarith ) ⟩ ;
-          have h_exp_growth : 5 ^ (Nat.log 2 (n / 2) + 1) ≥ 5 * (6 * (n / 2) ^ 2 + 10 * (n / 2) + 3) := by
+            rw [ Nat.sub_add_cancel ( Nat.log_pos ( by norm_num ) ( by linarith ) ) ]
+            exact ⟨ Nat.pow_le_of_le_log ( by linarith ) ( by linarith ),
+            Nat.lt_pow_of_log_lt ( by linarith ) ( by linarith ) ⟩ ;
+          have h_exp_growth : 5 ^ (Nat.log 2 (n / 2) + 1) ≥
+            5 * (6 * (n / 2) ^ 2 + 10 * (n / 2) + 3) := by
             have h_exp_growth : 5 ^ (Nat.log 2 (n / 2)) > 6 * (n / 2) ^ 2 + 10 * (n / 2) + 3 := by
               by_cases hn_large : n / 2 ≥ 1000000000;
               · exact ih _ ( Nat.div_lt_self ( by linarith ) ( by norm_num ) ) hn_large;
               · have h_exp_growth : Nat.log 2 (n / 2) ≥ 29 := by
                   exact Nat.le_log_of_pow_le ( by norm_num ) ( by omega );
-                exact lt_of_lt_of_le ( by nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos ] ) ( Nat.pow_le_pow_right ( by decide ) h_exp_growth );
+                exact lt_of_lt_of_le ( by
+                  nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos ] )
+                  ( Nat.pow_le_pow_right ( by decide ) h_exp_growth );
             rw [ pow_succ' ] ; linarith;
-          nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos, h_exp_growth, ‹5 ^ Nat.log 2 n ≥ 5 ^ ( Nat.log 2 ( n / 2 ) + 1 ) › ];
-        · have : Nat.log 2 n ≥ 29 := Nat.le_log_of_pow_le ( by decide ) ( by linarith ) ; ( have : Nat.log 2 n ≤ 29 := Nat.le_of_lt_succ ( Nat.log_lt_of_lt_pow ( by linarith ) ( by linarith ) ) ; interval_cases Nat.log 2 n ; norm_num at *; );
+          nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos, h_exp_growth,
+            ‹5 ^ Nat.log 2 n ≥ 5 ^ ( Nat.log 2 ( n / 2 ) + 1 ) › ];
+        · have : Nat.log 2 n ≥ 29 := Nat.le_log_of_pow_le ( by decide ) ( by linarith )
+          ( have : Nat.log 2 n ≤ 29 := Nat.le_of_lt_succ ( Nat.log_lt_of_lt_pow ( by linarith )
+            ( by linarith ) ) ; interval_cases Nat.log 2 n ; norm_num at *; );
           nlinarith only [ hn, hn_large ];
       exact h_exp_growth n hn_large.le
 
