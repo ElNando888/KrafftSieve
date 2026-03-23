@@ -399,7 +399,7 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
     exact ℝ;
     exact EuclideanSpace ℝ ( Idx n );
     all_goals try infer_instance;
-    exact Submodule.span ℝ { v : EuclideanSpace ℝ ( Idx n ) | Q_1 n ( fun i => v i ) = 0 };
+    exact Submodule.span ℝ { v : EuclideanSpace ℝ ( Idx n ) | Q_1 n ( fun i => v i ) = 0 }
     · constructor;
       intro v;
       have h_decomp : ∀ v : EuclideanSpace ℝ (Idx n),
@@ -421,7 +421,8 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
     · constructor <;> intro h
       · exact Submodule.sup_orthogonal_of_hasOrthogonalProjection
       · convert h using 1;
-        constructor <;> intro h <;> rw [ Submodule.eq_top_iff' ] at * <;> simp_all +decide [ Submodule.mem_sup, Submodule.mem_orthogonal ];
+        constructor <;> intro h <;> rw [ Submodule.eq_top_iff' ] at * <;>
+          simp_all +decide [ Submodule.mem_sup, Submodule.mem_orthogonal ]
         intro x;
         obtain ⟨ y, hy, z, hz, h ⟩ := h ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm x )
         refine' ⟨ fun i => y i, _, fun i => z i, _, _ ⟩

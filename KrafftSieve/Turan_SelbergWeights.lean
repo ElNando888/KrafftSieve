@@ -42,7 +42,7 @@ open scoped Pointwise
 noncomputable section
 
 /--
-#### Definition of the permitted residue classes A_i.
+Definition of the permitted residue classes A_i.
 Define the set of permitted residue classes for each prime as
 $A_i = (\mathbb{Z}/p_i\mathbb{Z}) \setminus \{\pm r_i \pmod{p_i}\}$.
 -/
@@ -63,7 +63,7 @@ def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)
   Finset.univ.filter (fun x => x ≠ (r i : ZMod (p n i)) ∧ x ≠ -(r i : ZMod (p n i)))
 
 /--
-#### Definition of the global set of surviving residues A.
+Definition of the global set of surviving residues A.
 Define the global set of surviving residues $A \subseteq \mathbb{Z}/q\mathbb{Z}$ such that
 $x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$.
 -/
@@ -74,7 +74,7 @@ def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
   Finset.univ.filter (fun x => ∀ i : Fin (w n), (x.cast : ZMod (p n i)) ∈ A_i n r i)
 
 /--
-#### Definition of the indicator function f.
+Definition of the indicator function f.
 Define the indicator function $f : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ such that
 $f(x) = 1$ if $x \in A$, and $f(x) = 0$ otherwise.
 -/
@@ -372,7 +372,7 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
       exact Finset.sum_le_sum h_Wc_ge_W
 
 /--
-#### Definition of the Krafft Admissibility condition
+Definition of the Krafft Admissibility condition
 Existence of a weight function $W$ such that $S_2(n) < S_1(n)$.
 -/
 def Krafft_Admissibility (n : ℕ) : Prop :=
