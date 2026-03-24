@@ -85,14 +85,14 @@ $$ c(x) = \sum_{i=1}^w g_i(x) $$ -/
 noncomputable def c (n : ℕ) (x : ZMod (q n)) : ℝ :=
   ∑ i : Fin (w n), g n i x
 
-/-- Define the total weighted mass of the interval S_1(n)
-Define the total weighted mass of the interval $S_1(n)$:
-$$ S_1(n) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
+/-- Define the total weighted mass of the interval S_1(n, W)
+Define the total weighted mass of the interval $S_1(n, W)$:
+$$ S_1(n, W) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
 noncomputable def S_1 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n))
 
-/-- Define the weighted hit count S_2(n)
-Define the weighted hit count $S_2(n)$:
-$$ S_2(n) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
+/-- Define the weighted hit count S_2(n, W)
+Define the weighted hit count $S_2(n, W)$:
+$$ S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
 noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n)) * c n (x : ZMod (q n))

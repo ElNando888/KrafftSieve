@@ -92,7 +92,7 @@ theorem survives_iff (n : ℕ) (x : ZMod (q n)) :
       unfold f A A_i; simp +decide [Finset.mem_filter]
 
 /-
-Krafft Algebraic Equivalence (\label{lem:krafft-algebraic-equivalence}): For any prime p >= 5 
+Krafft Algebraic Equivalence: For any prime p >= 5 
 and any integer x, let r = floor((p+1)/6). Then x = ±r (mod p) if and only if 
 p | (6x-1) or p | (6x+1).
 -/
@@ -122,7 +122,7 @@ lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (
       grind
 
 /-
-Interval Projection Bound (\label{lem:interval-projection-bound}): For any x in A_n, the 
+Interval Projection Bound: For any x in A_n, the 
 value 6x+1 is strictly bounded by the square of the next possible prime after P_n: 
 6x + 1 < (6n+5)^2.
 -/
@@ -202,7 +202,7 @@ lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1)
       simp_all +decide [r_K]
 
 /-
-The Sieve Isomorphism (\label{lem:sieve-isomorphism}): Assume x in A_n. By the Fundamental 
+The Sieve Isomorphism: Assume x in A_n. By the Fundamental 
 Theorem of Arithmetic and the Sieve of Eratosthenes bound from earlier, x survives the Krafft 
 sieve if and only if both 6x-1 and 6x+1 are prime numbers.
 -/
@@ -321,7 +321,7 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
                 List.get_mem _ _ ) )
 
 /--
-Additive Sieve Isomorphism (\label{thm:additive-sieve-isomorphism}):
+Additive Sieve Isomorphism:
 Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$
 and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
 $$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
@@ -335,7 +335,7 @@ lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ 
       unfold A_i at this; simp_all only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and])
 
 /--
-Non-negative Hits (\label{lem:non-negative-hits}):
+Non-negative Hits:
 Using the definition of $g_i(x)$ and $c(x)$, prove that for any $x$, the hit counter is
 non-negative: $c(x) \ge 0$. Furthermore, note that because $c(x)$ is a sum of indicator
 functions, if $c(x) < 1$, then $c(x) = 0$.
@@ -346,8 +346,8 @@ lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
       aesop
 
 /--
-The Weighted Existence Principle (\label{thm:weighted-existence-principle}):
-Assume there exists a specific configuration such that $S_2(n) < S_1(n)$. Prove that there must
+The Weighted Existence Principle:
+Assume there exists a specific configuration such that $S_2(n, W) < S_1(n, W)$. Prove that there must
 exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
 -/
 theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : ∀ x, W x ≥ 0)
@@ -373,7 +373,7 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
 
 /--
 Definition of the Krafft Admissibility condition
-Existence of a weight function $W$ such that $S_2(n) < S_1(n)$.
+Existence of a weight function $W$ such that $S_2(n, W) < S_1(n, W)$.
 -/
 def Krafft_Admissibility (n : ℕ) : Prop :=
   ∃ W : ZMod (q n) → ℝ, (∀ x, W x ≥ 0) ∧
@@ -381,11 +381,11 @@ def Krafft_Admissibility (n : ℕ) : Prop :=
   S_2 n W < S_1 n W
 
 /-
-The Krafft Sieve Guarantee (\label{thm:krafft-sieve-guarantee}):
+The Krafft Sieve Guarantee:
 Admit that there exists a valid non-negative weight function $W(x)$ supported on
 $\mathcal{A}_n$ such that the magnitude of the negative third-harmonic resonance strictly
 overpowers the main term, yielding:
-$$ S_2(n) < S_1(n) $$
+$$ S_2(n, W) < S_1(n, W) $$
 Conclude that by the Weighted Existence Principle and the Additive Sieve Isomorphism, a Twin Prime
 index is unconditionally guaranteed in $\mathcal{A}_n$.
 -/

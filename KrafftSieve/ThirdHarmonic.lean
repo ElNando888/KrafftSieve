@@ -68,7 +68,7 @@ noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
 
 /-
 Lemma: Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
-$\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n)$.
+$\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n, W)$.
 -/
 lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
@@ -88,11 +88,11 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
       · intro x hx; contrapose! h_supp; aesop;
 
 /-
-Compact Support Equivalence (\label{lem:compact-support-equivalence})
+Compact Support Equivalence
 Assume the weight function is strictly supported inside the interval:
-$\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n)$ is equivalent
+$\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n, W)$ is equivalent
 to the full space sum, which yields the zero-frequency Fourier coefficient:
-$$ S_1(n) = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) = q \hat{W}(0) $$
+$$ S_1(n, W) = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) = q \hat{W}(0) $$
 -/
 lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
@@ -184,7 +184,7 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
         norm_cast ; ring_nf
 
 /-
-The Plancherel Hit Expansion (\label{lem:plancherel-hit-expansion})
+The Plancherel Hit Expansion
 Using the compact support of $W(x)$ and admitting Plancherel's theorem for the inner product
 of $W(x)$ and $g_i(x)$, expand the weighted hit count $S_2(n)$ into the Fourier domain:
 $$ S_2(n) = q \sum_{i=1}^w \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
@@ -206,7 +206,7 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
           (Finset.sum_congr rfl fun _ _ => by ac_rfl))
 
 /-
-Dirac Comb Non-Zero Values (\label{lem:dirac-comb-nonzero})
+Dirac Comb Non-Zero Values
 For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, the Fourier
 transform evaluates to:
 $$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
@@ -429,7 +429,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
         · exact Nat.mul_div_le _ _
 
 /-
-Dirac Comb Zero Values (\label{lem:dirac-comb-zero})
+Dirac Comb Zero Values
 For any frequency $h$ that is NOT a multiple of $q/p_i$, the Fourier transform of the local
 hit function is zero:
 $$ \hat{g}_i(h) = 0 $$
@@ -610,11 +610,11 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
           exact h_factor x <| Finset.mem_range.mp <| Finset.mem_filter.mp hx |>.1
 
 /-
-The Resonant Sieve Equation (\label{thm:resonant-sieve-equation})
+The Resonant Sieve Equation
 By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$, 
 and applying the Dirac Comb lemmas, establish the exact equation for the weighted 
 hit mass $S_2(n)$:
-$$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} +
+$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} +
   q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
 set_option maxHeartbeats 800000 in
@@ -719,7 +719,7 @@ theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
           Finset.sum_add_distrib, h_zero_frequency]
 
 /-
-The Exact Krafft Cosine (\label{lem:exact-krafft-cosine})
+The Exact Krafft Cosine
 Using the definition $r^K_i = \lfloor(p_i+1)/6\rfloor$, admit that for all primes $p_i \ge 5$,
 the cosine at the third harmonic evaluates exactly to the negative cosine of a microscopic
 angle:
@@ -765,11 +765,11 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
         nlinarith [Real.pi_pos, mul_inv_cancel₀ h_nz]
 
 /-
-The Third Harmonic Extraction (\label{lem:third-harmonic-extraction})
+The Third Harmonic Extraction
 Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ is concentrated
 strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies
 to:
-$$ S_2(n) = S_1(n) \sum_{i=1}^w \frac{2}{p_i} -
+$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} -
   q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
 -/
 set_option maxHeartbeats 800000 in

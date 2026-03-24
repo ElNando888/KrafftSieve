@@ -218,7 +218,7 @@ lemma variance_expansion (n : ℕ) (r : Fin (w n) → ℕ) :
       by_cases h : q n = 0 <;> simp_all +decide [ pow_three, sq, mul_assoc ] ; ring
 
 /-
-Parseval's Identity for the Sieve (\label{thm:parseval-identity}): The variance of the indicator function f is
+Parseval's Identity for the Sieve: The variance of the indicator function f is
 strictly equal to the sum of the squared magnitudes of its non-zero Fourier coefficients.
 -/
 theorem parseval_identity (n : ℕ) (r : Fin (w n) → ℕ) :
@@ -258,7 +258,7 @@ lemma f_hat_conj_symm (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
       rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] ; norm_cast ; aesop
 
 /-
-Harmonic Variance Lower Bound (\label{thm:harmonic-variance-lower-bound}): For any non-zero frequency h, the variance is at least
+Harmonic Variance Lower Bound: For any non-zero frequency h, the variance is at least
 twice the squared magnitude of the Fourier coefficient at h.
 -/
 lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) (h_ne_zero : h ≠ 0) :
