@@ -15,6 +15,7 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
 import KrafftSieve.Basic
+
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,

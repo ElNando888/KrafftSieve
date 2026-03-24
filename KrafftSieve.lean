@@ -5,5 +5,5 @@ Authors: Fernando Portela
 -/
 
 import KrafftSieve.ThirdHarmonic
-import KrafftSieve.Turan_OptimalWeights
+import KrafftSieve.OptimalWeights
 import KrafftSieve.Variance
