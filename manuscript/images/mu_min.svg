@@ -1,0 +1,945 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   contentStyleType="text/css"
+   data-diagram-type="DESCRIPTION"
+   height="560px"
+   preserveAspectRatio="none"
+   style="width:1767px;height:560px;background:#FFFFFF;"
+   version="1.1"
+   viewBox="0 0 1767 560"
+   width="1767px"
+   zoomAndPan="magnify"
+   id="svg42"
+   sodipodi:docname="mu_min.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview42"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.55"
+     inkscape:cx="441.6129"
+     inkscape:cy="277.74194"
+     inkscape:window-width="2034"
+     inkscape:window-height="1152"
+     inkscape:window-x="0"
+     inkscape:window-y="44"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg42" />
+<?plantuml 1.2026.3beta5?>  <defs
+     id="defs1">
+    <marker
+       style="overflow:visible"
+       id="marker46"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Dart arrow"
+       markerWidth="1.6"
+       markerHeight="1.6"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid"
+       markerUnits="userSpaceOnUse">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         transform="scale(-0.5)"
+         id="path46" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker44"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Dart arrow"
+       markerWidth="1.6"
+       markerHeight="1.6"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid"
+       markerUnits="userSpaceOnUse">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         transform="scale(-0.5)"
+         id="path44" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="DartArrow"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="Dart arrow"
+       markerWidth="1.60000002"
+       markerHeight="1.60000002"
+       viewBox="0 0 1 1"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid"
+       markerUnits="strokeWidth">
+      <path
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         transform="scale(-0.5)"
+         id="path6" />
+    </marker>
+  </defs>
+  <g
+     class="entity"
+     data-qualified-name="Krafft_Admissibility"
+     data-source-line="15"
+     id="ent0002">
+    <rect
+       fill="#98fb98"
+       height="22.2969"
+       rx="2.5"
+       ry="2.5"
+       style="stroke:#00ff7f;stroke-width:0.5"
+       width="154.6611"
+       x="705.28003"
+       y="228.23061"
+       id="rect2" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="134.6611"
+       x="715.28003"
+       y="244.22569"
+       id="text2">Krafft_Admissibility</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="W_truly_multi_nonneg"
+     data-source-line="16"
+     id="ent0003"
+     transform="translate(137.81111,-96.290009)">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="175.59959"
+       x="356.81"
+       y="221.23061"
+       id="rect3" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="155.59959"
+       x="366.81"
+       y="244.22569"
+       id="text3">W_truly_multi_nonneg</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="mu_min_lt_one_implies_admissibility"
+     data-source-line="17"
+     id="ent0004">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="277.24319"
+       x="425.98999"
+       y="413.8306"
+       id="rect4" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="257.24319"
+       x="435.98999"
+       y="436.82571"
+       id="text4">mu_min_lt_one_implies_admissibility</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="krafft_sieve_guarantee"
+     data-source-line="18"
+     id="ent0005">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="180.7471"
+       x="856.23999"
+       y="413.8306"
+       id="rect5" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="160.7471"
+       x="866.23999"
+       y="436.82571"
+       id="text5">krafft_sieve_guarantee</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="weighted_existence_principle"
+     data-source-line="19"
+     id="ent0006">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="226.4521"
+       x="880.38"
+       y="317.53061"
+       id="rect6" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="206.4521"
+       x="890.38"
+       y="340.5257"
+       id="text6">weighted_existence_principle</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="primes_in_range_eq_P_n"
+     data-source-line="20"
+     id="ent0007">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="191.3633"
+       x="725.92999"
+       y="124.9406"
+       id="rect7" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="171.3633"
+       x="735.92999"
+       y="147.9357"
+       id="text7">primes_in_range_eq_P_n</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="not_dvd_of_survives"
+     data-source-line="21"
+     id="ent0008">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="161.77049"
+       x="1283.73"
+       y="124.9406"
+       id="rect8" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="141.77049"
+       x="1293.73"
+       y="147.9357"
+       id="text8">not_dvd_of_survives</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="krafft_sieve_guarantee_with_mu_min"
+     data-source-line="22"
+     id="ent0009">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="280.36041"
+       x="616.42999"
+       y="510.12061"
+       id="rect9" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="260.36041"
+       x="626.42999"
+       y="533.11572"
+       id="text9">krafft_sieve_guarantee_with_mu_min</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="non_negative_hits"
+     data-source-line="23"
+     id="ent0010">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="147.0869"
+       x="920.07001"
+       y="221.23061"
+       id="rect10" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="127.0869"
+       x="930.07001"
+       y="244.22569"
+       id="text10">non_negative_hits</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="prime_of_no_prime_factors_lt"
+     data-source-line="24"
+     id="ent0011">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="225.1875"
+       x="1024.02"
+       y="124.9406"
+       id="rect11" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="205.1875"
+       x="1034.02"
+       y="147.9357"
+       id="text11">prime_of_no_prime_factors_lt</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="survives_iff"
+     data-source-line="25"
+     id="ent0012">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="99.037102"
+       x="1088.09"
+       y="28.6406"
+       id="rect12" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="79.037102"
+       x="1098.09"
+       y="51.6357"
+       id="text12">survives_iff</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="krafft_algebraic_equivalence"
+     data-source-line="26"
+     id="ent0013">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="221.3799"
+       x="1320.92"
+       y="28.6406"
+       id="rect13" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="201.3799"
+       x="1330.92"
+       y="51.6357"
+       id="text13">krafft_algebraic_equivalence</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="S_1_eq_Q_1"
+     data-source-line="27"
+     id="ent0014">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="103.2207"
+       x="567"
+       y="221.23061"
+       id="rect14" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="83.220703"
+       x="577"
+       y="244.22569"
+       id="text14">S_1_eq_Q_1</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="interval_projection_bound"
+     data-source-line="28"
+     id="ent0015"
+     transform="translate(-161.29032,96.290009)">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="201.6855"
+       x="1551.77"
+       y="124.9406"
+       id="rect15" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="181.6855"
+       x="1561.77"
+       y="147.9357"
+       id="text15">interval_projection_bound</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="sufficiency_of_Q"
+     data-source-line="29"
+     id="ent0016">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="133.4834"
+       x="424.87"
+       y="317.53061"
+       id="rect16" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="113.4834"
+       x="434.87"
+       y="340.5257"
+       id="text16">sufficiency_of_Q</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="S_2_eq_Q_2"
+     data-source-line="30"
+     id="ent0017"
+     transform="translate(269.93565)">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="103.2207"
+       x="7"
+       y="221.23061"
+       id="rect17" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="83.220703"
+       x="17"
+       y="244.22569"
+       id="text17">S_2_eq_Q_2</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="sieve_isomorphism"
+     data-source-line="31"
+     id="ent0018">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="153.98441"
+       x="1173.62"
+       y="221.23061"
+       id="rect18" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="133.98441"
+       x="1183.62"
+       y="244.22569"
+       id="text18">sieve_isomorphism</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="W_truly_multi_support"
+     data-source-line="32"
+     id="ent0019"
+     transform="translate(131.65565,-96.290009)">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="176.666"
+       x="145.28"
+       y="221.23061"
+       id="rect19" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="156.666"
+       x="155.28"
+       y="244.22569"
+       id="text19">W_truly_multi_support</text>
+  </g>
+  <g
+     class="entity"
+     data-qualified-name="additive_sieve_isomorphism"
+     data-source-line="33"
+     id="ent0020">
+    <rect
+       fill="#87cefa"
+       height="36.296902"
+       rx="12.5"
+       ry="12.5"
+       style="stroke:#00008b;stroke-width:0.5"
+       width="217.50391"
+       x="1141.86"
+       y="317.53061"
+       id="rect20" />
+    <text
+       fill="#000000"
+       font-family="helvetica"
+       font-size="14px"
+       lengthAdjust="spacing"
+       textLength="197.50391"
+       x="1151.86"
+       y="340.5257"
+       id="text20">additive_sieve_isomorphism</text>
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0002"
+     data-entity-2="ent0016"
+     data-link-type="dependency"
+     data-source-line="35"
+     id="lnk21">
+    <path
+       d="m 744.0823,252.8605 c -49.49,16.04 -138.1123,44.7601 -198.0123,64.1701"
+       fill="none"
+       id="Krafft_Admissibility-backto-sufficiency_of_Q"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="745.0336,252.5522 742.4617,257.5906 749.79,251.0106 739.9952,249.9803 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon20" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0014"
+     data-entity-2="ent0016"
+     data-link-type="dependency"
+     data-source-line="37"
+     id="lnk23">
+    <path
+       d="m 590.2021,261.4766 c -22.81,16.93 -52.3621,38.874 -75.1321,55.784"
+       fill="none"
+       id="S_1_eq_Q_1-backto-sufficiency_of_Q"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="591.0051,260.8806 590.1771,266.4765 595.02,257.9006 585.4091,260.0526 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon22" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0016"
+     data-entity-2="ent0004"
+     data-link-type="dependency"
+     data-source-line="40"
+     id="lnk26">
+    <path
+       d="m 508.6728,358.7152 c 13.09,16.91 29.2372,37.7754 42.3872,54.7554"
+       fill="none"
+       id="sufficiency_of_Q-backto-mu_min_lt_one_implies_admissibility"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="508.0606,357.9244 513.6722,358.639 505,353.9706 507.3461,363.536 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon25" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0002"
+     data-entity-2="ent0004"
+     data-link-type="dependency"
+     data-source-line="41"
+     id="lnk27">
+    <path
+       d="M 766.0634,254.8504 C 730.3634,286.0704 629.25,374.4706 584.74,413.3806"
+       fill="none"
+       id="Krafft_Admissibility-backto-mu_min_lt_one_implies_admissibility"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="766.8162,254.1921 766.4383,259.8363 770.58,250.9006 761.172,253.8142 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon26" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0010"
+     data-entity-2="ent0006"
+     data-link-type="dependency"
+     data-source-line="42"
+     id="lnk28">
+    <path
+       d="m 993.61,263.6806 c 0,16.9 0,36.51 0,53.49"
+       fill="none"
+       id="non_negative_hits-backto-weighted_existence_principle"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="993.61,262.6806 997.61,266.6806 993.61,257.6806 989.61,266.6806 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon27" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0013"
+     data-entity-2="ent0008"
+     data-link-type="dependency"
+     data-source-line="43"
+     id="lnk29">
+    <path
+       d="m 1415.8457,69.9724 c -12.01,16.91 -26.7357,37.6282 -38.7957,54.6082"
+       fill="none"
+       id="krafft_algebraic_equivalence-backto-not_dvd_of_survives"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1416.4248,69.1571 1417.3698,74.7345 1419.32,65.0806 1410.8474,70.1021 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon28" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0012"
+     data-entity-2="ent0008"
+     data-link-type="dependency"
+     data-source-line="44"
+     id="lnk30">
+    <path
+       d="m 1185.5809,67.7125 c 40.68,16.9 96.1991,39.9681 136.8091,56.8281"
+       fill="none"
+       id="survives_iff-backto-not_dvd_of_survives"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1184.6574,67.3289 1189.8859,65.1695 1180.04,65.4106 1186.8167,72.5574 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon29" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0013"
+     data-entity-2="ent0018"
+     data-link-type="dependency"
+     data-source-line="45"
+     id="lnk31">
+    <path
+       d="m 1447.9325,70.0399 c 16.01,23.66 35.4075,61.5907 14.6775,91.1907 -30.27,43.23 -87.41,62.33 -134.75,70.72"
+       fill="none"
+       id="krafft_algebraic_equivalence-backto-sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1447.3721,69.2117 1452.9266,70.2828 1444.57,65.0706 1446.301,74.7662 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon30" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0011"
+     data-entity-2="ent0018"
+     data-link-type="dependency"
+     data-source-line="47"
+     id="lnk33">
+    <path
+       d="m 1162.4124,165.4259 c 20.47,16.94 46.6976,38.6247 67.1376,55.5347"
+       fill="none"
+       id="prime_of_no_prime_factors_lt-backto-sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1161.642,164.7884 1167.2739,164.257 1157.79,161.6006 1162.1735,170.4202 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon32" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0007"
+     data-entity-2="ent0018"
+     data-link-type="dependency"
+     data-source-line="48"
+     id="lnk34">
+    <path
+       d="m 907.6602,162.9983 c 77.73,17.08 188.9598,41.5323 265.6798,58.4023"
+       fill="none"
+       id="primes_in_range_eq_P_n-backto-sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="906.6835,162.7837 911.4487,159.7354 901.8,161.7106 909.7318,167.549 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon33" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0008"
+     data-entity-2="ent0018"
+     data-link-type="dependency"
+     data-source-line="49"
+     id="lnk35">
+    <path
+       d="m 1338.8076,165.4259 c -20.47,16.94 -46.6976,38.6247 -67.1376,55.5347"
+       fill="none"
+       id="not_dvd_of_survives-backto-sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1339.578,164.7884 1339.0465,170.4202 1343.43,161.6006 1333.9461,164.257 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon34" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0012"
+     data-entity-2="ent0018"
+     data-link-type="dependency"
+     data-source-line="50"
+     id="lnk36">
+    <path
+       d="m 1083.0632,67.7323 c -48.43,20.22 -105.7932,53.4583 -76.4532,93.4983 37.88,51.7 110.54,69.63 166.76,75.44"
+       fill="none"
+       id="survives_iff-backto-sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1083.986,67.347 1081.8359,72.5793 1088.6,65.4206 1078.7537,65.1969 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon35" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0018"
+     data-entity-2="ent0020"
+     data-link-type="dependency"
+     data-source-line="51"
+     id="lnk37">
+    <path
+       d="m 1250.61,263.6806 c 0,16.9 0,36.51 0,53.49"
+       fill="none"
+       id="sieve_isomorphism-backto-additive_sieve_isomorphism"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1250.61,262.6806 1254.61,266.6806 1250.61,257.6806 1246.61,266.6806 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon36" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0020"
+     data-entity-2="ent0005"
+     data-link-type="dependency"
+     data-source-line="52"
+     id="lnk38">
+    <path
+       d="m 1188.0596,356.0791 c -54.39,16.88 -130.2596,40.4115 -184.6496,57.2815"
+       fill="none"
+       id="additive_sieve_isomorphism-backto-krafft_sieve_guarantee"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="1189.0147,355.7826 1186.3801,360.7885 1193.79,354.3006 1184.0088,353.148 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon37" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0006"
+     data-entity-2="ent0005"
+     data-link-type="dependency"
+     data-source-line="53"
+     id="lnk39">
+    <path
+       d="m 982.3131,359.3404 c -8.43,16.91 -18.5131,37.1502 -26.9731,54.1302"
+       fill="none"
+       id="weighted_existence_principle-backto-krafft_sieve_guarantee"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="982.7592,358.4454 984.5544,363.8098 984.99,353.9706 977.3948,360.2406 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon38" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0002"
+     data-entity-2="ent0005"
+     data-link-type="dependency"
+     data-source-line="54"
+     id="lnk40">
+    <path
+       d="m 792.1216,256.0524 c 12.74,20.73 39.6184,62.6582 70.4884,97.7782 19.48,22.16 44.74,44.66 62.45,59.59"
+       fill="none"
+       id="Krafft_Admissibility-backto-krafft_sieve_guarantee"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="791.598,255.2005 797.1002,256.514 788.98,250.9406 790.2845,260.7027 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon39" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0005"
+     data-entity-2="ent0009"
+     data-link-type="dependency"
+     data-source-line="55"
+     id="lnk41">
+    <path
+       d="m 905.9452,453.1575 c -34.02,16.88 -79.8452,39.6231 -113.9052,56.5331"
+       fill="none"
+       id="krafft_sieve_guarantee-backto-krafft_sieve_guarantee_with_mu_min"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="906.841,452.713 905.0358,458.0741 911.32,450.4906 901.48,450.9077 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon40" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0004"
+     data-entity-2="ent0009"
+     data-link-type="dependency"
+     data-source-line="56"
+     id="lnk42">
+    <path
+       d="m 605.6558,453.135 c 34.38,16.88 80.7342,39.6456 115.1542,56.5556"
+       fill="none"
+       id="mu_min_lt_one_implies_admissibility-backto-krafft_sieve_guarantee_with_mu_min"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="604.7582,452.6943 610.1117,450.8666 600.27,450.4906 606.5859,458.0477 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon41" />
+  </g>
+  <g
+     class="link"
+     data-entity-1="ent0002"
+     data-entity-2="ent0009"
+     data-link-type="dependency"
+     data-source-line="57"
+     id="lnk43">
+    <path
+       d="m 781.109,256.9062 c -3.89,42.97 -18.039,199.0344 -22.909,252.8644"
+       fill="none"
+       id="Krafft_Admissibility-backto-krafft_sieve_guarantee_with_mu_min"
+       style="stroke:#181818;stroke-width:1" />
+    <polygon
+       fill="#181818"
+       points="781.1992,255.9103 784.8223,260.2546 781.65,250.9306 776.8549,259.5333 "
+       style="stroke:#181818;stroke-width:1"
+       id="polygon42" />
+  </g>
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#DartArrow)"
+     d="M 494.57831,317.46988 580.72289,168.6747"
+     id="path42"
+     inkscape:connector-type="polyline"
+     inkscape:connector-curvature="0" />
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.793435px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker44)"
+     d="M 462.86421,316.64717 375.96529,168.88848"
+     id="path43"
+     inkscape:connector-type="polyline"
+     inkscape:connector-curvature="0" />
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.729727px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker46)"
+     d="M 432.44413,319.00638 359.10837,263.62299"
+     id="path45"
+     inkscape:connector-type="polyline"
+     inkscape:connector-curvature="0" />
+  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.01352px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#DartArrow)"
+     d="m 1327.1281,238.83072 52.9932,-0.77456"
+     id="path47"
+     inkscape:connector-type="polyline"
+     inkscape:connector-curvature="0" />
+</svg>
