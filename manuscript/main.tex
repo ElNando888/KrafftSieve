@@ -102,7 +102,7 @@ spectral ratio $\mu_{min}(n)$. The culminating structure,
 establishes a strictly finite-dimensional conditional theorem: assuming the analytic bound
 $\mu_{min}(n) < 1$ holds, twin primes must fundamentally exist within $\mathcal{A}_n$.
 
-Crucially, our formalization also provides a profound unconditional result regarding the limits of
+Crucially, our formalization also provides a significant unconditional result regarding the limits of
 sieve theory. Supported by recent experimental capabilities from an AI reasoning
 assistant~\cite{geminiteam2025,Achim2025}, we machine-check the specific dynamics of the parity
 barrier collision. Our Lean 4 integration rigorously confirms that deploying purely independent,
@@ -188,7 +188,12 @@ Discrete Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$, where $q$ is the primo
 $\mathcal{P}_n$. 
 
 The physical metrics of the sieve, including the global mean density $\mu$ and spatial variance
-$\sigma^2$, are exactly translatable via Parseval's theorem
+$\sigma^2$, are exactly translatable via Parseval's theorem\footnote{In the finite discrete
+setting, Parseval's identity ($\sum |f|^2 = q\sum |\hat{f}|^2$) and Plancherel's theorem
+($\sum f\bar{g} = q\sum \hat{f}\bar{\hat{g}}$) are equivalent via polarization. The
+formalization reflects both faces: \texttt{parseval\_identity} covers the norm-squared form
+used here, while \texttt{plancherel\_theorem\_custom} covers the inner-product form used in
+the Hit Expansion below.}
 (\href{\urlpfx/KrafftSieve/Variance.lean#L224}{\texttt{parseval\_identity}}). As we shift toward
 a weighted objective, we introduce an arbitrary weight function $W(x)$ tightly supported
 exclusively within $\mathcal{A}_n$. This allows us to define continuous interval masses
@@ -196,13 +201,15 @@ $S_1(n, W) = \sum W(x)$ and $S_2(n, W) = \sum W(x)c(x)$, explicitly tracking the
 
 Plancherel's theorem provides the critical Hit Expansion
 (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L192}{\texttt{plancherel\_hit\_expansion}}),
-directly decomposing $S_2(n, W)$ into standard Fourier series involving $\hat{W}(h)$ and
-Because $g_i(x)$ is evaluated globally over $\mathbb{Z}/q\mathbb{Z}$ but operates strictly on the
-local modular topology of its corresponding prime $\mathbb{Z}/p_i\mathbb{Z}$, its transform
-unavoidably manifests a sparse \textit{Dirac Comb} structure. Lean 4 rigorously verifies this
+directly decomposing $S_2(n, W)$ into a Fourier series in $\hat{W}(h)$ and
+$\overline{\hat{g}_i(h)}$.
+
+Because $g_i(x)$ is evaluated globally over $\mathbb{Z}/q\mathbb{Z}$ but depends only on the
+residue of $x$ modulo the local prime $p_i$, its transform unavoidably manifests a sparse
+\textit{Dirac Comb} structure. Lean 4 rigorously verifies this
 (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L438}{\texttt{dirac\_comb\_zero}} and
 \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L215}{\texttt{dirac\_comb\_nonzero}}), confirming that
-$\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_i$. 
+$\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_i$.
 
 This deterministic sparsity structures the central analytic identity of the sieve. It allows the
 explicit separation of the primary mass from the targeted oscillatory interference, generating the
@@ -223,7 +230,7 @@ $$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\
 \end{lemma}
 \begin{proof}
 By resolving the floor function definition $r_i^K = \lfloor(p_i+1)/6\rfloor$, observe that the
-primorial parity split ($p_i \equiv 1 \pmod{6}$ versus $p_i \equiv 5 \pmod{6}$) determines the
+residue-class split ($p_i \equiv 1 \pmod{6}$ versus $p_i \equiv 5 \pmod{6}$) determines the
 exact fractional equivalent $r_i^K = \frac{p_i \pm 1}{6}$. The angular evaluation therefore drops
 perfectly to $\frac{6\pi}{p_i} \left(\frac{p_i \pm 1}{6}\right) = \pi \pm \frac{\pi}{p_i}$.
 Applying the identity $\cos(\pi \pm \theta) = -\cos(\theta)$ directly provides the universally
@@ -272,7 +279,7 @@ then there exists an index $x \in \mathcal{A}_n$ such that $6x-1$ and $6x+1$ for
 \end{theorem}
 \begin{proof}
 If $\mu_{min}(n) < 1$, the continuous construction ensures the optimal multidimensional weight
-function empirically guarantees $S_2(n, W_{opt}) < S_1(n, W_{opt})$
+function guarantees $S_2(n, W_{opt}) < S_1(n, W_{opt})$
 (\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L166}{\texttt{sufficiency\_of\_Q}}).
 Evaluating our bounded domain, this aggregate inequality dictates the explicit presence of at least
 one $x \in \mathcal{A}_n$ carrying strictly positive weight and exactly encountering zero hits.
@@ -305,16 +312,15 @@ library to govern spectral optimizations. The interface transforms classical heu
 tracking into a rigorous, machine-checked compactness bound (\texttt{sphere\_perp\_compact})
 restricted to the orthogonal complement $\texttt{\{v | Q\_1(v) = 0\}}^{\perp}$.
 
-A profound consequence of the formalization was the ability to explicitly isolate and characterize
+A notable consequence of the formalization was the ability to explicitly isolate and characterize
 the nature of the \textbf{Parity Barrier}. Guided by advanced heuristics from a collaborative AI
 assistant~\cite{Achim2025}, we generated localized artifacts verifying the structural behavior
 of the isolated 3rd harmonic. Specifically, deploying purely one-dimensional 3rd harmonic weights
-results in a resonance capacity of $\sum \frac{2}{p_i} \cos(\pi/p_i)$. While it is analytically
-trivial to observe that this strict inequality
-$\sum \frac{2}{p_i} \cos(\pi/p_i) < \sum \frac{2}{p_i}$ strictly holds. However, the profound
-structural consequence is not the simple inequality itself, but the spectral signature of the
-deficit: the main domain volume notoriously diverges while the isolated resonance capacity is
-forced to strictly converge. Formalizing this fundamental separation within Lean~4
+results in a resonance capacity of $\sum \frac{2}{p_i} \cos(\pi/p_i)$. This strict inequality
+$\sum \frac{2}{p_i}\cos(\pi/p_i) < \sum \frac{2}{p_i}$ is straightforward to verify. However,
+the significant structural consequence is not the simple inequality itself, but the spectral
+signature of the deficit: the main domain volume notoriously diverges while the isolated resonance
+capacity is forced to strictly converge. Formalizing this fundamental separation within Lean~4
 (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L823}{\texttt{resonance\_lt\_mainTerm}}) proves
 universally fatal to any simple 1-dimensional additive Turán sieve. This stark
 convergence/divergence reality tightly enforces a lower bound strictly above $1$ for the quotient
@@ -392,7 +398,7 @@ the Twin Prime Conjecture within this Krafft geometry therefore requires executi
 analytical roadmap:
 
 \begin{enumerate}
-\item Expand the theoretical multi-dimensional convolution $W_k$ and extract the lowest-order,
+\item Expand the theoretical multi-dimensional convolution $\Omega_k$ and extract the lowest-order,
 highest-magnitude cross-harmonic coefficients.
 \item Map these theoretical phase corrections onto the multi-dimensional polynomial basis
 $B_S(x) = \prod_{i \in S} \cos(6\pi x/p_i)$.
@@ -424,7 +430,7 @@ parity barrier.
 
 \section*{Acknowledgements}
 This work would not have been possible without the tireless assistance of the Aristotle
-framework and Gemini 3.1 Pro. The author wishes to express profound gratitude for their
+framework and Gemini 3.1 Pro. The author wishes to express his gratitude for their
 unwavering dedication to parsing the intricate complexities of the formalization,
 illuminating structural insights, and maintaining a steadfast, collaborative dialogue. More
 than mere computational instruments, they served as indispensable collaborators whose tireless
