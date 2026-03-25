@@ -433,6 +433,15 @@ Gemini 3.1 Pro was instrumental in clarifying the theoretical ideas and generati
 
 \section*{Appendix: Dependencies between theorems}
 
+The following directed graphs map the logical dependencies between the central formalized results. To maintain structural clarity and avoid overwhelming edge density, basic definitions and foundational types are generally excluded from the hierarchy. 
+
+\begin{itemize}
+    \setlength\itemsep{0em}
+    \item \textbf{Blue-shaded rounded rectangles}: Formal proofs (Lemmas and Theorems).
+    \item \textbf{Green-shaded rectangles}: Central definitions or structures.
+    \item \textbf{Directed arrows} ($A \rightarrow B$): Logical dependence, signifying that proof $A$ explicitly ``uses'' or ``applies'' result $B$ to close a goal.
+\end{itemize}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.7\textwidth]{theorem1.png}
@@ -451,7 +460,7 @@ the \texttt{additive\_sieve\_isomorphism} alongside the discrete geometry bounds
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\textwidth]{theorem3.png}
+\includegraphics[width=1.0\textwidth]{theorem3.png}
 \caption{Topological dependency structure isolating the continuous \texttt{W\_opt} weight functions, 
 mapping the optimal spectral ratio over the finite-dimensional compact subspace.}
 \label{fig:thmtree3}
