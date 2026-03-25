@@ -57,9 +57,10 @@ We fully formalize this geometric framework in the Lean 4 proof assistant, forma
 the Twin Prime problem to a conditional finite-dimensional linear-algebraic inequality
 (assuming $\mu_{min} < 1$). Furthermore, our formalization delivers a machine-checked proof that
 1-dimensional harmonic weights strictly collide with the parity barrier (forcing $\mu \ge 1$),
-rigorously establishing that multidimensional cross-harmonic interactions are analytically necessary to produce a favorable sieve density. We conclude
-by mapping the exact spectral convolution required to bypass this continuous density deficit,
-offering a deterministic blueprint to resolving the conjecture.
+rigorously establishing that multidimensional cross-harmonic interactions are analytically necessary
+to produce a favorable sieve density. We conclude by mapping the exact spectral convolution required
+to bypass this continuous density deficit, offering a deterministic blueprint to resolving the
+conjecture.
 \end{abstract}
 
 \keywords{Krafft form, Twin primes, Turán sieve, Interactive theorem proving, Lean 4}
@@ -205,8 +206,10 @@ $\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_
 
 This deterministic sparsity structures the central analytic identity of the sieve. It allows the
 explicit separation of the primary mass from the targeted oscillatory interference, generating the
-\textbf{Resonant Sieve Equation} (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L614}{\texttt{resonant\_sieve\_equation}}):
-$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum_{k \neq 0} \hat{W}\!\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\!\left( \frac{2 \pi k r^K_i}{p_i} \right) $$
+\textbf{Resonant Sieve Equation} (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L614}
+{\texttt{resonant\_sieve\_equation}}):
+$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum_{k \neq 0}
+\hat{W}\!\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\!\left( \frac{2 \pi k r^K_i}{p_i} \right) $$
 
 When examining the precise sub-comb frequency constructed at the 3rd harmonic $h = 3q/p_i$, the
 cosine wave perfectly anchors to the Krafft alignment integer $r^K_i$ and generates the
@@ -260,7 +263,7 @@ is unconditionally attained by an exact optimal spectral vector $\lambda_{opt}$
 (\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L628}{\texttt{exists\_minimizer}}), physically
 realizing the minimum ratio $\mu_{min}(n)$. Lean formally
 checks the bridging lemma \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L188}
-{\texttt{mu\_min\allowbreak \_lt\_one\allowbreak \_implies\allowbreak \_admissibility}}, resulting in
+{\texttt{mu\_min\_lt\_one\_implies\_admissibility}}, resulting in
 the \textbf{Krafft Sieve Guarantee}.
 
 \begin{theorem}[Krafft Sieve Guarantee]
@@ -310,8 +313,8 @@ results in a resonance capacity of $\sum \frac{2}{p_i} \cos(\pi/p_i)$. While it 
 trivial to observe that this strict inequality
 $\sum \frac{2}{p_i} \cos(\pi/p_i) < \sum \frac{2}{p_i}$ strictly holds. However, the profound
 structural consequence is not the simple inequality itself, but the spectral signature of the
-deficit: the main domain volume notoriously diverges while the isolated resonance capacity is forced to
-strictly converge. Formalizing this fundamental separation within Lean~4
+deficit: the main domain volume notoriously diverges while the isolated resonance capacity is
+forced to strictly converge. Formalizing this fundamental separation within Lean~4
 (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L823}{\texttt{resonance\_lt\_mainTerm}}) proves
 universally fatal to any simple 1-dimensional additive Turán sieve. This stark
 convergence/divergence reality tightly enforces a lower bound strictly above $1$ for the quotient
@@ -341,7 +344,8 @@ However, deploying these independent 1-dimensional waves inevitably encounters a
 The main spectral density is constructed by $\sum 2/p_i$, which diverges. In contrast, the
 suppression capacity of the third harmonic is bounded by the individual harmonic deficit:
 $$ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\frac{\pi}{p_i}\right)
-\le \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \left(\frac{1}{2}\left(\frac{\pi}{p_i}\right)^2\right) = \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} $$
+\le \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \left(\frac{1}{2}\left(\frac{\pi}{p_i}\right)^2\right)
+ = \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} $$
 Because this sum of individual deficits strictly converges, a finite truncation of purely
 independent harmonics will inevitably drag the weight function into negative values at dense
 overlapping forbidden regions before it can reduce the overall Rayleigh quotient below 1. This
@@ -351,9 +355,9 @@ the Krafft geometry.
 \subsection{The Perfect Sieve Weight and Cross-Harmonics}
 
 To understand how to analytically break this barrier, we examine the true, un-truncated spatial
-inclusion-exclusion principle. The "perfect" spatial weight function $\omega(x)$, which evaluates exactly to
-$1$ when $c(x) = 0$ and $0$ elsewhere, is given by the pointwise product of the allowed residue
-indicators:
+inclusion-exclusion principle. The "perfect" spatial weight function $\omega(x)$, which evaluates
+exactly to $1$ when $c(x) = 0$ and $0$ elsewhere, is given by the pointwise product of the allowed
+residue indicators:
 $$ \omega(x) = \prod_{i=1}^{w(n)} \left(1 - u^{(i)}_x\right) $$
 
 Transforming this exact equivalence into the frequency domain over $\mathbb{Z}/q\mathbb{Z}$
@@ -425,7 +429,9 @@ unwavering dedication to parsing the intricate complexities of the formalization
 illuminating structural insights, and maintaining a steadfast, collaborative dialogue. More
 than mere computational instruments, they served as indispensable collaborators whose tireless
 deductive logic helped chart the course through these formalized geometric spaces. Specifically,
-Gemini 3.1 Pro was instrumental in clarifying the theoretical ideas and generating precise prompt heuristics for the formal prover, while Aristotle served as the primary mechanical workhorse securing the dense derivations.
+Gemini 3.1 Pro was instrumental in clarifying the theoretical ideas and generating precise prompt
+heuristics for the formal prover, while Aristotle served as the primary mechanical workhorse
+securing the dense derivations.
 
 \printbibliography
 
@@ -433,13 +439,16 @@ Gemini 3.1 Pro was instrumental in clarifying the theoretical ideas and generati
 
 \section*{Appendix: Dependencies between theorems}
 
-The following directed graphs map the logical dependencies between the central formalized results. To maintain structural clarity and avoid overwhelming edge density, basic definitions and foundational types are generally excluded from the hierarchy. 
+The following directed graphs map the logical dependencies between the central formalized results.
+To maintain structural clarity and avoid overwhelming edge density, basic definitions and
+foundational types are generally excluded from the hierarchy. 
 
 \begin{itemize}
     \setlength\itemsep{0em}
     \item \textbf{Blue-shaded rounded rectangles}: Formal proofs (Lemmas and Theorems).
     \item \textbf{Green-shaded rectangles}: Central definitions or structures.
-    \item \textbf{Directed arrows} ($A \rightarrow B$): Logical dependence, signifying that proof $A$ explicitly ``uses'' or ``applies'' result $B$ to close a goal.
+    \item \textbf{Directed arrows} ($A \rightarrow B$): Logical dependence, signifying that proof
+    $A$ explicitly ``uses'' or ``applies'' result $B$ to close a goal.
 \end{itemize}
 
 \begin{figure}[h]
