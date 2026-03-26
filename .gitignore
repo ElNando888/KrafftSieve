@@ -2,7 +2,6 @@
 /.agents
 /aristotle
 /Old
-/KrafftSieve/KrafftEquiv
 GetDeps.lean
 *.aux
 *.bbl
