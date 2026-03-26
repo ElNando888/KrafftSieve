@@ -309,7 +309,8 @@ This interface design structurally translates the weighted spatial totals $S_1(n
 into the evaluation of continuous quadratic forms $Q_1(n)$ and $Q_2(n)$. By casting the sieve's
 performance metric as a Rayleigh quotient, we leverage \texttt{Mathlib}'s extensive linear algebra
 library to govern spectral optimizations. The interface transforms classical heuristic variance
-tracking into a rigorous, machine-checked compactness bound (\texttt{sphere\_perp\_compact})
+tracking into a rigorous, machine-checked compactness bound
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L459}{\texttt{sphere\_perp\_compact}})
 restricted to the orthogonal complement $\texttt{\{v | Q\_1(v) = 0\}}^{\perp}$.
 
 A notable consequence of the formalization was the ability to explicitly isolate and characterize
