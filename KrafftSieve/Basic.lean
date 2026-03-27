@@ -49,7 +49,6 @@ lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
       obtain ⟨ i, hi ⟩ := List.mem_iff_get.1 h_in_sorted; use ⟨ i, by
         exact i.2.trans_le ( by simp +decide [ primes_list, w ] ) ⟩
       subst hi
-      simp_all only [List.get_eq_getElem, List.getElem_mem]
       rfl;
     · obtain ⟨ i, rfl ⟩ := h;
       exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
