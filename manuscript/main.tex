@@ -207,8 +207,8 @@ $\overline{\hat{g}_i(h)}$.
 
 Because $g_i(x)$ is evaluated globally over $\mathbb{Z}/q\mathbb{Z}$ but depends only on the
 residue of $x$ modulo the local prime $p_i$, its transform unavoidably manifests a sparse
-\textit{Dirac Comb} structure. Lean 4 rigorously verifies this
-(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L438}{\texttt{dirac\_comb\_zero}} and
+\textit{Dirac Comb} structure. The Lean 4 code rigorously verifies this
+(see \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L438}{\texttt{dirac\_comb\_zero}} and
 \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L215}{\texttt{dirac\_comb\_nonzero}}), confirming that
 $\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_i$.
 
@@ -263,14 +263,14 @@ of the basis, it acts independently of uniform scaling
 (\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L374}{\texttt{Ratio\_scale}}). Thus, we constrain
 our parameter space purely to the unit sphere restricted to the orthogonal complement of the kernel
 of $Q_1$. The formal extraction of an absolute minimizer proceeds by a rigorous sequence of
-topological deductions. First, Lean 4 guarantees that this finite-dimensional bounded subspace acts
-as a compact domain (\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L459}
+topological deductions. First, the Lean 4 code guarantees that this finite-dimensional bounded
+subspace acts as a compact domain (see \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L459}
 {\texttt{sphere\_perp\_compact}}). Because the rational Rayleigh quotient maps inputs continuously,
 its continuous image evaluated over this domain is itself compact. Consequently, the infimum ratio
 is unconditionally attained by an exact optimal spectral vector $\lambda_{opt}$
 (\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L628}{\texttt{exists\_minimizer}}), physically
-realizing the minimum ratio $\mu_{min}(n)$. Lean formally
-checks the bridging lemma \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L188}
+realizing the minimum ratio $\mu_{min}(n)$. The Lean 4 code formally
+proves the bridging lemma \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L188}
 {\texttt{mu\_min\_lt\_one\_implies\_admissibility}}, resulting in
 the \textbf{Krafft Sieve Guarantee}.
 
@@ -328,10 +328,10 @@ universally fatal to any simple 1-dimensional additive Turán sieve. This stark
 convergence/divergence reality tightly enforces a lower bound strictly above $1$ for the quotient
 $\mu$, analytically formalizing a direct collision with the classical Sieve Parity limit.
 
-Consequently, Lean 4 rigorously guarantees \textit{why} the massive $2^{w(n)}$ parameter space of
-the multidimensional polynomials represents the only topological route forward. We are formally
-required to engineer profound cross-harmonic correlations to circumvent this inherent continuous
-density deficit and break the Twin Prime configuration.
+Consequently, the Lean 4 code rigorously guarantees \textit{why} the massive $2^{w(n)}$ parameter
+space of the multidimensional polynomials represents the only topological route forward. We are
+formally required to engineer profound cross-harmonic correlations to circumvent this inherent
+continuous density deficit and break the Twin Prime configuration.
 
 
 \section{Overcoming the Parity Barrier via Spectral Convolution} \label{crossharmonics}
