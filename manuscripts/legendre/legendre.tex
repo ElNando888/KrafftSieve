@@ -11,7 +11,7 @@
 \newcommand{\fin}[1]{[\.#1\.]}
 \newcommand{\sekt}[1]{Section~\ref{#1}}
 
-\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.0}
+\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/main}
 
 \makeatletter
 \newcommand{\thickhline}{%
@@ -70,7 +70,7 @@ Legendre's Conjecture is one of the oldest open problems in number theory, postu
 every positive integer $n$, there exists at least one prime $p$ such that $n^2 < p < (n+1)^2$. An
 unconditional proof of this conjecture remains out of reach, as it intrinsically demands
 controlling the gaps between consecutive primes strictly within $O(x^{1/2})$, whereas the best
-unconditional bounds currently available are of order $O(x^{0.525})$.
+unconditional bounds currently available are of order $O(x^{0.525})$~\cite{baker2001}.
 
 In this manuscript, we offer a \textit{formal, conditional reduction} mechanized in the Lean 4
 interactive theorem prover. Our approach translates the spatial bounds of Legendre's Conjecture
@@ -86,11 +86,24 @@ The bedrock of our formalization is the explicit partitioning of the spatial dom
 distinct Krafft sub-intervals, denoted $B_n^{(k)}$ for $k \in \{1,\dots,6\}$. These sets partition
 the surrounding moduli space to tightly restrict the residue classes. 
 
-Our first primary formalized milestone is the \textit{Legendre targeting property}: for any
-integer $x \in B_n^{(k)}$, the candidates $6x+1$ and $6x-1$ natively satisfy the property of
-living strictly between consecutive squares. This combinatorial translation means that proving
-Legendre's Conjecture is reduced to proving that at least one element $x$ in at least one Krafft
-interval produces a prime out of $\{6x-1, 6x+1\}$.
+Our first primary formalized milestone is the \textit{Legendre targeting property} 
+(\href{\urlpfx/Legendre/KrafftIntervals.lean#L87}{\texttt{legendre\allowbreak \_targeting}}).
+
+\begin{theorem}[Legendre Targeting Property]
+For any positive integer $n \ge 1$, Krafft coordinate index $k \in \{0,\dots,5\}$, and any integer
+$x \in B_n^{(k)}$, the prime candidates natively satisfy:
+$$ (6n + k - 1)^2 < 6x - 1 \quad \text{and} \quad 6x + 1 < (6n + k)^2 $$
+\end{theorem}
+\begin{proof}
+As formalized in Lean 4, this holds strictly via algebraic expansion. The boundaries of
+$B_n^{(k)}$ tightly constrain $x$ such that the geometric mapping $6x \pm 1$ inevitably lands
+unconditionally within the gap between the squares of consecutive integers. Thus, any prime found
+at these targeted coordinates strictly satisfies Legendre's requirement.
+\end{proof}
+
+This combinatorial translation means that proving Legendre's Conjecture is reduced to formally
+verifying that for sufficiently large $n$, \textit{every} Krafft interval independently generates
+at least one survivor $x$ such that either $6x-1$ or $6x+1$ is prime.
 
 \section{The Cardinality Contradiction} \label{contradiction_scaffold}
 
@@ -100,16 +113,45 @@ Cover, every geometric candidate in the target subset must be composite, meaning
 at least one large sieving prime $p > 2n$.
 
 By analyzing the difference between paired residue strikes, we formalize a rigid spatial vector
-connecting potential dual-strikes by the same prime $p$. Because traversing this distance requires
-steps far exceeding the length of $B_n^{(k)}$, we formally derive the ``wasted cover'' lemma: a
-large prime cannot simultaneously strike a candidate of the form $6x+1$ and a distinct candidate
-$6y-1$ without exceeding the combinatorial boundaries. 
+connecting potential dual-strikes by the same prime $p$
+(\href{\urlpfx/Legendre/GeometricTranslation.lean#L105}{\texttt{paired\_strike\_separation}}).
+Because traversing this modular distance requires steps far exceeding the structural width of
+$B_n^{(k)}$, we formally derive the ``Wasted Cover'' limit.
+
+\begin{lemma}[Krafft Strike Separation]
+If a prime $p \in P_{large}$ strikes a positive candidate $6x+1 \equiv 0 \pmod{p}$ and a distinct
+negative candidate $6y-1 \equiv 0 \pmod{p}$ within the same interval $x, y \in B_n^{(k)}$, their
+spatial separation must rigorously be:
+$$ x - y \equiv 2\alpha m \pmod{p} $$
+where $p = 6m + \alpha$.
+\end{lemma}
+\begin{proof}
+By constructing the translation vector strictly within $\mathbb{Z}/p\mathbb{Z}$, the modular
+requirement evaluates exactly to $2\alpha m$. Since $p > 2n$, this structural requirement forces
+an absolute geometric distance $|x - y| \ge (p-1)/3$. However, the interval $B_n^{(k)}$ has
+maximum width bounded safely below this. A structural spatial contradiction guarantees that no
+such dual-strike can occur, legally formalizing that each large prime captures at most one
+candidate from the positive residue class and one from the negative class.
+\end{proof}
 
 This geometric ceiling on strike efficiency yields a hard upper bound on the maximum number of
 candidates the large primes can eliminate. If the analytic density of points surviving the initial
 small prime sieving strictly exceeds the combined covering capacity of the available large primes,
 the Double Cover assumption mathematically collapses, guaranteeing the survival of at least one
-prime.
+prime (\href{\urlpfx/Legendre/CardinalityContradiction.lean#L498}
+{\texttt{legendre\_conjecture\_holds\_conditional}}).
+
+\begin{theorem}[Conditional Legendre's Conjecture]
+Assuming there exists a constant $N_0$ such that for all $n \ge N_0$, the analytic density of
+candidates surviving the initial small-prime sieve locally exceeds the covering summation bounds
+of the large sieve prime reciprocals, then Legendre's Conjecture firmly holds for all $n \ge N_0$.
+\end{theorem}
+\begin{proof}
+By sealing the Double Cover exhaustion inside Lean 4, we generate a final cardinality
+contradiction. The sum of the available large-prime strikes explicitly fails to cover the
+geometric target sets $U^+$ and $U^-$, enforcing that the pigeonhole principle formalized over
+these finite discrete spaces must output an un-struck non-composite coordinate.
+\end{proof}
 
 \section{Conclusion} \label{conclusion}
 
