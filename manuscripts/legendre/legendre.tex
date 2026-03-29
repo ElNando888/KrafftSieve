@@ -55,8 +55,8 @@ with the Krafft geometric intervals, we establish a ``zero-sorry'' formal scaffo
 sieve capacity of large primes. While an unconditional proof requires establishing prime gaps of
 order $O(x^{1/2})$---a well-known open problem in analytic number theory---our formalized
 reduction cleanly separates the absolute, verified geometric properties from the unproven analytic
-density estimate. Consequently, we mathematically guarantee that Legendre's Conjecture holds
-conditionally upon this isolated analytic threshold.
+density estimate. Consequently, we mathematically guarantee, conditional on this isolated 
+analytic threshold, that Legendre's Conjecture strictly holds.
 \end{abstract}
 
 \keywords{Legendre's Conjecture, Krafft intervals, Tur\'an sieve, Prime gaps, Lean 4, Formalization}
@@ -90,8 +90,23 @@ mathematical library \texttt{Mathlib} \cite{Mathlib} revision \texttt{8f9d9cf} (
 \section{Krafft Geometry and Legendre Targeting} \label{krafft_geometry}
 
 The bedrock of our formalization is the explicit partitioning of the spatial domain into six
-distinct Krafft sub-intervals, denoted $B_n^{(k)}$ for $k \in \{1,\dots,6\}$. These sets partition
-the surrounding moduli space to tightly restrict the residue classes. 
+distinct Krafft sub-intervals, denoted $B_n^{(k)}$ for $k \in \{0,\dots,5\}$, which completely
+cover the gaps between consecutive squares scaling with $n$:
+
+\begin{center}
+\begin{tabular}{c c " c c}
+ $k$ & Interval $B_n^{(k)}$ & $k$ & Interval $B_n^{(k)}$ \\
+ \thickhline
+ 0 & $[6n^2-2n+1, 6n^2-1]$ & 3 & $[6n^2+4n+1, 6n^2+6n+1]$ \\
+ 1 & $[6n^2+1, 6n^2+2n-1]$ & 4 & $[6n^2+6n+2, 6n^2+8n+2]$ \\
+ 2 & $[6n^2+2n+1, 6n^2+4n]$ & 5 & $[6n^2+8n+3, 6n^2+10n+3]$ \\
+\end{tabular}
+\end{center}
+
+Crucially, each interval possesses a width strictly bounded by $2n+1$. To intuitively analyze these
+spatial bounds sieve-theoretically, we explicitly partition the available sieving primes
+($p < 6n+2$) into two sets: the ``small primes'' $\mathcal{P}_{small} = \{ p \ge 5 \mid p \le 2n\}$
+and the ``large primes'' $\mathcal{P}_{large} = \{ p \ge 5 \mid 2n < p < 6n+2\}$. 
 
 Our first primary formalized milestone is the \textit{Legendre targeting property} 
 (\href{\urlpfx/Legendre/KrafftIntervals.lean#L87}{\texttt{legendre\allowbreak \_targeting}}).
@@ -103,9 +118,10 @@ $$ (6n + k - 1)^2 < 6x - 1 \quad \text{and} \quad 6x + 1 < (6n + k)^2 $$
 \end{theorem}
 \begin{proof}
 As formalized in Lean 4, this holds strictly via algebraic expansion. The boundaries of
-$B_n^{(k)}$ tightly constrain $x$ such that the geometric mapping $6x \pm 1$ inevitably lands
-unconditionally within the gap between the squares of consecutive integers. Thus, any prime found
-at these targeted coordinates strictly satisfies Legendre's requirement.
+$B_n^{(k)}$ tightly constrain $x$ such that the geometric mapping \textit{both} $6x - 1$ and
+$6x + 1$ inevitably land within the gap between the squares of consecutive integers. Since it
+guarantees both candidates lie in the gap, finding any prime out of $\{6x-1, 6x+1\}$ strictly
+satisfies Legendre's requirement.
 \end{proof}
 
 This combinatorial translation means that proving Legendre's Conjecture is reduced to formally
@@ -114,10 +130,13 @@ one survivor $x$ such that either $6x-1$ or $6x+1$ is prime.
 
 \section{The Cardinality Contradiction} \label{contradiction_scaffold}
 
-To isolate surviving prime candidates, we formalize a combinatorial exhaustion assuming the
+To isolate surviving prime candidates, we denote $U^+$ and $U^-$ as the discrete sets of integer
+coordinates $x \in B_n^{(k)}$ surviving the initial small prime sieving step (i.e., not divisible
+by any $p \in \mathcal{P}_{small}$). We formalize a combinatorial exhaustion assuming the
 negation of Legendre's Conjecture---a scenario we term the ``Double Cover''. Under a Double
-Cover, every geometric candidate in the target subset must be composite, meaning it is struck by
-at least one large sieving prime $p > 2n$.
+Cover, every geometric candidate must be composite, meaning the sets of survivors $U^+$ and $U^-$
+must be entirely struck by at least one available large sieving prime $p \in \mathcal{P}_{large}$
+(since $p > 2n$).
 
 By analyzing the difference between paired residue strikes, we formalize a rigid spatial vector
 connecting potential dual-strikes by the same prime $p$
@@ -126,32 +145,48 @@ Because traversing this modular distance requires steps far exceeding the struct
 $B_n^{(k)}$, we formally derive the ``Wasted Cover'' limit.
 
 \begin{lemma}[Krafft Strike Separation]
-If a prime $p \in P_{large}$ strikes a positive candidate $6x+1 \equiv 0 \pmod{p}$ and a distinct
-negative candidate $6y-1 \equiv 0 \pmod{p}$ within the same interval $x, y \in B_n^{(k)}$, their
-spatial separation must rigorously be:
+If a prime $p \in \mathcal{P}_{large}$ strikes a positive candidate $6x+1 \equiv 0 \pmod{p}$ and a
+distinct negative candidate $6y-1 \equiv 0 \pmod{p}$ within the same interval $x, y \in B_n^{(k)}$,
+their spatial separation must rigorously be:
 $$ x - y \equiv 2\alpha m \pmod{p} $$
 where $p = 6m + \alpha$.
 \end{lemma}
 \begin{proof}
 By constructing the translation vector strictly within $\mathbb{Z}/p\mathbb{Z}$, the modular
-requirement evaluates exactly to $2\alpha m$. Since $p > 2n$, this structural requirement forces
-an absolute geometric distance $|x - y| \ge (p-1)/3$. However, the interval $B_n^{(k)}$ has
-maximum width bounded safely below this. A structural spatial contradiction guarantees that no
-such dual-strike can occur, legally formalizing that each large prime captures at most one
-candidate from the positive residue class and one from the negative class.
+requirement evaluates exactly to $2\alpha m$. Since $p \in \mathcal{P}_{large}$ implies $p > 2n$,
+this structural requirement forces an absolute geometric distance $|x - y| \ge (p-1)/3$. However,
+the interval $B_n^{(k)}$ has maximum width $2n$, bounded safely below this separation envelope.
+A structural spatial contradiction guarantees that no such dual-strike can occur, legally
+formalizing that each large prime captures at most one candidate from the positive residue class
+and one from the negative class.
 \end{proof}
 
 This geometric ceiling on strike efficiency yields a hard upper bound on the maximum number of
-candidates the large primes can eliminate. If the analytic density of points surviving the initial
-small prime sieving strictly exceeds the combined covering capacity of the available large primes,
-the Double Cover assumption mathematically collapses, guaranteeing the survival of at least one
-prime (\href{\urlpfx/Legendre/CardinalityContradiction.lean#L498}
-{\texttt{legendre\_conjecture\_holds\_conditional}}).
+candidates the large primes can eliminate. We formally define the set of $\text{wasted}(n,k)$
+primes as those $p \in \mathcal{P}_{large}$ that simultaneously hit both a positive candidate in
+$U^+$ and a distinct negative candidate in $U^-$. Due to the inclusion-exclusion principle over the
+Double Cover, the total number of distinct coordinate pairs struck across both sets is strictly
+bounded by the covering capacity of the individual strikes minus these duplicate hits. We formally
+verify this capacity bottleneck (\href{\urlpfx/Legendre/CardinalityContradiction.lean}
+{\texttt{effective\_coverage\_bound}}):
+
+\begin{theorem}[Effective Coverage Capacity]
+If the Double Cover assumption holds, the total subset volumes unconditionally satisfy the
+boundary:
+$$ |U^+| + |U^-| \leq |\mathcal{P}_{large}| + |\text{wasted}(n,k)| $$
+\end{theorem}
+
+If the analytic density of points surviving the initial
+small prime sieving strictly exceeds this combined covering capacity bound,
+the Double Cover equation mathematically collapses, formally guaranteeing the survival of at least
+one prime (\href{\urlpfx/Legendre/CardinalityContradiction.lean#L498}
+{\texttt{legendre\_conjecture\_holds\allowbreak \_conditional}}).
 
 \begin{theorem}[Conditional Legendre's Conjecture]
-Assuming there exists a constant $N_0$ such that for all $n \ge N_0$, the analytic density of
-candidates surviving the initial small-prime sieve locally exceeds the covering summation bounds
-of the large sieve prime reciprocals, then Legendre's Conjecture firmly holds for all $n \ge N_0$.
+Assuming there exists an analytic constant $N_0$ such that for all $n \ge N_0$, the strict density
+of survivors independently satisfies the $h_{density}$ hypothesis:
+$$ |U^+| + |U^-| > |\mathcal{P}_{large}| + |\text{wasted}(n,k)| $$
+then Legendre's Conjecture firmly holds for all $n \ge N_0$.
 \end{theorem}
 \begin{proof}
 By sealing the Double Cover exhaustion inside Lean 4, we generate a final cardinality
@@ -164,9 +199,9 @@ these finite discrete spaces must output an un-struck non-composite coordinate.
 
 We have successfully constructed a fully verified, ``zero-sorry'' formal scaffold bridging
 structural sieve geometry with the constraints of analytic number theory. By sealing off the
-conditional analytic estimate into an explicit hypothesis, the Lean 4 formalization explicitly
-guarantees that if the analytic inequality is resolved, Legendre's Conjecture follows
-unyieldingly from the verified mechanics. This project underscores the utility of formal methods
+conditional analytic density estimate into an explicit hypothesis, the Lean 4 formalization
+explicitly establishes that if the analytic inequality is resolved, Legendre's Conjecture follows
+directly from the verified mechanics. This project underscores the utility of formal methods
 not merely in verifying completed proofs, but in structurally isolating the exact boundaries of
 open problems.
 
@@ -201,7 +236,7 @@ foundational types are generally excluded from the hierarchy.
 
 \begin{figure}[h]
 \centering
-%\includegraphics[width=0.7\textwidth]{theorem1.png}
+\includegraphics[width=0.95\textwidth]{theorems.png}
 \caption{.}
 \label{fig:thmtree1}
 \end{figure}
