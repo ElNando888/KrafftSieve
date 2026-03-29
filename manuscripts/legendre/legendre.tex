@@ -80,6 +80,13 @@ successfully formalize a contradiction scaffold that definitively proves Legendr
 \textit{conditional} upon a specific, isolated inequality representing the expected analytic
 density of sieve survivors. 
 
+The Github repository \href{https://github.com/ElNando888/KrafftSieve/tree/v2.0}
+{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v2.0}}
+contains all definitions, statements, and proofs.\footnote{The only axioms used are
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, which can be checked by
+the \texttt{\#print axioms} command.} We use Lean version 4.28.0 together with the Lean
+mathematical library \texttt{Mathlib} \cite{Mathlib} revision \texttt{8f9d9cf} (dated 2026-02-16).
+
 \section{Krafft Geometry and Legendre Targeting} \label{krafft_geometry}
 
 The bedrock of our formalization is the explicit partitioning of the spatial domain into six
@@ -102,8 +109,8 @@ at these targeted coordinates strictly satisfies Legendre's requirement.
 \end{proof}
 
 This combinatorial translation means that proving Legendre's Conjecture is reduced to formally
-verifying that for sufficiently large $n$, \textit{every} Krafft interval independently generates
-at least one survivor $x$ such that either $6x-1$ or $6x+1$ is prime.
+verifying that for sufficiently large $n$, every Krafft interval independently generates at least
+one survivor $x$ such that either $6x-1$ or $6x+1$ is prime.
 
 \section{The Cardinality Contradiction} \label{contradiction_scaffold}
 
