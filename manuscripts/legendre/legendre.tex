@@ -1,0 +1,109 @@
+\documentclass[lean]{AFM}
+\graphicspath{ {./images/} }
+
+\addbibresource{krafft.bib}
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
+
+
+\renewcommand{\.}{\hskip .75pt}
+\renewcommand{\arraystretch}{1.25}
+\newcommand{\fin}[1]{[\.#1\.]}
+\newcommand{\sekt}[1]{Section~\ref{#1}}
+
+\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.0}
+
+\makeatletter
+\newcommand{\thickhline}{%
+	\noalign {\ifnum 0=`}\fi \hrule height 2pt
+	\futurelet \reserved@a \@xhline
+}
+\newcolumntype{"}{@{\hskip\tabcolsep\vrule width 2pt\hskip\tabcolsep}}
+\makeatother
+
+\makeatletter
+\newcommand{\customlabel}[2]{%
+   \protected@write \@auxout {}{\string \newlabel {#1}{{#2}{\thepage}{#2}{#1}{}} }%
+   \hypertarget{#1}{#2\!\!}
+}
+\makeatother
+
+
+\title[a short title]{The title}
+
+\author[F. Portela]{Fernando Portela} 
+
+\authorinfo[F. Portela]{Independent Researcher}{math.nt@elnando.anonaddy.me}
+
+\VOLUME{0}
+\YEAR{2026}
+\NUMBER{0}
+\firstpage{1}
+\DOI{https://doi.org/10.46298/afm.?????}
+\receiveddate{00}
+\finaldate{00}
+\accepteddate{00}
+\msc{11N05, 11N35, 11N36, 03B35}
+
+
+
+\begin{abstract}
+
+...
+
+\end{abstract}
+
+\keywords{Krafft form, Twin primes, Turán sieve, Interactive theorem proving, Lean 4}
+
+\begin{document}
+
+
+\section{Introduction} \label{introduction}
+
+.
+
+\section {first section} \label{first}
+
+.
+
+\section {Conclusion}
+
+.
+
+\section*{Acknowledgements}
+This work would not have been possible without the tireless assistance of the Aristotle
+framework and Gemini 3.1 Pro. The author wishes to express his gratitude for their
+unwavering dedication to parsing the intricate complexities of the formalization,
+illuminating structural insights, and maintaining a steadfast, collaborative dialogue. More
+than mere computational instruments, they served as indispensable collaborators whose tireless
+deductive logic helped chart the course through these formalized geometric spaces. Specifically,
+Gemini 3.1 Pro was instrumental in clarifying the theoretical ideas and generating precise prompt
+heuristics for the formal prover, while Aristotle served as the primary mechanical workhorse
+securing the dense derivations.
+
+\printbibliography
+
+\newpage
+
+\section*{Appendix: Dependencies between theorems}
+
+The following directed graphs map the logical dependencies between the central formalized results.
+To maintain structural clarity and avoid overwhelming edge density, basic definitions and
+foundational types are generally excluded from the hierarchy. 
+
+\begin{itemize}
+    \setlength\itemsep{0em}
+    \item \textbf{Blue-shaded rounded rectangles}: Formal proofs (Lemmas and Theorems).
+    \item \textbf{Green-shaded rectangles}: Central definitions or structures.
+    \item \textbf{Directed arrows} ($A \rightarrow B$): Logical dependence, signifying that proof
+    $A$ explicitly ``uses'' or ``applies'' result $B$ to close a goal.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{theorem1.png}
+\caption{.}
+\label{fig:thmtree1}
+\end{figure}
+
+\end{document}
