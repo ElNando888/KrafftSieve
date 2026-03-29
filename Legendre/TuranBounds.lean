@@ -74,7 +74,7 @@ For each small prime p, it is bounded by 2n.
 PROVIDED SOLUTION
 From the definition of P_small: it filters range(2n+1), so p < 2n+1, hence p ≤ 2n.
 -/
-theorem small_prime_coverage (n : ℕ) (hn : n ≥ 1) (p : ℕ) (hp : p ∈ P_small n) :
+theorem small_prime_coverage (n : ℕ) (_hn : n ≥ 1) (p : ℕ) (hp : p ∈ P_small n) :
     p ≤ 2 * n := by
       exact Finset.mem_range_succ_iff.mp ( Finset.mem_filter.mp hp |>.1 )
 
@@ -83,12 +83,20 @@ PROBLEM
 The number of small sieving primes is bounded by π(2n) (the prime counting function).
 
 PROVIDED SOLUTION
-P_small n is the set of primes p with 5 ≤ p < 2n+1, which is a subset of primes less than or equal to 2n. The cardinality of all primes ≤ 2n is Nat.primeCounting(2n). Since P_small ⊆ {p prime | p ≤ 2n}, its card is ≤ primeCounting(2n). More precisely, P_small n ⊆ (Finset.range (2n+1)).filter Nat.Prime, and (Finset.range (2n+1)).filter Nat.Prime has card = Nat.primeCounting(2n). Then P_small is a subset of this (it has the extra constraint 5 ≤ p), so its card is ≤.
+P_small n is the set of primes p with 5 ≤ p < 2n+1, which is a subset of primes less than or equal 
+to 2n. The cardinality of all primes ≤ 2n is Nat.primeCounting(2n). Since P_small ⊆ 
+{p prime | p ≤ 2n}, its card is ≤ primeCounting(2n). More precisely, P_small n ⊆ 
+(Finset.range (2n+1)).filter Nat.Prime, and (Finset.range (2n+1)).filter Nat.Prime has card = 
+Nat.primeCounting(2n). Then P_small is a subset of this (it has the extra constraint 5 ≤ p), so 
+its card is ≤.
 -/
 theorem P_small_card_bound (n : ℕ) : (P_small n).card ≤ Nat.primeCounting (2 * n) := by
-  -- Since P_small n is a subset of the set of primes less than or equal to 2n, we can conclude that its cardinality is less than or equal to the cardinality of the set of primes less than or equal to 2n.
+  -- Since P_small n is a subset of the set of primes less than or equal to 2n, we can conclude 
+  -- that its cardinality is less than or equal to the cardinality of the set of primes less than 
+  -- or equal to 2n.
   have h_subset : P_small n ⊆ Finset.filter Nat.Prime (Finset.range (2 * n + 1)) := by
-    exact fun x hx => Finset.mem_filter.mpr ⟨ Finset.mem_filter.mp hx |>.1, Finset.mem_filter.mp hx |>.2.2 ⟩;
+    exact fun x hx => 
+      Finset.mem_filter.mpr ⟨ Finset.mem_filter.mp hx |>.1, Finset.mem_filter.mp hx |>.2.2 ⟩;
   nontriviality;
   rw [ Nat.primeCounting ];
   rw [ Nat.primeCounting', Nat.count_eq_card_filter_range ];
@@ -120,17 +128,21 @@ def aggregate_hits_small (n : ℕ) (x : ℤ) : ℕ :=
 /-
 PROBLEM
 Key separation lemma: no prime p ≥ 5 can simultaneously divide both 6x+1 and 6x−1.
-    If p ∣ 6x+1 and p ∣ 6x−1, then p ∣ (6x+1)−(6x−1) = 2. But p ≥ 5 > 2, contradiction.
+    If p ∣ 6x+1 and p ∣ 6x−1, then p ∣ (6x+1)−(6x−1) = 2. 
+    But p ≥ 5 > 2, contradiction.
     This means I_p⁺(x) · I_p⁻(x) = 0 for all x.
 
 PROVIDED SOLUTION
-Unfold I_plus_ind and I_minus_ind. If (p : ℤ) ∤ (6*x+1) or (p : ℤ) ∤ (6*x-1), then one factor is 0 so the product is 0. If both divide, then p ∣ (6*x+1) - (6*x-1) = 2, but p ≥ 5 so p ∤ 2, contradiction. Use Int.Prime.not_dvd or direct argument that p ≥ 5 implies ¬(p : ℤ) ∣ 2.
+Unfold I_plus_ind and I_minus_ind. If (p : ℤ) ∤ (6*x+1) or (p : ℤ) ∤ (6*x-1), then one factor is 0 
+so the product is 0. If both divide, then p ∣ (6*x+1) - (6*x-1) = 2, but p ≥ 5 so p ∤ 2, 
+contradiction. Use Int.Prime.not_dvd or direct argument that p ≥ 5 implies ¬(p : ℤ) ∣ 2.
 -/
-theorem I_plus_mul_I_minus_eq_zero (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p) (x : ℤ) :
+theorem I_plus_mul_I_minus_eq_zero (p : ℕ) (_hp : Nat.Prime p) (hp5 : 5 ≤ p) (x : ℤ) :
     I_plus_ind p x * I_minus_ind p x = 0 := by
       unfold I_plus_ind I_minus_ind;
       split_ifs <;> simp_all +decide [ sub_eq_add_neg ];
-      exact absurd ( Int.dvd_sub ‹ ( p : ℤ ) ∣ 6 * x + 1 › ‹ ( p : ℤ ) ∣ 6 * x + -1 › ) ( by norm_num; exact mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith ) )
+      exact absurd ( Int.dvd_sub ‹ ( p : ℤ ) ∣ 6 * x + 1 › ‹ ( p : ℤ ) ∣ 6 * x + -1 › ) 
+        ( by norm_num; exact mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith ) )
 
 /-
 PROBLEM
@@ -157,7 +169,8 @@ PROBLEM
 I_plus_ind squared equals itself (idempotent, since it's 0 or 1).
 
 PROVIDED SOLUTION
-Unfold I_plus_ind. Split on the if condition. If true, result is 1^2 = 1. If false, result is 0^2 = 0.
+Unfold I_plus_ind. Split on the if condition. If true, result is 1^2 = 1.
+If false, result is 0^2 = 0.
 -/
 theorem I_plus_ind_sq (p : ℕ) (x : ℤ) : I_plus_ind p x ^ 2 = I_plus_ind p x := by
   unfold I_plus_ind; aesop;
@@ -167,7 +180,8 @@ PROBLEM
 I_minus_ind squared equals itself (idempotent, since it's 0 or 1).
 
 PROVIDED SOLUTION
-Unfold I_minus_ind. Split on the if condition. If true, result is 1^2 = 1. If false, result is 0^2 = 0.
+Unfold I_minus_ind. Split on the if condition. If true, result is 1^2 = 1.
+If false, result is 0^2 = 0.
 -/
 theorem I_minus_ind_sq (p : ℕ) (x : ℤ) : I_minus_ind p x ^ 2 = I_minus_ind p x := by
   unfold I_minus_ind; aesop;
@@ -180,12 +194,18 @@ The variance halving identity: because I_p⁺ and I_p⁻ are disjoint (their pro
     This strictly halves the diagonal penalty in the Turán variance matrix.
 
 PROVIDED SOLUTION
-Unfold I_total_ind. We need (I_plus_ind p x + I_minus_ind p x)^2 = I_plus_ind p x + I_minus_ind p x. Expand the square: a^2 + 2ab + b^2 = a + b. Since a^2 = a (I_plus_ind_sq), b^2 = b (I_minus_ind_sq), and a*b = 0 (I_plus_mul_I_minus_eq_zero), this simplifies to a + 0 + b = a + b.
+Unfold I_total_ind.
+We need (I_plus_ind p x + I_minus_ind p x)^2 = I_plus_ind p x + I_minus_ind p x. 
+Expand the square: a^2 + 2ab + b^2 = a + b.
+Since a^2 = a (I_plus_ind_sq), b^2 = b (I_minus_ind_sq), 
+and a*b = 0 (I_plus_mul_I_minus_eq_zero), this simplifies to a + 0 + b = a + b.
 -/
-theorem I_total_sq_eq_self (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p) (x : ℤ) :
+theorem I_total_sq_eq_self (p : ℕ) (_hp : Nat.Prime p) (hp5 : 5 ≤ p) (x : ℤ) :
     I_total_ind p x ^ 2 = I_total_ind p x := by
       unfold I_total_ind;
       unfold I_plus_ind I_minus_ind ; split_ifs <;> norm_num;
-      have := Int.dvd_sub ‹ ( p : ℤ ) ∣ 6 * x + 1 › ‹ ( p : ℤ ) ∣ 6 * x - 1 ›; norm_num at this; norm_cast at this; have := Nat.le_of_dvd ( by linarith ) this; interval_cases p ;
+      have := Int.dvd_sub ‹ ( p : ℤ ) ∣ 6 * x + 1 › ‹ ( p : ℤ ) ∣ 6 * x - 1 ›; 
+      norm_num at this; norm_cast at this; have := Nat.le_of_dvd ( by linarith ) this; 
+      interval_cases p ;
 
 end

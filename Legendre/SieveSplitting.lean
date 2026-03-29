@@ -37,7 +37,8 @@ PROBLEM
 P_small and P_large are disjoint.
 
 PROVIDED SOLUTION
-The disjointness is immediate: P_small has p ≤ 2n (range (2n+1) means p < 2n+1, i.e. p ≤ 2n), while P_large has p > 2n. These are disjoint by the strict inequality.
+The disjointness is immediate: P_small has p ≤ 2n (range (2n+1) means p < 2n+1, 
+i.e. p ≤ 2n), while P_large has p > 2n. These are disjoint by the strict inequality.
 -/
 theorem P_small_P_large_disjoint (n : ℕ) : Disjoint (P_small n) (P_large n) := by
   -- To prove disjointness, we show that the ranges of primes in P_small and P_large are disjoint.
@@ -50,7 +51,8 @@ PROBLEM
 Every sieving prime (5 ≤ p < 6n+2, p prime) is in P_small ∪ P_large.
 
 PROVIDED SOLUTION
-If p ≤ 2n then p < 2n+1 so p ∈ range(2n+1), hence p ∈ P_small. If p > 2n then p ∈ P_large since p < 6n+2 and p is prime with p ≥ 5.
+If p ≤ 2n then p < 2n+1 so p ∈ range(2n+1), hence p ∈ P_small. 
+If p > 2n then p ∈ P_large since p < 6n+2 and p is prime with p ≥ 5.
 -/
 theorem sieve_primes_partition (n : ℕ) (p : ℕ) (hp : p.Prime) (h5 : 5 ≤ p)
     (hlt : p < 6 * n + 2) :

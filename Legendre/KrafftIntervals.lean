@@ -78,9 +78,13 @@ For x ∈ B_n^(k) (0-indexed k), both 6x - 1 and 6x + 1 lie strictly between
     = (6n+k-1)² and (6n+k)².
 
 PROVIDED SOLUTION
-Case split on k (fin_cases k). For each k=j (0-indexed), unfold Bk to get the interval bounds on x from Finset.Icc membership. Then the inequalities become purely algebraic: use nlinarith with the bounds on x and n ≥ 1. For example, k=0 (B1): x ∈ [6n²-2n+1, 6n²-1]. Need (6n-1)² < 6x-1, i.e. 36n²-12n+1 < 6x-1, i.e. x > 6n²-2n, which holds since x ≥ 6n²-2n+1. And 6x+1 < (6n)² = 36n², i.e. x < 6n²-1/6, which holds since x ≤ 6n²-1.
+Case split on k (fin_cases k). For each k=j (0-indexed), unfold Bk to get the interval bounds on 
+x from Finset.Icc membership. Then the inequalities become purely algebraic: use nlinarith with 
+the bounds on x and n ≥ 1. For example, k=0 (B1): x ∈ [6n²-2n+1, 6n²-1]. Need (6n-1)² < 6x-1, 
+i.e. 36n²-12n+1 < 6x-1, i.e. x > 6n²-2n, which holds since x ≥ 6n²-2n+1. And 6x+1 < (6n)² = 36n², 
+i.e. x < 6n²-1/6, which holds since x ≤ 6n²-1.
 -/
-theorem legendre_targeting (n : ℕ) (hn : n ≥ 1) (k : Fin 6) (x : ℤ)
+theorem legendre_targeting (n : ℕ) (_hn : n ≥ 1) (k : Fin 6) (x : ℤ)
     (hx : x ∈ Bk n k) :
     (6 * (n : ℤ) + k.val - 1) ^ 2 < 6 * x - 1 ∧
     6 * x + 1 < (6 * (n : ℤ) + k.val) ^ 2 := by
@@ -104,9 +108,14 @@ PROBLEM
 The S⁺ hit is correct: if p = 6m + α and x ≡ α·m (mod p), then p ∣ 6x + 1.
 
 PROVIDED SOLUTION
-We need to show p ∣ 6x + 1 given p = 6m + α and x ≡ αm (mod p). Rewrite divisibility as (6x+1 : ZMod p) = 0. From hx, (x : ZMod p) = (α*m : ZMod p). So (6*x+1 : ZMod p) = (6*α*m+1 : ZMod p). Since (p : ZMod p) = 0, we get (6m + α : ZMod p) = 0, hence 6m ≡ -α (mod p). Then 6*α*m = α*(6m) ≡ α*(-α) = -α² = -1 (mod p). So 6x+1 ≡ -1+1 = 0 (mod p). Use ← ZMod.intCast_zmod_eq_zero_iff_dvd to reduce to ZMod computation, then use ring-like reasoning or direct substitution.
+We need to show p ∣ 6x + 1 given p = 6m + α and x ≡ αm (mod p). Rewrite divisibility as 
+(6x+1 : ZMod p) = 0. From hx, (x : ZMod p) = (α*m : ZMod p). So (6*x+1 : ZMod p) = 
+(6*α*m+1 : ZMod p). Since (p : ZMod p) = 0, we get (6m + α : ZMod p) = 0, hence 6m ≡ -α (mod p). 
+Then 6*α*m = α*(6m) ≡ α*(-α) = -α² = -1 (mod p). So 6x+1 ≡ -1+1 = 0 (mod p). Use 
+← ZMod.intCast_zmod_eq_zero_iff_dvd to reduce to ZMod computation, then use ring-like reasoning 
+or direct substitution.
 -/
-theorem sieve_hit_plus_correct (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p)
+theorem sieve_hit_plus_correct (p : ℕ) (_hp : Nat.Prime p) (_hp5 : 5 ≤ p)
     (m : ℤ) (alpha : ℤ) (halpha : alpha = 1 ∨ alpha = -1)
     (hp_eq : (p : ℤ) = 6 * m + alpha) (x : ℤ) (hx : (x : ZMod p) = sieve_hit_plus p m alpha) :
     (p : ℤ) ∣ 6 * x + 1 := by
@@ -115,16 +124,20 @@ theorem sieve_hit_plus_correct (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p)
         have h_subst : (x : ℤ) ≡ (alpha * m : ℤ) [ZMOD p] := by
           exact (ZMod.intCast_eq_intCast_iff x (alpha * m) p).mp hx;
         gcongr;
-      exact Int.dvd_of_emod_eq_zero ( h_subst.symm ▸ Int.emod_eq_zero_of_dvd ( by rcases halpha with ( rfl | rfl ) <;> [ exact ⟨ 1, by linarith ⟩ ; exact ⟨ -1, by linarith ⟩ ] ) )
+      exact Int.dvd_of_emod_eq_zero ( h_subst.symm ▸ Int.emod_eq_zero_of_dvd 
+        ( by rcases halpha with ( rfl | rfl ) <;> 
+          [ exact ⟨ 1, by linarith ⟩ ; exact ⟨ -1, by linarith ⟩ ] ) )
 
 /-- The S⁻ hit is correct: if p = 6m + α and x ≡ -α·m (mod p), then p ∣ 6x - 1. -/
-theorem sieve_hit_minus_correct (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p)
+theorem sieve_hit_minus_correct (p : ℕ) (_hp : Nat.Prime p) (_hp5 : 5 ≤ p)
     (m : ℤ) (alpha : ℤ) (halpha : alpha = 1 ∨ alpha = -1)
     (hp_eq : (p : ℤ) = 6 * m + alpha) (x : ℤ) (hx : (x : ZMod p) = sieve_hit_minus p m alpha) :
     (p : ℤ) ∣ 6 * x - 1 := by
       have h_sub : (6 * x - 1 : ℤ) ≡ (6 * (-alpha * m) - 1 : ℤ) [ZMOD p] := by
-        unfold sieve_hit_minus at hx; simp_all +decide [ ← ZMod.intCast_eq_intCast_iff ] ;
+        unfold sieve_hit_minus at hx; simp_all +decide ;
         simp +decide [ ← hp_eq, ← ZMod.intCast_eq_intCast_iff, hx ];
-      exact Int.dvd_of_emod_eq_zero ( h_sub.symm ▸ Int.modEq_zero_iff_dvd.2 ( by obtain rfl | rfl := halpha <;> [ exact ⟨ -1, by linarith ⟩ ; exact ⟨ 1, by linarith ⟩ ] ) )
+      exact Int.dvd_of_emod_eq_zero ( h_sub.symm ▸ Int.modEq_zero_iff_dvd.2 
+        ( by obtain rfl | rfl := halpha <;> 
+          [ exact ⟨ -1, by linarith ⟩ ; exact ⟨ 1, by linarith ⟩ ] ) )
 
 end
