@@ -1,7 +1,7 @@
 \documentclass[lean]{AFM}
 \graphicspath{ {./images/} }
 
-\addbibresource{krafft.bib}
+\addbibresource{legendre.bib}
 \setcounter{biburllcpenalty}{7000}
 \setcounter{biburlucpenalty}{8000}
 
@@ -48,7 +48,15 @@
 
 
 \begin{abstract}
-We present a fully formalized, conditional reduction of Legendre's Conjecture in the Lean 4 proof assistant. Legendre's Conjecture asserts the existence of at least one prime between consecutive perfect squares $n^2$ and $(n+1)^2$. By deploying a formulation of the Tur\'an sieve intertwined with the Krafft geometric intervals, we establish a ``zero-sorry'' formal scaffold bounding the sieve capacity of large primes. While an unconditional proof requires establishing prime gaps of order $O(x^{1/2})$---a well-known open problem in analytic number theory---our formalized reduction cleanly separates the absolute, verified geometric properties from the unproven analytic density estimate. Consequently, we mathematically guarantee that Legendre's Conjecture holds conditionally upon this isolated analytic threshold.
+We present a fully formalized, conditional reduction of Legendre's Conjecture in the Lean 4 proof
+assistant. Legendre's Conjecture asserts the existence of at least one prime between consecutive
+perfect squares $n^2$ and $(n+1)^2$. By deploying a formulation of the Tur\'an sieve intertwined
+with the Krafft geometric intervals, we establish a ``zero-sorry'' formal scaffold bounding the
+sieve capacity of large primes. While an unconditional proof requires establishing prime gaps of
+order $O(x^{1/2})$---a well-known open problem in analytic number theory---our formalized
+reduction cleanly separates the absolute, verified geometric properties from the unproven analytic
+density estimate. Consequently, we mathematically guarantee that Legendre's Conjecture holds
+conditionally upon this isolated analytic threshold.
 \end{abstract}
 
 \keywords{Legendre's Conjecture, Krafft intervals, Tur\'an sieve, Prime gaps, Lean 4, Formalization}
@@ -58,27 +66,60 @@ We present a fully formalized, conditional reduction of Legendre's Conjecture in
 
 \section{Introduction} \label{introduction}
 
-Legendre's Conjecture is one of the oldest open problems in number theory, postulating that for every positive integer $n$, there exists at least one prime $p$ such that $n^2 < p < (n+1)^2$. An unconditional proof of this conjecture remains out of reach, as it intrinsically demands controlling the gaps between consecutive primes strictly within $O(x^{1/2})$, whereas the best unconditional bounds currently available are of order $O(x^{0.525})$.
+Legendre's Conjecture is one of the oldest open problems in number theory, postulating that for
+every positive integer $n$, there exists at least one prime $p$ such that $n^2 < p < (n+1)^2$. An
+unconditional proof of this conjecture remains out of reach, as it intrinsically demands
+controlling the gaps between consecutive primes strictly within $O(x^{1/2})$, whereas the best
+unconditional bounds currently available are of order $O(x^{0.525})$.
 
-In this manuscript, we offer a \textit{formal, conditional reduction} mechanized in the Lean 4 interactive theorem prover. Our approach translates the spatial bounds of Legendre's Conjecture into a systematic geometric framework via \textit{Krafft sub-intervals}, integrating this geometry natively into a formalized Tur\'an sieve. We successfully formalize a contradiction scaffold that definitively proves Legendre's Conjecture \textit{conditional} upon a specific, isolated inequality representing the expected analytic density of sieve survivors. 
+In this manuscript, we offer a \textit{formal, conditional reduction} mechanized in the Lean 4
+interactive theorem prover. Our approach translates the spatial bounds of Legendre's Conjecture
+into a systematic geometric framework via \textit{Krafft}~\cite{Krafft1801,Portela2026}
+\textit{sub-intervals}, integrating this geometry natively into a formalized Tur\'an sieve. We
+successfully formalize a contradiction scaffold that definitively proves Legendre's Conjecture
+\textit{conditional} upon a specific, isolated inequality representing the expected analytic
+density of sieve survivors. 
 
 \section{Krafft Geometry and Legendre Targeting} \label{krafft_geometry}
 
-The bedrock of our formalization is the explicit partitioning of the spatial domain into six distinct Krafft sub-intervals, denoted $B_n^{(k)}$ for $k \in \{1,\dots,6\}$. These sets partition the surrounding moduli space to tightly restrict the residue classes. 
+The bedrock of our formalization is the explicit partitioning of the spatial domain into six
+distinct Krafft sub-intervals, denoted $B_n^{(k)}$ for $k \in \{1,\dots,6\}$. These sets partition
+the surrounding moduli space to tightly restrict the residue classes. 
 
-Our first primary formalized milestone is the \textit{Legendre targeting property}: for any integer $x \in B_n^{(k)}$, the candidates $6x+1$ and $6x-1$ natively satisfy the property of lying strictly between consecutive squares. This combinatorial translation means that proving Legendre's Conjecture is reduced to proving that at least one element $x$ in at least one Krafft interval produces a prime out of $\{6x-1, 6x+1\}$.
+Our first primary formalized milestone is the \textit{Legendre targeting property}: for any
+integer $x \in B_n^{(k)}$, the candidates $6x+1$ and $6x-1$ natively satisfy the property of
+living strictly between consecutive squares. This combinatorial translation means that proving
+Legendre's Conjecture is reduced to proving that at least one element $x$ in at least one Krafft
+interval produces a prime out of $\{6x-1, 6x+1\}$.
 
 \section{The Cardinality Contradiction} \label{contradiction_scaffold}
 
-To isolate surviving prime candidates, we formalize a combinatorial exhaustion assuming the negation of Legendre's Conjecture---a scenario we term the ``Double Cover''. Under a Double Cover, every geometric candidate in the target subset must be composite, meaning it is struck by at least one large sieving prime $p > 2n$.
+To isolate surviving prime candidates, we formalize a combinatorial exhaustion assuming the
+negation of Legendre's Conjecture---a scenario we term the ``Double Cover''. Under a Double
+Cover, every geometric candidate in the target subset must be composite, meaning it is struck by
+at least one large sieving prime $p > 2n$.
 
-By analyzing the difference between paired residue strikes, we formalize a rigid spatial vector connecting potential dual-strikes by the same prime $p$. Because traversing this distance requires steps far exceeding the length of $B_n^{(k)}$, we formally derive the ``wasted cover'' lemma: a large prime cannot simultaneously strike a candidate of the form $6x+1$ and a distinct candidate $6y-1$ without exceeding the combinatorial boundaries. 
+By analyzing the difference between paired residue strikes, we formalize a rigid spatial vector
+connecting potential dual-strikes by the same prime $p$. Because traversing this distance requires
+steps far exceeding the length of $B_n^{(k)}$, we formally derive the ``wasted cover'' lemma: a
+large prime cannot simultaneously strike a candidate of the form $6x+1$ and a distinct candidate
+$6y-1$ without exceeding the combinatorial boundaries. 
 
-This geometric ceiling on strike efficiency yields a hard upper bound on the maximum number of candidates the large primes can eliminate. If the analytic density of points surviving the initial small prime sieving strictly exceeds the combined covering capacity of the available large primes, the Double Cover assumption mathematically collapses, guaranteeing the survival of at least one prime.
+This geometric ceiling on strike efficiency yields a hard upper bound on the maximum number of
+candidates the large primes can eliminate. If the analytic density of points surviving the initial
+small prime sieving strictly exceeds the combined covering capacity of the available large primes,
+the Double Cover assumption mathematically collapses, guaranteeing the survival of at least one
+prime.
 
 \section{Conclusion} \label{conclusion}
 
-We have successfully constructed a fully verified, ``zero-sorry'' formal scaffold bridging structural sieve geometry with the constraints of analytic number theory. By sealing off the conditional analytic estimate into an explicit hypothesis, the Lean 4 formalization explicitly guarantees that if the analytic inequality is resolved, Legendre's Conjecture follows unyieldingly from the verified mechanics. This project underscores the utility of formal methods not merely in verifying completed proofs, but in structurally isolating the exact boundaries of open problems.
+We have successfully constructed a fully verified, ``zero-sorry'' formal scaffold bridging
+structural sieve geometry with the constraints of analytic number theory. By sealing off the
+conditional analytic estimate into an explicit hypothesis, the Lean 4 formalization explicitly
+guarantees that if the analytic inequality is resolved, Legendre's Conjecture follows
+unyieldingly from the verified mechanics. This project underscores the utility of formal methods
+not merely in verifying completed proofs, but in structurally isolating the exact boundaries of
+open problems.
 
 \section*{Acknowledgements}
 This work would not have been possible without the tireless assistance of the Aristotle
@@ -111,7 +152,7 @@ foundational types are generally excluded from the hierarchy.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.7\textwidth]{theorem1.png}
+%\includegraphics[width=0.7\textwidth]{theorem1.png}
 \caption{.}
 \label{fig:thmtree1}
 \end{figure}
