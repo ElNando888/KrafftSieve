@@ -8,7 +8,6 @@ Sets up theorems applying optimal weights over P_small, defines the residual sur
 sets U⁺ and U⁻, and hooks up expected combinatorial density.
 -/
 
-import Mathlib
 import Legendre.SieveSplitting
 import KrafftSieve.Variance
 import KrafftSieve.OptimalWeights
@@ -16,7 +15,12 @@ import KrafftSieve.OptimalWeights
 open scoped BigOperators
 
 set_option linter.style.setOption false
-set_option linter.style.longLine false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 open Classical in
 noncomputable section

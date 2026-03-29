@@ -8,13 +8,17 @@ Defines the partition of sieving primes into P_small (statistical) and P_large (
 relative to interval length L = 2n.
 -/
 
-import Mathlib
 import Legendre.KrafftIntervals
 
 open scoped BigOperators
 
 set_option linter.style.setOption false
-set_option linter.style.longLine false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 noncomputable section
 

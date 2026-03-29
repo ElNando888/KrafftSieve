@@ -9,13 +9,17 @@ For p > L, p strikes at most one element for S⁺ and at most one for S⁻.
 The absolute modulo distance between these strikes is rigidly fixed by p's Krafft parameter.
 -/
 
-import Mathlib
 import Legendre.SieveSplitting
 
 open scoped BigOperators
 
 set_option linter.style.setOption false
-set_option linter.style.longLine false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 noncomputable section
 
@@ -55,7 +59,7 @@ theorem krafft_translation_vector (p : ℕ) (m : ℤ) (alpha : ℤ)
     (halpha : alpha = 1 ∨ alpha = -1) (hp_eq : (p : ℤ) = 6 * m + alpha) :
     (sieve_hit_plus p m alpha : ZMod p) - (sieve_hit_minus p m alpha : ZMod p) =
     ((2 * alpha * m : ℤ) : ZMod p) := by
-      unfold sieve_hit_plus sieve_hit_minus; ring;
+      unfold sieve_hit_plus sieve_hit_minus; ring_nf;
       norm_num [ mul_two ]
 
 /-

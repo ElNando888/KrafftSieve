@@ -9,20 +9,22 @@ proves the Legendre targeting property and cardinality bounds,
 and defines the sieve indicator hits S^+ and S^-.
 -/
 
-import Mathlib
+-- import Mathlib
+import KrafftSieve.Defs
 
 open scoped BigOperators
 
 set_option linter.style.setOption false
-set_option linter.style.longLine false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 noncomputable section
 
 /-! ## Krafft Interval Definitions -/
-
-/-- The full target interval 𝒜_n = {6n² - 2n, ..., 6n² + 10n + 3}. -/
-def scrA_n (n : ℕ) : Finset ℤ :=
-  Finset.Icc (6 * (n : ℤ) ^ 2 - 2 * n) (6 * n ^ 2 + 10 * n + 3)
 
 /-- Krafft sub-interval B_n^(1) = {6n² - 2n + 1, ..., 6n² - 1}. -/
 def B1 (n : ℕ) : Finset ℤ :=
@@ -111,7 +113,7 @@ theorem sieve_hit_plus_correct (p : ℕ) (hp : Nat.Prime p) (hp5 : 5 ≤ p)
       -- Substitute $x$ from hypothesis hx into the expression $6x + 1$.
       have h_subst : (6 * x + 1 : ℤ) ≡ (6 * (alpha * m) + 1 : ℤ) [ZMOD p] := by
         have h_subst : (x : ℤ) ≡ (alpha * m : ℤ) [ZMOD p] := by
-          exact?;
+          exact (ZMod.intCast_eq_intCast_iff x (alpha * m) p).mp hx;
         gcongr;
       exact Int.dvd_of_emod_eq_zero ( h_subst.symm ▸ Int.emod_eq_zero_of_dvd ( by rcases halpha with ( rfl | rfl ) <;> [ exact ⟨ 1, by linarith ⟩ ; exact ⟨ -1, by linarith ⟩ ] ) )
 

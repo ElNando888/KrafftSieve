@@ -9,7 +9,6 @@ and shows that P_large cannot perfectly exhaust U⁺ ∪ U⁻ due to geometric c
 yielding the existence of a survivor.
 -/
 
-import Mathlib
 import Legendre.TuranBounds
 import Legendre.GeometricTranslation
 import KrafftSieve.Variance
@@ -18,7 +17,12 @@ import KrafftSieve.OptimalWeights
 open scoped BigOperators
 
 set_option linter.style.setOption false
-set_option linter.style.longLine false
+set_option linter.style.openClassical false
+set_option linter.style.refine false
+set_option linter.style.nativeDecide false
+set_option linter.flexible false
+set_option linter.style.induction false
+set_option linter.style.emptyLine false
 
 open Classical in
 noncomputable section
