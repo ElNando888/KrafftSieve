@@ -21,19 +21,13 @@ import KrafftSieve.SelbergWeights
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
 -- `native_decide`, flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
-set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
-set_option linter.style.longLine false
-set_option linter.style.maxHeartbeats false
-set_option linter.style.docString false
 set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 open scoped BigOperators
-open scoped Classical
 open scoped Real
 open scoped Nat
 
@@ -100,6 +94,19 @@ non-zero $\lambda$ if the basis is linearly independent on $A_n$).
 -/
 noncomputable def Ratio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
   if Q_1 n lambda = 0 then 0 else (Q_2 n lambda) / (Q_1 n lambda)
+
+/--
+Helper: Q_1 equals the sum of squares of P_multi over A_n.
+-/
+private lemma Q_1_sum_sq (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda (x : ZMod (q n))) ^ 2 := by
+  unfold Q_1 P_multi Matrix_1
+  simp +decide [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
+  exact Eq.symm (by
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ =>
+      Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ =>
+        Finset.sum_congr rfl fun _ _ => by ring))
 
 /--
 The truly multidimensional weight function is non-negative everywhere.
@@ -239,18 +246,8 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
         ring;
         rw [ Finset.sum_comm ] ; congr ; ext ; congr ; ext ; ring_nf;
         unfold Matrix_1; simp +decide [ mul_assoc, mul_comm ] ;
-      have h_nonneg : ∀ (lambda : Idx n → ℝ), Q_1 n lambda ≥ 0 := by
-        intro lambda
-        have h_sum : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda (x : ZMod (q n)))^2 := by
-          unfold Q_1 P_multi Matrix_1;
-          simp +decide [ Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq ];
-          ring_nf;
-          exact Eq.symm ( by
-            rw [ Finset.sum_comm ]
-            exact Finset.sum_congr rfl fun _ _ =>
-              Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
-                Finset.sum_congr rfl fun _ _ => by ring ) ) ;
-        exact h_sum.symm ▸ Finset.sum_nonneg fun x hx => sq_nonneg _;
+      have h_nonneg : ∀ (lambda : Idx n → ℝ), Q_1 n lambda ≥ 0 := fun lambda =>
+        (Q_1_sum_sq n lambda).symm ▸ Finset.sum_nonneg fun _ _ => sq_nonneg _
       grind,
     zero_mem' := by
       unfold Q_1; aesop;,
@@ -272,28 +269,14 @@ Lemma: $Q_1(\lambda) = 0$ if and only if $P_{multi}(\lambda, x) = 0$ for all $x 
 lemma Q_1_eq_zero_iff (n : ℕ) (lambda : Idx n → ℝ) :
     Q_1 n lambda = 0 ↔ ∀ x ∈ A_n n, P_multi n lambda x = 0 := by
       -- By definition of $Q_1$, we know that
-      have hQ1_def : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x) ^ 2 := by
-        unfold Q_1 P_multi;
-        simp +decide [ Matrix_1, pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
-        exact Eq.symm ( by
-          rw [ Finset.sum_comm ]
-          exact Finset.sum_congr rfl fun _ _ =>
-            Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
-              Finset.sum_congr rfl fun _ _ => by ring ) )
-      simp_all +decide [ Finset.sum_eq_zero_iff_of_nonneg, sq_nonneg ]
+      rw [Q_1_sum_sq]
+      simp +decide [Finset.sum_eq_zero_iff_of_nonneg, sq_nonneg]
 
 /--
 Lemma: $Q_1$ is non-negative for all $\lambda$.
 -/
-lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : Q_1 n lambda ≥ 0 := by
-  -- By definition of $Q_1$, we know that $Q_1 n lambda = \sum_{x \in A_n n}
-  -- (P_{\text{multi}} n \lambda x)^2$.
-  have hQ1_def : Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := by
-    unfold Q_1 P_multi Matrix_1
-    simp [pow_two]
-    simp +decide only [Finset.mul_sum _ _ _, mul_comm, mul_left_comm]
-    exact Eq.symm (Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm))
-  exact hQ1_def.symm ▸ Finset.sum_nonneg fun x hx => sq_nonneg _;
+lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : Q_1 n lambda ≥ 0 :=
+  (Q_1_sum_sq n lambda).symm ▸ Finset.sum_nonneg fun _ _ => sq_nonneg _
 
 /--
 Define the standard dot product on the space of coefficients.
@@ -534,15 +517,7 @@ lemma Ratio_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) 
         -- By definition of $Q_1$, we have:
         -- $Q_1(u + v) = \sum_{x \in A_n} (P_{\text{multi}} n (u + v) x)^2$.
         have hQ_1_def : ∀ (lambda : Idx n → ℝ),
-            Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := by
-          intros lambda
-          simp [Q_1, Matrix_1]
-          simp +decide [ P_multi, pow_two, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ]
-          exact Eq.symm ( by
-            rw [ Finset.sum_comm ]
-            exact Finset.sum_congr rfl fun _ _ =>
-              Finset.sum_comm.trans ( Finset.sum_congr rfl fun _ _ =>
-                Finset.sum_congr rfl fun _ _ => by ring ) )
+            Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda x)^2 := Q_1_sum_sq n
         -- Since $u \in \ker(Q_1)$, we have $P_{\text{multi}} n u x = 0$ for all $x \in A_n$.
         have hP_multi_u_zero : ∀ x ∈ A_n n, P_multi n u x = 0 := by
           exact fun x hx => by simpa [ hQ_1_def ] using Q_1_eq_zero_iff n u |>.1 hu x hx

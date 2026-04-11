@@ -15,19 +15,13 @@ import KrafftSieve.SelbergWeights
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
 -- `native_decide`, flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
-set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
 set_option linter.style.longLine false
-set_option linter.style.maxHeartbeats false
-set_option linter.style.docString false
-set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 open scoped BigOperators
-open scoped Classical
 open scoped Real
 open scoped Nat
 

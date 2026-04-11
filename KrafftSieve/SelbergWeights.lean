@@ -21,19 +21,13 @@ import KrafftSieve.Basic
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
 -- `native_decide`, flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
-set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
-set_option linter.style.longLine false
-set_option linter.style.maxHeartbeats false
-set_option linter.style.docString false
 set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 open scoped BigOperators
-open scoped Classical
 open scoped Real
 open scoped Nat
 
@@ -47,19 +41,7 @@ Define the set of permitted residue classes for each prime as
 $A_i = (\mathbb{Z}/p_i\mathbb{Z}) \setminus \{\pm r_i \pmod{p_i}\}$.
 -/
 def A_i (n : ℕ) (r : Fin (w n) → ℕ) (i : Fin (w n)) : Finset (ZMod (p n i)) :=
-  haveI : NeZero (p n i) := ⟨by
-  -- Since $p n i$ is an element of $P_n n$, and $P_n n$ consists of primes greater than
-  --or equal to 5, $p n i$ must be at least 5. Hence, it cannot be zero.
-  have h_prime : ∀ i : Fin (w n), 5 ≤ p n i := by
-    intro i
-    have h_prime : p n i ∈ P_n n := by
-      -- Since the sorted list is a permutation of the original set, every element in the
-      -- sorted list is in the original set.
-      have h_perm : ∀ x ∈ primes_list n, x ∈ P_n n := by
-        exact fun x hx => Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 hx;
-      exact h_perm _ ( List.get_mem _ _ )
-    exact (Finset.mem_filter.mp h_prime).right.left
-  exact ne_of_gt (by linarith [h_prime i])⟩
+  haveI : NeZero (p n i) := ⟨p_ne_zero n i⟩
   Finset.univ.filter (fun x => x ≠ (r i : ZMod (p n i)) ∧ x ≠ -(r i : ZMod (p n i)))
 
 /--
@@ -179,25 +161,24 @@ lemma prime_of_no_prime_factors_lt {k m : ℕ} (hk : 2 ≤ k) (h_sq : k < m ^ 2)
 If x survives, then for any p in P_n, p does not divide 6x-1 and p does not divide 6x+1.
 -/
 lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1)
-    (p : ℕ) (hp : p ∈ P_n n) :
-    ¬(p : ℤ) ∣ (6 * x - 1) ∧ ¬(p : ℤ) ∣ (6 * x + 1) := by
-      obtain ⟨i, hi⟩ := mem_P_n_iff_exists_index n p |>.1 hp
-      have h_cong : (x.cast : ZMod p) ≠ r_K n i ∧ (x.cast : ZMod p) ≠ -r_K n i := by
+    (p_val : ℕ) (hp : p_val ∈ P_n n) :
+    ¬(p_val : ℤ) ∣ (6 * x - 1) ∧ ¬(p_val : ℤ) ∣ (6 * x + 1) := by
+      obtain ⟨i, hi⟩ := mem_P_n_iff_exists_index n p_val |>.1 hp
+      have h_cong : (x.cast : ZMod p_val) ≠ r_K n i ∧ (x.cast : ZMod p_val) ≠ -r_K n i := by
         convert survives_iff n x |>.1 h_survives i; aesop
         all_goals subst hi; norm_cast
         · rw [ZMod.cast_eq_val]
           norm_num [ZMod.natCast_zmod_val]
           rw [← ZMod.natCast_mod]
-          rw [← Nat.mod_mod_of_dvd x (show p n i ∣ q n from Finset.dvd_prod_of_mem _ hp)]
+          rw [← Nat.mod_mod_of_dvd x (show p n i ∣ q n from p_dvd_q n i)]
           exact ZMod.natCast_mod (x % q n) (p n i)
         · rw [ZMod.cast_eq_val]
           norm_num [ZMod.natCast_zmod_val]
           rw [ZMod.natCast_eq_natCast_iff]
-          have h_div : p n i ∣ q n := Finset.dvd_prod_of_mem _ hp
-          rw [Nat.ModEq, Nat.mod_mod_of_dvd _ h_div]
+          rw [Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i)]
       have h_prime := Finset.mem_filter.mp hp |>.2.2
       have h_ge_5 := Finset.mem_filter.mp hp |>.2.1
-      have := krafft_algebraic_equivalence p h_prime h_ge_5 x
+      have := krafft_algebraic_equivalence p_val h_prime h_ge_5 x
       simp_all +decide [← ZMod.intCast_zmod_eq_zero_iff_dvd]
       simp_all +decide [r_K]
 
@@ -208,11 +189,9 @@ sieve if and only if both 6x-1 and 6x+1 are prime numbers.
 -/
 lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     f n (r_K n) x = 1 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      -- Apply the lemma survives_iff to rewrite the goal in terms of the congruence conditions.
       rw [survives_iff];
       constructor <;> intro h
-      · -- Since 6x-1 and 6x+1 have no prime factors less than 6n+5, they must be prime.
-        have h_prime_factors : ∀ p : ℕ, p.Prime → p < 6 * n + 5 →
+      · have h_prime_factors : ∀ p : ℕ, p.Prime → p < 6 * n + 5 →
             ¬(p : ℤ) ∣ (6 * x - 1) ∧ ¬(p : ℤ) ∣ (6 * x + 1) := by
           intro p hp hp_lt
           by_cases hp_ge_5 : 5 ≤ p
@@ -270,36 +249,18 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
                 Nat.pos_of_ne_zero ( by rintro rfl; contradiction ) ] ) ] at H
             norm_cast at H ; simp_all;
             rw [ Nat.dvd_prime h.1 ] at H;
-            have h_pi_lt : p n i < 6 * n + 2 := by
-              have h_pi_lt : p n i ∈ P_n n := by
-                exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
-              exact Finset.mem_range.mp ( Finset.mem_filter.mp h_pi_lt |>.1 );
+            have h_pi_lt : p n i < 6 * n + 2 := p_lt_range n i
             rcases x with ( _ | _ | x ) <;> simp_all +arith +decide [ Nat.mul_succ ];
             · unfold A_n at hx; norm_num at hx; nlinarith;
             · cases H <;> simp_all +arith +decide [ A_n ];
-              · have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
-                  exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) )
-                aesop
+              · exact absurd (p_ge_5 n i) (by aesop)
               · nlinarith only [ hx, h_pi_lt ]
           · rw [ Nat.dvd_prime h.2 ] at H
-            -- Since $p n i$ is a prime number in $P_n$, it must be at least 5. However,
-            -- $6x + 1$ is greater than $6n + 2$, which is the upper bound for $P_n$.
-            -- Therefore, $p n i$ cannot be $6x + 1$.
-            have h_contra : p n i ≤ 6 * n + 1 := by
-              have h_contra : p n i ∈ P_n n := by
-                exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ );
-              exact Nat.le_of_lt_succ (
-                Finset.mem_range.mp (Finset.mem_filter.mp h_contra |>.1));
+            have h_contra : p n i ≤ 6 * n + 1 := Nat.le_of_lt_succ (p_lt_range n i)
             cases H <;> simp_all +arith +decide [ A_n ];
-            · have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
-                exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) )
-              aesop
+            · exact absurd (p_ge_5 n i) (by aesop)
             · nlinarith only [ hn, hx, h_contra ]
-        have := krafft_algebraic_equivalence ( p n i ) ( Finset.mem_filter.mp (
-          show p n i ∈ P_n n from by
-            exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) |>.2.2 ) ( by
-          have := Finset.mem_filter.mp ( show p n i ∈ P_n n from by
-            exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ; aesop; ) x
+        have := krafft_algebraic_equivalence ( p n i ) (p_prime n i) (p_ge_5 n i) x
         generalize_proofs at *;
         simp_all +decide [ r_K ];
         convert this using 1;
@@ -307,18 +268,14 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
           rw [ ZMod.cast_eq_val ];
           rw [ ZMod.val_natCast ];
           rw [ ZMod.natCast_eq_natCast_iff ];
-          rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ ( show p n i ∣ q n from
-            Finset.dvd_prod_of_mem _ <| by
-              exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ ) ) ];
+          rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i) ];
         · norm_num [ ZMod.cast, ZMod.val ];
           cases h_qn : q n <;> simp_all +decide [ ZMod ];
           convert this.2 using 1;
           rw [ ← ZMod.natCast_mod ];
           rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ _ from _ ) ];
           · simp;
-          · exact h_qn ▸ Finset.dvd_prod_of_mem _ (
-              Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 (
-                List.get_mem _ _ ) )
+          · exact h_qn ▸ p_dvd_q n i
 
 /--
 Additive Sieve Isomorphism:
@@ -347,8 +304,8 @@ lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
 
 /--
 The Weighted Existence Principle:
-Assume there exists a specific configuration such that $S_2(n, W) < S_1(n, W)$. Prove that there must
-exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
+Assume there exists a specific configuration such that $S_2(n, W) < S_1(n, W)$. Prove that
+there must exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
 -/
 theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : ∀ x, W x ≥ 0)
     (h_ineq : S_2 n W < S_1 n W) :
@@ -358,18 +315,13 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
       have h_c_ge_one : ∀ x ∈ A_n n, W x > 0 → c n x ≥ 1 := by
         -- Since $c(x)$ is the sum of non-negative terms, if $c(x) \neq 0$, then $c(x) \geq 1$.
         intros x hx hWx_pos
-        have h_c_nonneg : 0 ≤ c n x := by
-          exact Finset.sum_nonneg fun _ _ => by unfold g; split_ifs <;> norm_num;
+        have h_c_nonneg : 0 ≤ c n x :=
+          Finset.sum_nonneg fun _ _ => by unfold g; split_ifs <;> norm_num
         contrapose! h_ineq;
-        exact ⟨ x, hx, hWx_pos, by
-          linarith [ show c n x = 0 from by
-            linarith [ show c n x = 0 from by
-              exact non_negative_hits n x |>.2 <| by linarith ] ] ⟩
-      -- Therefore, for all $x \in A_n$, $W(x) c(x) \ge W(x)$.
-      have h_Wc_ge_W : ∀ x ∈ A_n n, W x * c n (x : ZMod (q n)) ≥ W x := by
-        exact fun x hx => if hx' : W x = 0 then by simp +decide [ hx' ]
+        exact ⟨ x, hx, hWx_pos, (non_negative_hits n x).2 (by linarith) ⟩
+      exact Finset.sum_le_sum fun x hx =>
+        if hx' : W x = 0 then by simp +decide [ hx' ]
         else by nlinarith [ hW x, h_c_ge_one x hx ( lt_of_le_of_ne ( hW x ) ( Ne.symm hx' ) ) ]
-      exact Finset.sum_le_sum h_Wc_ge_W
 
 /--
 Definition of the Krafft Admissibility condition
@@ -391,7 +343,7 @@ index is unconditionally guaranteed in $\mathcal{A}_n$.
 -/
 theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Admissibility n) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      obtain ⟨ W, hW_nonneg, hW_supp, hW_ineq ⟩ := h_admit
+      obtain ⟨ W, hW_nonneg, _, hW_ineq ⟩ := h_admit
       obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq
       exact ⟨ x, hx.1, additive_sieve_isomorphism n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
 

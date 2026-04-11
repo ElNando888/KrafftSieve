@@ -21,19 +21,14 @@ import KrafftSieve.Basic
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
 -- `native_decide`, flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
-set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
-set_option linter.style.longLine false
 set_option linter.style.maxHeartbeats false
-set_option linter.style.docString false
 set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 open scoped BigOperators
-open scoped Classical
 open scoped Real
 open scoped Nat
 
@@ -209,7 +204,9 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
 Dirac Comb Non-Zero Values
 For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, the Fourier
 transform evaluates to:
-$$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
+$$
+\hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right)
+$$
 -/
 set_option maxHeartbeats 800000 in
 lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
@@ -261,17 +258,15 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
         · rw [Nat.div_mul_cancel];
           exact Finset.dvd_prod_of_mem _ (Finset.mem_filter.mpr ⟨Finset.mem_range.mpr
             (show p n i < 6 * n + 2 from by
-              have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-              have h_range := Finset.mem_range.mp (Finset.mem_filter.mp h_in_P |>.1)
+              have h_in_P := p_mem_P_n n i
+              have h_range := p_lt_range n i
               aesop),
             by
               have h_prime : p n i ∈ P_n n := by
                 exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
               exact ⟨Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2⟩⟩);
         · rw [ Nat.cast_div ];
-          · have h_in_P : p n i ∈ P_n n := by
-              exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+          · have h_in_P := p_mem_P_n n i
             have h_prime' := Finset.mem_filter.mp h_in_P
             exact Finset.dvd_prod_of_mem _ (Finset.mem_filter.mpr ⟨
               Finset.mem_range.mpr (by
@@ -279,10 +274,8 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
                 aesop),
               by
                 exact ⟨h_prime'.2.1, h_prime'.2.2⟩⟩)
-          · have h_in_P : p n i ∈ P_n n := by
-              exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-            exact Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| (Finset.mem_filter.mp h_in_P).2.2
-
+          · have h_in_P := p_mem_P_n n i
+            exact Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i
       -- Let's simplify the sum
       -- $\sum_{x=0}^{p_n-1} \mathbf{1}_{\{x \equiv \pm r^K_i \pmod{p_n}\}} e^{-2\pi i k x / p_n}$.
       have h_sum_final : ∑ x ∈ Finset.range (p n i),
@@ -324,63 +317,53 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
                   (fun hx => hx.symm ▸ Nat.div_lt_of_lt_mul (by
                     linarith [Nat.Prime.two_le (show Nat.Prime (p n i) from by grind)]))
                   fun hx => hx.symm ▸ Nat.mod_lt _ (Nat.Prime.pos (show Nat.Prime (p n i) from by
-                    have h_in_P : p n i ∈ P_n n := by
-                      exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-                    exact (Finset.mem_filter.mp h_in_P).2.2)))
+                    have h_in_P := p_mem_P_n n i
+                    exact p_prime n i)))
               simp_all only [or_self, iff_true]
           · grind +ring;
           · simp +decide [Finset.insert_subset_iff]
             exact ⟨Nat.div_lt_of_lt_mul <| by
               linarith [show p n i ≥ 5 from by
-                have h_prime := Finset.mem_filter.mp (show p n i ∈ P_n n from by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _))
+                have h_prime := Finset.mem_filter.mp (p_mem_P_n n i)
                 exact h_prime.2.1],
               Nat.mod_lt _ <| Nat.Prime.pos <| by
-                have h_prime := Finset.mem_filter.mp (show p n i ∈ P_n n from by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _))
+                have h_prime := Finset.mem_filter.mp (p_mem_P_n n i)
                 exact h_prime.2.2⟩
         rw [ h_sum_final, Finset.sum_pair ];
         · rw [ Nat.mod_eq_of_lt ];
           · rw [ Nat.cast_sub ( show r_K n i ≤ p n i from _ ) ] ; ring_nf;
             · have hp : p n i ≠ 0 := by
-                have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+                have h_in_P := p_mem_P_n n i
                 have h_prime := Finset.mem_filter.mp h_in_P
-                exact Nat.ne_of_gt (Nat.Prime.pos h_prime.2.2)
+                exact Nat.ne_of_gt ((p_prime n i).pos)
               norm_num [hp]
               exact Complex.exp_eq_exp_iff_exists_int.mpr ⟨-k, by push_cast; ring⟩;
             · have h_ge_5 : p n i ≥ 5 := by
-                have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-                exact Finset.mem_filter.mp h_in_P |>.2.1
+                have h_in_P := p_mem_P_n n i
+                exact p_ge_5 n i
               exact Nat.div_le_of_le_mul <| by linarith [h_ge_5]
           · refine' Nat.sub_lt _ _;
-            · have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+            · have h_in_P := p_mem_P_n n i
               have h_prime := Finset.mem_filter.mp h_in_P
-              exact Nat.Prime.pos h_prime.2.2
+              exact (p_prime n i).pos
             · have h_ge_5 : p n i ≥ 5 := by
-                have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-                exact Finset.mem_filter.mp h_in_P |>.2.1
+                have h_in_P := p_mem_P_n n i
+                exact p_ge_5 n i
               exact Nat.div_pos (by linarith [h_ge_5]) (by norm_num)
         · rw [ Nat.mod_eq_of_lt ];
           · unfold r_K;
             have h_pi_ge_5 : 5 ≤ p n i := by
               have h_prime_ge_5 : ∀ i : Fin (w n), 5 ≤ p n i := by
                 intro i
-                have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-                exact (Finset.mem_filter.mp h_in_P).2.1;
+                have h_in_P := p_mem_P_n n i
+                exact p_ge_5 n i;
               exact h_prime_ge_5 i;
             omega;
           · refine' Nat.sub_lt _ _
-            · have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-              exact Nat.Prime.pos (Finset.mem_filter.mp h_in_P).2.2
-            · have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-              have h_ge_5 : 5 ≤ p n i := (Finset.mem_filter.mp h_in_P).2.1
+            · have h_in_P := p_mem_P_n n i
+              exact (p_prime n i).pos
+            · have h_in_P := p_mem_P_n n i
+              have h_ge_5 : 5 ≤ p n i := p_ge_5 n i
               apply Nat.div_pos
               · linarith
               · norm_num
@@ -396,15 +379,13 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
           norm_num [ ZMod.val_mul, ZMod.val_natCast ];
           rw [ Nat.mod_eq_of_lt ];
           · rw [ Nat.cast_mul, Nat.cast_div ] <;> norm_num;
-            · have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+            · have h_in_P := p_mem_P_n n i
               have h_prime := Finset.mem_filter.mp h_in_P
               apply Finset.dvd_prod_of_mem
               apply Finset.mem_filter.mpr
               exact ⟨Finset.mem_range.mpr (by aesop), h_prime.2⟩
-            · have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-              exact Nat.Prime.ne_zero (Finset.mem_filter.mp h_in_P).2.2
+            · have h_in_P := p_mem_P_n n i
+              exact p_ne_zero n i
           · refine' lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos _ _)) _
             · apply Nat.le_of_dvd
               · exact Finset.prod_pos fun p hp => Nat.Prime.pos (Finset.mem_filter.mp hp).2.2
@@ -417,15 +398,13 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
         refine' lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos _ _)) _
         · apply Nat.le_of_dvd
           · exact Finset.prod_pos fun x hx => Nat.Prime.pos (Finset.mem_filter.mp hx).2.2
-          · have h_in_P : p n i ∈ P_n n := by
-              exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+          · have h_in_P := p_mem_P_n n i
             have h_prime := Finset.mem_filter.mp h_in_P
             apply Finset.dvd_prod_of_mem
             apply Finset.mem_filter.mpr
             exact ⟨Finset.mem_range.mpr (by aesop), h_prime.2⟩
-        · have h_in_P : p n i ∈ P_n n := by
-            exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
-          exact Nat.Prime.pos (Finset.mem_filter.mp h_in_P).2.2
+        · have h_in_P := p_mem_P_n n i
+          exact (p_prime n i).pos
         · exact Nat.mul_div_le _ _
 
 /-
@@ -460,19 +439,17 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
                   exact h_perm _ (List.get_mem _ _)
                 exact Nat.Prime.pos (Finset.mem_filter.mp h_prime |>.2.2)
               refine' Nat.dvd_of_mul_dvd_mul_right h_pi_pos _
-              have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+              have h_in_P := p_mem_P_n n i
               have h_div : p n i ∣ q n := by
                 apply Finset.dvd_prod_of_mem
                 exact Finset.mem_filter.mpr ⟨Finset.mem_range.mpr <| by
-                  linarith [Finset.mem_range.mp <| Finset.mem_filter.mp h_in_P |>.1],
+                  linarith [p_lt_range n i],
                   Finset.mem_filter.mp h_in_P |>.2⟩
               rwa [Nat.div_mul_cancel h_div]
             use ⟨k % p n i, by
-              have h_in_P : p n i ∈ P_n n := by
-                exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+              have h_in_P := p_mem_P_n n i
               have h_prime := Finset.mem_filter.mp h_in_P
-              exact Nat.mod_lt _ (Nat.Prime.pos h_prime.2.2)⟩
+              exact Nat.mod_lt _ ((p_prime n i).pos)⟩
             generalize_proofs at *;
             simp +zetaDelta at *;
             convert congr_arg ( fun x : ℕ => x : ℕ → ZMod ( q n ) ) hk using 1;
@@ -483,8 +460,7 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
               norm_cast;
               rw [ mul_right_comm, Nat.mul_div_cancel' ];
               · rw [ ZMod.natCast_eq_zero_iff ] ; exact dvd_mul_right _ _;
-              · have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+              · have h_in_P := p_mem_P_n n i
                 have h_prime := Finset.mem_filter.mp h_in_P
                 apply Finset.dvd_prod_of_mem
                 apply Finset.mem_filter.mpr
@@ -509,8 +485,7 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
             · ring_nf; aesop
             · rw [Nat.cast_div] <;> norm_num; ring_nf
               · by_cases hq : q n = 0 <;> by_cases hp : p n i = 0 <;> aesop
-              · have h_in_P : p n i ∈ P_n n := by
-                  exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+              · have h_in_P := p_mem_P_n n i
                 have h_prime := Finset.mem_filter.mp h_in_P
                 apply Finset.dvd_prod_of_mem
                 apply Finset.mem_filter.mpr
@@ -520,7 +495,7 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
                 · exact h_prime.2
               · have h_in_P : p n i ∈ P_n n := by
                   exact mem_P_n_iff_exists_index n _ |>.2 ⟨i, rfl⟩
-                exact Nat.Prime.ne_zero (Finset.mem_filter.mp h_in_P).2.2
+                exact p_ne_zero n i
           · simpa [ neg_div, mul_assoc, mul_comm, mul_left_comm ] using h_zeta_ne_one;
         exact Eq.trans (Finset.sum_congr rfl fun _ _ => by
           rw [← Complex.exp_nat_mul]; ring_nf) h_geo_series;
@@ -615,7 +590,8 @@ By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$,
 and applying the Dirac Comb lemmas, establish the exact equation for the weighted 
 hit mass $S_2(n)$:
 $$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} +
-  q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
+  q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i}
+    \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
 set_option maxHeartbeats 800000 in
 theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -699,11 +675,7 @@ theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
           rw [Finset.sum_congr rfl fun x hx => by rw [h_simplify x hx]]
           norm_num [Finset.sum_ite, Finset.filter_ne']
           ring_nf
-          have hp_ne_zero : p n i ≠ 0 := by
-            apply Nat.Prime.ne_zero
-            have h_in_P : p n i ∈ P_n n := by
-              exact mem_P_n_iff_exists_index n (p n i) |>.2 ⟨i, rfl⟩
-            exact (Finset.mem_filter.mp h_in_P).2.2
+          have hp_ne_zero : p n i ≠ 0 := p_ne_zero n i
           rw [Finset.sum_eq_add_sum_diff_singleton (Finset.mem_range.mpr
             (Nat.pos_of_ne_zero hp_ne_zero))]
           norm_num; ring_nf
@@ -735,11 +707,7 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
         unfold r_K
         have h_prime : p n i ≥ 5 ∧ p n i % 6 = 1 ∨ p n i ≥ 5 ∧ p n i % 6 = 5 := by
           have h_prime : p n i ≥ 5 ∧ p n i % 2 = 1 ∧ p n i % 3 ≠ 0 := by
-            have h_prime : p n i ≥ 5 ∧ Nat.Prime (p n i) := by
-              have h_in_P : p n i ∈ P_n n := by
-                convert Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _) using 1
-              generalize_proofs at *
-              exact ⟨Finset.mem_filter.mp h_in_P |>.2.1, Finset.mem_filter.mp h_in_P |>.2.2⟩
+            have h_prime : p n i ≥ 5 ∧ Nat.Prime (p n i) := ⟨p_ge_5 n i, p_prime n i⟩
             generalize_proofs at *
             exact ⟨h_prime.1, h_prime.2.eq_two_or_odd.resolve_left (by linarith),
                    fun h => by
@@ -752,8 +720,7 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
         omega
       obtain h | h := h_prime_cases i <;> rw [h] <;> ring_nf <;> norm_num [sub_eq_add_neg]
       · rcases k : r_K n i with (_ | k) <;> push_cast [k] <;> ring_nf <;> norm_num at *
-        · have h_in_P : p n i ∈ P_n n := by
-            exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
+        · have h_in_P := p_mem_P_n n i
           have := Finset.mem_filter.mp h_in_P
           aesop
         · rw [← Real.cos_sub_pi]; ring_nf
@@ -769,10 +736,11 @@ The Third Harmonic Extraction
 Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ is concentrated
 strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies
 to:
-$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} -
-  q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
+$$
+S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} -
+q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right)
+$$
 -/
-set_option maxHeartbeats 800000 in
 lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0)
     (h_spectral : ∀ i : Fin (w n), ∀ k ∈ (Finset.range (p n i)).erase 0, k ≠ 3 →
@@ -794,8 +762,7 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
       · grind;
       · intro h
         norm_num +zetaDelta at *
-        have h_in_P : p n i ∈ P_n n := by
-          exact (mem_P_n_iff_exists_index n _) |>.2 ⟨i, rfl⟩
+        have h_in_P := p_mem_P_n n i
         have := Finset.mem_filter.mp h_in_P
         norm_num at this
         interval_cases p n i <;> norm_num at *;

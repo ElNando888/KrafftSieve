@@ -23,58 +23,74 @@ open scoped BigOperators Real Nat Pointwise
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
 -- `native_decide`, flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
-set_option linter.style.openClassical false
 set_option linter.style.refine false
 set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 noncomputable section
 
-open Classical in
 /-- Instance proof that q is non-zero. -/
 instance q_ne_zero (n : ℕ) : NeZero (q n) := ⟨by
-  apply Finset.prod_ne_zero_iff.mpr
-  intro p hp
-  have hp_prime : p.Prime := (Finset.mem_filter.mp hp).2.2
-  exact hp_prime.ne_zero⟩
+  exact Finset.prod_ne_zero_iff.mpr fun p hp => (Finset.mem_filter.mp hp).2.2.ne_zero⟩
 
 /-- A number p is in P_n if and only if it equals p_i for some index i. -/
 lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
   p_val ∈ P_n n ↔ ∃ i : Fin (w n), p n i = p_val := by
-    constructor <;> intro h;
-    · have h_in_sorted : p_val ∈ primes_list n := by
-        exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.2 h;
-      obtain ⟨ i, hi ⟩ := List.mem_iff_get.1 h_in_sorted; use ⟨ i, by
-        exact i.2.trans_le ( by simp +decide [ primes_list, w ] ) ⟩
-      subst hi
-      rfl;
-    · obtain ⟨ i, rfl ⟩ := h;
-      exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
+  constructor
+  · intro h
+    obtain ⟨i, hi⟩ := List.mem_iff_get.mp ((Finset.mem_sort (α := ℕ) (· ≤ ·)).mpr h)
+    exact ⟨i.cast (by simp +decide [w]), hi⟩
+  · rintro ⟨i, rfl⟩
+    exact (Finset.mem_sort (α := ℕ) (· ≤ ·)).mp (List.get_mem _ _)
 
 /-- P_n is a subset of P_{n+1}. -/
 lemma P_n_mono (n : ℕ) : P_n n ⊆ P_n (n + 1) := by
-  exact fun x hx => Finset.mem_filter.mpr ⟨ Finset.mem_range.mpr ( by
-    linarith [ Finset.mem_range.mp ( Finset.mem_filter.mp hx |>.1 ),
-      Finset.mem_filter.mp hx |>.2.2.two_le ] ),
-    Finset.mem_filter.mp hx |>.2.1, Finset.mem_filter.mp hx |>.2.2 ⟩
+  intro x hx
+  have := Finset.mem_filter.mp hx
+  exact Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by
+    linarith [Finset.mem_range.mp this.1, this.2.2.two_le]), this.2.1, this.2.2⟩
 
 /-- q(n) divides q(n+1). -/
 lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
-set_option maxHeartbeats 400000 in
+/-- Every `p n i` is in `P_n n`. -/
+lemma p_mem_P_n (n : ℕ) (i : Fin (w n)) : p n i ∈ P_n n :=
+  (Finset.mem_sort (α := ℕ) (· ≤ ·)).mp (List.get_mem _ _)
+
+/-- Every `p n i` is prime. -/
+lemma p_prime (n : ℕ) (i : Fin (w n)) : (p n i).Prime :=
+  (Finset.mem_filter.mp (p_mem_P_n n i)).2.2
+
+/-- Every `p n i` is at least 5. -/
+lemma p_ge_5 (n : ℕ) (i : Fin (w n)) : 5 ≤ p n i :=
+  (Finset.mem_filter.mp (p_mem_P_n n i)).2.1
+
+/-- Every `p n i` is positive. -/
+lemma p_pos (n : ℕ) (i : Fin (w n)) : 0 < p n i :=
+  (p_prime n i).pos
+
+/-- Every `p n i` is nonzero. -/
+lemma p_ne_zero (n : ℕ) (i : Fin (w n)) : p n i ≠ 0 :=
+  (p_pos n i).ne'
+
+/-- `p n i` is in the range `[5, 6n+2)`. -/
+lemma p_lt_range (n : ℕ) (i : Fin (w n)) : p n i < 6 * n + 2 :=
+  Finset.mem_range.mp (Finset.mem_filter.mp (p_mem_P_n n i)).1
+
+/-- `p n i` divides `q n`. -/
+lemma p_dvd_q (n : ℕ) (i : Fin (w n)) : p n i ∣ q n :=
+  Finset.dvd_prod_of_mem _ (p_mem_P_n n i)
+
 /- q(n) is at least 10^20 for n >= 10. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
-  induction' n, hn using Nat.le_induction with n hn ih;
-  · native_decide +revert;
-  · refine' le_trans ih _;
-    exact Nat.le_of_dvd ( by
-      exact Finset.prod_pos fun p hp =>
-        Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2 ) ( q_mono n )
+  induction' n, hn using Nat.le_induction with n hn ih
+  · native_decide +revert
+  · refine' le_trans ih _
+    exact Nat.le_of_dvd (Finset.prod_pos fun p hp =>
+      (Finset.mem_filter.mp hp).2.2.pos) (q_mono n)
 
-set_option maxHeartbeats 800000 in
 /- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
 theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
   by_cases hn10 : n < 10
