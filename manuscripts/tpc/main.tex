@@ -11,7 +11,7 @@
 \newcommand{\fin}[1]{[\.#1\.]}
 \newcommand{\sekt}[1]{Section~\ref{#1}}
 
-\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.0}
+\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.1}
 
 \makeatletter
 \newcommand{\thickhline}{%
@@ -97,8 +97,8 @@ Krafft alignment forces a universal negative resonance precisely at the third ha
 leverage this efficiently, we execute a rigorous topological reduction within the Lean 4 proof
 assistant~\cite{MouraUllrich2021,Mathlib}. We machine-verify the existence of an optimal
 multi-dimensional weight function over a compact subspace, thereby evaluating a minimum
-spectral ratio $\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L182}{\mu_{min}(n)}$. The culminating
-structure, \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L693}
+spectral ratio $\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L189}{\mu_{min}(n)}$. The culminating
+structure, \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L668}
 {\texttt{krafft\_sieve\_guarantee\_with\_mu\_min}}, establishes a strictly finite-dimensional
 conditional theorem: assuming the analytic bound $\mu_{min}(n) < 1$ holds, twin primes must
 fundamentally exist within $\mathcal{A}_n$.
@@ -121,8 +121,8 @@ Lean 4 formalization and provide a machine-checked proof of the parity barrier c
 \sekt{crossharmonics} explores the analytic mechanism of spectral cross-convolutions, providing a
 deterministic blueprint for how multidimensional polynomials circumvent this harmonic deficit.
 
-The Github repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.0}
-{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.0}}
+The Github repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.1}
+{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.1}}
 contains all definitions, statements, and proofs.\footnote{The only axioms used are
 \texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, which can be checked by
 the \texttt{\#print axioms} command.} We use Lean version 4.28.0 together with the Lean
@@ -142,7 +142,7 @@ outside $\mathcal{P}_n$.
 
 For each $p_i \in \mathcal{P}_n$, we establish the target residue class
 $r^K_i = \lfloor (p_i + 1) / 6 \rfloor$. The algebraic equivalence lemma
-(\href{\urlpfx/KrafftSieve/SelbergWeights.lean#L99}{\texttt{krafft\_algebraic\_equivalence}})
+(\href{\urlpfx/KrafftSieve/SelbergWeights.lean#L81}{\texttt{krafft\_algebraic\_equivalence}})
 formally establishes that evaluating $x \equiv \pm r^K_i \pmod{p_i}$ serves as a strict
 proxy for divisibility rules against either $6x-1$ or $6x+1$. 
 
@@ -163,7 +163,7 @@ penalty for the coordinate $x$ is defined additively as the sum of all local hit
 $$ c(x) = \sum_{i} g_i(x) $$ 
 
 Unlike classical inclusion-exclusion setups, $c(x)$ does not collapse destructively. The formal
-proof of \href{\urlpfx/KrafftSieve/SelbergWeights.lean#L329}{\texttt{additive\_sieve\_isomorphism}}
+proof of \href{\urlpfx/KrafftSieve/SelbergWeights.lean#L286}{\texttt{additive\_sieve\_isomorphism}}
 formally guarantees that an interval coordinate $x$ has exactly zero hits ($c(x) = 0$) if and only
 if both bounding integers $6x-1$ and $6x+1$ are genuine primes.  
 
@@ -173,7 +173,7 @@ zero, $c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime numbers.
 \end{theorem}
 \begin{proof}
 Assuming $x \in \mathcal{A}_n$, a structural interval bound
-(\href{\urlpfx/KrafftSieve/SelbergWeights.lean#L129}{\texttt{interval\_projection\_bound}})
+(\href{\urlpfx/KrafftSieve/SelbergWeights.lean#L111}{\texttt{interval\_projection\_bound}})
 verifies that neither $6x-1$ nor $6x+1$ can possess a prime factor strictly greater than $6n+2$
 unless that bounding integer is itself prime. If $c(x) = 0$, no prime $p \in \mathcal{P}_n$
 generates a local hit across the interval. In conjunction with our algebraic equivalence lemma,
@@ -195,21 +195,21 @@ setting, Parseval's identity ($\sum |f|^2 = q\sum |\hat{f}|^2$) and Plancherel's
 formalization reflects both faces: \texttt{parseval\_identity} covers the norm-squared form
 used here, while \texttt{plancherel\_theorem\_custom} covers the inner-product form used in
 the Hit Expansion below.}
-(\href{\urlpfx/KrafftSieve/Variance.lean#L224}{\texttt{parseval\_identity}}). As we shift toward
+(\href{\urlpfx/KrafftSieve/Variance.lean#L406}{\texttt{parseval\_identity}}). As we shift toward
 a weighted objective, we introduce an arbitrary weight function $W(x)$ tightly supported
 exclusively within $\mathcal{A}_n$. This allows us to define continuous interval masses
 $S_1(n, W) = \sum W(x)$ and $S_2(n, W) = \sum W(x)c(x)$, explicitly tracking the weight function.
 
 Plancherel's theorem provides the critical Hit Expansion
-(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L192}{\texttt{plancherel\_hit\_expansion}}),
+(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L187}{\texttt{plancherel\_hit\_expansion}}),
 directly decomposing $S_2(n, W)$ into a Fourier series in $\hat{W}(h)$ and
 $\overline{\hat{g}_i(h)}$.
 
 Because $g_i(x)$ is evaluated globally over $\mathbb{Z}/q\mathbb{Z}$ but depends only on the
 residue of $x$ modulo the local prime $p_i$, its transform unavoidably manifests a sparse
 \textit{Dirac Comb} structure. The Lean 4 code rigorously verifies this
-(see \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L438}{\texttt{dirac\_comb\_zero}} and
-\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L215}{\texttt{dirac\_comb\_nonzero}}), confirming that
+(see \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L417}{\texttt{dirac\_comb\_zero}} and
+\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L212}{\texttt{dirac\_comb\_nonzero}}), confirming that
 $\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_i$.
 
 This deterministic sparsity structures the central analytic identity of the sieve. It allows the
@@ -221,7 +221,7 @@ $$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \
 
 When examining the precise sub-comb frequency constructed at the 3rd harmonic $h = 3q/p_i$, the
 cosine wave perfectly anchors to the Krafft alignment integer $r^K_i$ and generates the
-\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L728}{\texttt{exact\_krafft\_cosine}} lemma:
+\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L700}{\texttt{exact\_krafft\_cosine}} lemma:
 
 \begin{lemma}[The Exact Krafft Cosine]
 For any prime factor $p_i \ge 5$, substituting the alignment residue
@@ -254,23 +254,23 @@ $S \subseteq \{1, \dots, w(n)\}$. This exponential expansion to a $2^{w(n)}$-dim
 analytically unavoidable; it is the minimum algebraic dimension required to remain strictly closed
 under pointwise multiplication. Crucially, we enforce non-negativity simply by squaring the entire
 polynomial: $W_{\lambda}(x) = P_{multi}(\lambda, x)^2$
-(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L107}{\texttt{W\_truly\_multi\_nonneg}}). This is
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L114}{\texttt{W\_truly\_multi\_nonneg}}). This is
 analytically elegant as it automatically satisfies the strict positive-weight condition without
 requiring an intractable continuum of linear inequality constraints on the vector $\lambda$.
 
 Because the Rayleigh quotient $Q_2(\lambda) / Q_1(\lambda)$ evaluates the continuous efficiency
 of the basis, it acts independently of uniform scaling
-(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L374}{\texttt{Ratio\_scale}}). Thus, we constrain
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L357}{\texttt{Ratio\_scale}}). Thus, we constrain
 our parameter space purely to the unit sphere restricted to the orthogonal complement of the kernel
 of $Q_1$. The formal extraction of an absolute minimizer proceeds by a rigorous sequence of
 topological deductions. First, the Lean 4 code guarantees that this finite-dimensional bounded
-subspace acts as a compact domain (see \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L459}
+subspace acts as a compact domain (see \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L442}
 {\texttt{sphere\_perp\_compact}}). Because the rational Rayleigh quotient maps inputs continuously,
 its continuous image evaluated over this domain is itself compact. Consequently, the infimum ratio
 is unconditionally attained by an exact optimal spectral vector $\lambda_{opt}$
-(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L628}{\texttt{exists\_minimizer}}), physically
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L603}{\texttt{exists\_minimizer}}), physically
 realizing the minimum ratio $\mu_{min}(n)$. The Lean 4 code formally
-proves the bridging lemma \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L188}
+proves the bridging lemma \href{\urlpfx/KrafftSieve/OptimalWeights.lean#L195}
 {\texttt{mu\_min\_lt\_one\_implies\_admissibility}}, resulting in
 the \textbf{Krafft Sieve Guarantee}.
 
@@ -281,7 +281,7 @@ then there exists an index $x \in \mathcal{A}_n$ such that $6x-1$ and $6x+1$ for
 \begin{proof}
 If $\mu_{min}(n) < 1$, the continuous construction ensures the optimal multidimensional weight
 function guarantees $S_2(n, W_{opt}) < S_1(n, W_{opt})$
-(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L166}{\texttt{sufficiency\_of\_Q}}).
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L173}{\texttt{sufficiency\_of\_Q}}).
 Evaluating our bounded domain, this aggregate inequality dictates the explicit presence of at least
 one $x \in \mathcal{A}_n$ carrying strictly positive weight and exactly encountering zero hits.
 Finally, triggering the \textit{Additive Sieve Isomorphism}, $c(x) = 0$ independently asserts
@@ -311,7 +311,7 @@ into the evaluation of continuous quadratic forms $Q_1(n)$ and $Q_2(n)$. By cast
 performance metric as a Rayleigh quotient, we leverage \texttt{Mathlib}'s extensive linear algebra
 library to govern spectral optimizations. The interface transforms classical heuristic variance
 tracking into a rigorous, machine-checked compactness bound
-(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L459}{\texttt{sphere\_perp\_compact}})
+(\href{\urlpfx/KrafftSieve/OptimalWeights.lean#L442}{\texttt{sphere\_perp\_compact}})
 restricted to the orthogonal complement $\texttt{\{v | Q\_1(v) = 0\}}^{\perp}$.
 
 A notable consequence of the formalization was the ability to explicitly isolate and characterize
@@ -323,7 +323,7 @@ $\sum \frac{2}{p_i}\cos(\pi/p_i) < \sum \frac{2}{p_i}$ is straightforward to ver
 the significant structural consequence is not the simple inequality itself, but the spectral
 signature of the deficit: the main domain volume notoriously diverges while the isolated resonance
 capacity is forced to strictly converge. Formalizing this fundamental separation within Lean~4
-(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L823}{\texttt{resonance\_lt\_mainTerm}}) proves
+(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L790}{\texttt{resonance\_lt\_mainTerm}}) proves
 universally fatal to any simple 1-dimensional additive Turán sieve. This stark
 convergence/divergence reality tightly enforces a lower bound strictly above $1$ for the quotient
 $\mu$, analytically formalizing a direct collision with the classical Sieve Parity limit.
