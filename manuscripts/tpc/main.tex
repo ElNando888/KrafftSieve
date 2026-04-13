@@ -11,7 +11,7 @@
 \newcommand{\fin}[1]{[\.#1\.]}
 \newcommand{\sekt}[1]{Section~\ref{#1}}
 
-\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.1}
+\def\urlpfx{https://github.com/ElNando888/KrafftSieve/blob/v1.2}
 
 \makeatletter
 \newcommand{\thickhline}{%
@@ -121,8 +121,8 @@ Lean 4 formalization and provide a machine-checked proof of the parity barrier c
 \sekt{crossharmonics} explores the analytic mechanism of spectral cross-convolutions, providing a
 deterministic blueprint for how multidimensional polynomials circumvent this harmonic deficit.
 
-The Github repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.1}
-{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.1}}
+The Github repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.2}
+{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.2}}
 contains all definitions, statements, and proofs.\footnote{The only axioms used are
 \texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, which can be checked by
 the \texttt{\#print axioms} command.} We use Lean version 4.28.0 together with the Lean
@@ -208,20 +208,20 @@ $\overline{\hat{g}_i(h)}$.
 Because $g_i(x)$ is evaluated globally over $\mathbb{Z}/q\mathbb{Z}$ but depends only on the
 residue of $x$ modulo the local prime $p_i$, its transform unavoidably manifests a sparse
 \textit{Dirac Comb} structure. The Lean 4 code rigorously verifies this
-(see \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L417}{\texttt{dirac\_comb\_zero}} and
-\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L212}{\texttt{dirac\_comb\_nonzero}}), confirming that
+(see \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L571}{\texttt{dirac\_comb\_zero}} and
+\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L349}{\texttt{dirac\_comb\_nonzero}}), confirming that
 $\hat{g}_i(h) = 0$ for all frequencies except precise integer multiples of $q/p_i$.
 
 This deterministic sparsity structures the central analytic identity of the sieve. It allows the
 explicit separation of the primary mass from the targeted oscillatory interference, generating the
-\textbf{Resonant Sieve Equation} (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L597}
+\textbf{Resonant Sieve Equation} (\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L688}
 {\texttt{resonant\_sieve\_equation}}):
 $$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum_{k \neq 0}
 \hat{W}\!\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\!\left( \frac{2 \pi k r^K_i}{p_i} \right) $$
 
 When examining the precise sub-comb frequency constructed at the 3rd harmonic $h = 3q/p_i$, the
 cosine wave perfectly anchors to the Krafft alignment integer $r^K_i$ and generates the
-\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L700}{\texttt{exact\_krafft\_cosine}} lemma:
+\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L716}{\texttt{exact\_krafft\_cosine}} lemma:
 
 \begin{lemma}[The Exact Krafft Cosine]
 For any prime factor $p_i \ge 5$, substituting the alignment residue
@@ -323,7 +323,7 @@ $\sum \frac{2}{p_i}\cos(\pi/p_i) < \sum \frac{2}{p_i}$ is straightforward to ver
 the significant structural consequence is not the simple inequality itself, but the spectral
 signature of the deficit: the main domain volume notoriously diverges while the isolated resonance
 capacity is forced to strictly converge. Formalizing this fundamental separation within Lean~4
-(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L790}{\texttt{resonance\_lt\_mainTerm}}) proves
+(\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean#L806}{\texttt{resonance\_lt\_mainTerm}}) proves
 universally fatal to any simple 1-dimensional additive Turán sieve. This stark
 convergence/divergence reality tightly enforces a lower bound strictly above $1$ for the quotient
 $\mu$, analytically formalizing a direct collision with the classical Sieve Parity limit.
