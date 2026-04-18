@@ -10,6 +10,7 @@ Formal verification of the Krafft sieve architecture for the Twin Prime Conjectu
 
 I know I have to take entire responsibility for the whole output, but for what it's worth, I consider this a collaborative effort between _all_ three "entities" involved.
 
-## Manuscript
+## Manuscripts
 
-First draft completed on 03/24/2026.
+- First draft completed on 03/24/2026.
+- The idea of submitting to AFM was somewhat misguide, so drafting has resarted (04/18/2026).
