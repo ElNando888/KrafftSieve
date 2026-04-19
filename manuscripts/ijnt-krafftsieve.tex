@@ -53,7 +53,18 @@
 \end{history}
 
 \begin{abstract}
-.
+The Twin Prime Conjecture notoriously faces the parity barrier, structurally preventing classical
+multiplicative sieves from isolating prime pairs. To bypass this, we introduce a shift to an additive
+Turán variance framework over bounded, symmetric intervals. Utilizing the discrete Krafft alignment,
+we construct an exact geometric isomorphism where a local penalty metric dictates twin prime existence.
+Translating this spatial model into the frequency domain exposes a universal negative resonance at
+the third harmonic. We systematically reduce the Twin Prime Conjecture to a strictly finite-dimensional
+continuous inequality: proving the minimum spectral ratio $\mu_{\min}(n) < 1$ rigorously guarantees
+the existence of twin primes. Furthermore, we prove analytically that purely independent 1-dimensional
+weights inherently fail to overcome the logarithmic divergence of Mertens' sums, mathematically
+forcing the quotient to $\mu \ge 1$. This continuous density deficit acts as the exact spectral
+manifestation of the parity barrier, establishing that an unconditional proof requires deploying
+high-dimensional cross-harmonic polynomials to resolve the sieve geometry.
 \end{abstract}
 
 \keywords{Krafft form, Twin primes, Turán sieve}
@@ -67,11 +78,12 @@ two, stands as one of the most celebrated unsolved problems in number theory. Hi
 mathematicians have relied on sieve methods intuitively dating back to Brun and continuously
 refined by Selberg~\cite{Selberg1947} and others~\cite{MontgomeryVaughan2006} to approach questions
 of prime distribution. While these multiplicative inclusion-exclusion frameworks have yielded
-profound structural results—most notably strictly bounding the gaps between
+significant structural results—most notably strictly bounding the gaps between
 primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}—they inevitably encounter the parity
 barrier. This combinatorial limitation severely restricts classical sieves from successfully
 distinguishing integers with an even number of prime factors from those with an odd number,
-effectively paralyzing standard approaches from generating an unconditional proof.
+resulting in a structural paralysis that prevents standard approaches from generating an
+unconditional proof.
 
 To bypass this barrier, this paper introduces a pivot from a multiplicative inclusion-exclusion
 model toward an additive Turán variance framework~\cite{Turan1934}. Rather than counting survivors
@@ -79,26 +91,28 @@ destructively via a product, we constrain our search to highly structured symmet
 $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. Following the discrete Krafft
 geometry~\cite{Krafft1801,Portela2026}, our framework utilizes the alignment residue
 $r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our bounded sieve window. Our formally verified
-Additive Sieve Isomorphism mechanism uniquely establishes that any surviving integer strictly
-generates a genuine twin prime pair.
+Additive Sieve Isomorphism mechanism establishes that any surviving integer
+corresponds to a twin prime pair.
 
 Translating this discrete spatial model into the continuous frequency domain via the Discrete
 Fourier Transform and Parseval's identity reveals a geometric observation: the previously
 specified Krafft alignment forces a universal negative resonance precisely at the third harmonic.
-To leverage this efficiently, we execute a rigorous topological reduction over the space of
-multidimensional polynomial weights. We evaluate a minimum spectral ratio $\mu_{min}(n)$,
+To leverage this efficiently, we execute a topological reduction over the space of
+multidimensional polynomial weights. We evaluate a minimum spectral ratio $\mu_{\min}(n)$,
 formally reducing the Twin Prime problem to a strictly finite-dimensional conditional inequality:
-assuming the analytic bound $\mu_{min}(n) < 1$ holds, twin primes must fundamentally exist within
+assuming the analytic bound $\mu_{\min}(n) < 1$ holds, twin primes must fundamentally exist within
 $\mathcal{A}_n$.
 
-Crucially, we also provide a definitive analytic result regarding the limits of sieve theory. We
-prove that deploying purely independent, 1-dimensional harmonic weights inherently fails to
-overcome the local density bounds, structurally forcing the quotient to $\mu \ge 1$. This
-continuous density deficit is the exact spectral manifestation of the parity problem, rigorously
-establishing that resolving the conjecture relies intrinsically on the massive $2^{w(n)}$
-dimensionality of polynomial cross-harmonics to produce a favorable sieve density. 
+Crucially, we also provide an explicit analytic result regarding the limitations of 1-dimensional
+harmonic weights. We prove that deploying purely independent, 1-dimensional harmonic weights
+inherently fails to overcome the local density bounds---specifically, because bounded independent
+phase corrections cannot structurally outpace the logarithmic divergence of Mertens' sums. This
+forces the quotient to $\mu \ge 1$. This continuous density deficit is the exact spectral
+manifestation of the parity problem, indicating that resolving the conjecture relies intrinsically
+on the full $2^{w(n)}$ dimensionality of polynomial cross-harmonics to produce a favorable sieve
+density. 
 
-Throughout the text, \lean\ symbols are used as direct links to formalized code in the Github
+Throughout the text, \lean\ symbols are used as direct links to formalized code in the GitHub
 repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.2}
 {\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.2}}, which contains the machine-checked
 verifications for all definitions, statements, and proofs in this paper.\footnote{The only axioms
@@ -185,7 +199,7 @@ $c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime numbers.
 By the definition of the global hit counter, $c(x) = 0$ implies no prime $p_i \in \mathcal{P}_n$
 generates a local hit, meaning $x \not\equiv \pm r^K_i \pmod{p_i}$. By the Krafft Algebraic
 Equivalence, this guarantees that neither $6x-1$ nor $6x+1$ has any prime divisors in
-$\mathcal{P}_n$. Since integers of the form $6x \pm 1$ are intrinsically co-prime to 2 and 3, they
+$\mathcal{P}_n$. Since integers of the form $6x \pm 1$ are intrinsically coprime to 2 and 3, they
 have no prime factors strictly less than $6n+5$. Because Lemma \ref{lem:interval_bound}
 structurally guarantees that the maximum possible value of $6x+1$ is strictly less than
 $(6n+5)^2$, lacking prime factors up to this threshold unconditionally forces primality.
@@ -314,7 +328,7 @@ sub-comb frequency at the third harmonic $h = 3q/p_i$, the trigonometric phase p
 the Krafft alignment integer.
 
 \begin{lemma}[The Exact Krafft Cosine {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L716}{\lean}]}] \label{lem:exact_krafft_cosine}
-For any prime factor $p_i \ge 5$, substituting the Krafft alignment residue $r_i^K = \lfloor(p_i+1)/6\rfloor$ evaluated precisely at the third harmonic yields a universally negative term:
+For any prime factor $p_i \ge 5$, substituting the Krafft alignment residue $r_i^K = \lfloor(p_i+1)/6\rfloor$ evaluated precisely at the third harmonic yields a strictly negative term:
 $$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) $$
 \end{lemma}
 \begin{proof}
@@ -406,7 +420,7 @@ While the strict inequality itself is algebraically elementary, its analytic con
 theory are profound. The significance lies not just in the deficit, but in the spectral signature of
 the divergence. 
 
-By Merten's theorems \cite{MontgomeryVaughan2006}, the main density term $\sum \frac{2}{p_i}$ diverges
+By Mertens' theorems \cite{MontgomeryVaughan2006}, the main density term $\sum \frac{2}{p_i}$ diverges
 logarithmically as $n \to \infty$. Conversely, the magnitude of the harmonic deficit
 \eqref{eq:harmonic_deficit}, measured by the difference between the main term and the resonance
 capacity, can be bounded using the Taylor expansion $\cos(x) \ge 1 - x^2/2$:
@@ -500,7 +514,7 @@ lower bound of the sieve density quotient \eqref{eq:sieve_density_quotient}.
 
 \begin{definition}[The Minimum Attainable Ratio]
 We define the set of attainable ratios as the continuous image of the compact space
-$\mathcal{S}^{\perp}$ under the mapping $R(\lambda)$. The minimum spectral ratio $\mu_{min}(n)$ is
+$\mathcal{S}^{\perp}$ under the mapping $R(\lambda)$. The minimum spectral ratio $\mu_{\min}(n)$ is
 defined as the absolute infimum of this attainable set.
 \end{definition}
 
@@ -509,9 +523,9 @@ physically attainable by a specific weight configuration. However, by leveraging
 compactness derived above, we can assert the existence of an exact optimal coefficient vector.
 
 \begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L603}{\lean}]}]
-The minimum spectral ratio $\mu_{min}(n)$ is strictly attained by an optimal coefficient vector
+The minimum spectral ratio $\mu_{\min}(n)$ is strictly attained by an optimal coefficient vector
 $\lambda_{opt} \in \mathcal{S}^{\perp}$, such that $Q_1(\lambda_{opt}) > 0$ and
-$R(\lambda_{opt}) = \mu_{min}(n)$.
+$R(\lambda_{opt}) = \mu_{\min}(n)$.
 \end{theorem}
 \begin{proof}
 The Rayleigh quotient $R(\lambda)$ acts as a continuous rational function at all points where its
@@ -530,22 +544,22 @@ the discrete existence of twin primes within our evaluation interval.
 \begin{theorem}[Optimal Admissibility and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L640}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L668}{\lean}]}]
 The optimal multidimensional weight function $W_{opt}(x)$ synthesized from $\lambda_{opt}$ satisfies
 the strict Definition \ref{def:krafft_admissibility} condition ($S_2 < S_1$) if and only if
-$\mu_{min}(n) < 1$. If this analytic bound holds, the geometric framework rigorously guarantees the
+$\mu_{\min}(n) < 1$. If this analytic bound holds, the geometric framework rigorously guarantees the
 existence of a Twin Prime pair within $\mathcal{A}_n$.
 \end{theorem}
 \begin{proof}
 By the definition of the minimum ratio, evaluating the moments with the optimal weight function yields
-exactly $S_2(n, W_{opt}) / S_1(n, W_{opt}) = R(\lambda_{opt}) = \mu_{min}(n)$. Since $S_1$ is strictly
+exactly $S_2(n, W_{opt}) / S_1(n, W_{opt}) = R(\lambda_{opt}) = \mu_{\min}(n)$. Since $S_1$ is strictly
 positive for the optimal non-zero weight, it follows algebraically that $S_2 < S_1$ holds if and only
-if the ratio $\mu_{min}(n) < 1$. If this strict inequality is satisfied, the weight function $W_{opt}$
+if the ratio $\mu_{\min}(n) < 1$. If this strict inequality is satisfied, the weight function $W_{opt}$
 inherently fulfills the Definition \ref{def:krafft_admissibility} condition. By directly applying the
 previously established Theorem \ref{thm:additive_sieve}, this state of structural admissibility forces
 the existence of at least one index $x \in \mathcal{A}_n$ that strictly generates a twin prime pair.
 \end{proof}
 
-This theorem completes the geometric reduction. The combinatorial paralyzation of the parity barrier
+This theorem completes the geometric reduction. The combinatorial paralysis of the parity barrier
 has been entirely translated into an analytic mandate: evaluating the spectral density of the
-cross-harmonic convolutions to confirm $\mu_{min}(n) < 1$.
+cross-harmonic convolutions to confirm $\mu_{\min}(n) < 1$.
 
 \section{Discussion: Cross-Harmonic Convolutions and Future Directions} \label{sec:discussion}
 
@@ -604,9 +618,9 @@ highest-magnitude cross-harmonic coefficients.
     harmonic deficit.
 \end{enumerate}
 
-While executing this final step demands profound analytic machinery capable of resolving massive
+While executing this final step demands sophisticated analytic machinery capable of resolving extensive
 nested combinatorial sums, the Krafft structure explicitly confirms that this pathway is
-deterministic. 
+deterministic. Crucially, this continuous analytic framework definitively maps a combinatorial obstacle into an explicit, resolvable linear algebra problem.
 
 \section{Conclusion} \label{sec:conclusion}
 
@@ -619,9 +633,9 @@ Crucially, this continuous formulation allowed us to isolate the exact spectral 
 parity barrier. We proved that 1-dimensional harmonic weights suffer from a continuous density deficit,
 forcing the sieve quotient $\mu \ge 1$ and structurally necessitating the use of multidimensional
 polynomial bases. By bridging topological compactness, harmonic resonance, and geometric intervals,
-our reduction to $\mu_{min}(n) < 1$ removes the combinatorial ambiguity of parity boundaries. It
+our reduction to $\mu_{\min}(n) < 1$ removes the combinatorial ambiguity of parity boundaries. It
 refines the twin prime problem entirely into estimating the spectral density of heavily structured
-cross-harmonic convolutions, providing a structurally certified linear framework to directly assault
+cross-harmonic convolutions, providing a structurally certified linear framework to directly address
 the parity barrier.
 
 \section*{Acknowledgments}
