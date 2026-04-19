@@ -13,4 +13,4 @@ I know I have to take entire responsibility for the whole output, but for what i
 ## Manuscripts
 
 - First draft completed on 03/24/2026.
-- The idea of submitting to AFM was somewhat misguide, so drafting has resarted (04/18/2026).
+- The idea of submitting to AFM was somewhat misguided, so drafting has restarted (04/18/2026).
