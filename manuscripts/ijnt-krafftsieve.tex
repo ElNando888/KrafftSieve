@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Text Area: 8in (include Runningheads) x 5in
 %% ws-ijnt.tex   :   05-08-2025
-%% TeX file to use with ws-mpla.cls written in LaTeX2E.
+%% TeX file to use with ws-ijnt.cls written in LaTeX2E.
 %% The content, structure, format and layout of this style file is the
 %% property of World Scientific Publishing Co. Pte. Ltd.
 %% Copyright 2025 by World Scientific Publishing Co.
@@ -56,18 +56,16 @@
 \end{history}
 
 \begin{abstract}
-The Twin Prime Conjecture notoriously faces the parity barrier, structurally preventing classical
-multiplicative sieves from isolating prime pairs. To bypass this, we introduce a shift to an additive
-Turán variance framework over bounded, symmetric intervals. Utilizing the discrete Krafft alignment,
-we construct an exact geometric isomorphism where a local penalty metric dictates twin prime existence.
-Translating this spatial model into the frequency domain exposes a universal negative resonance at
-the third harmonic. We systematically reduce the Twin Prime Conjecture to a strictly finite-dimensional
-continuous inequality: proving the minimum spectral ratio $\mu_{\min}(n) < 1$ rigorously guarantees
-the existence of twin primes. Furthermore, we prove analytically that purely independent 1-dimensional
-weights inherently fail to overcome the logarithmic divergence of Mertens' sums, mathematically
-forcing the quotient to $\mu \ge 1$. This continuous density deficit acts as the exact spectral
-manifestation of the parity barrier, establishing that an unconditional proof requires deploying
-high-dimensional cross-harmonic polynomials to resolve the sieve geometry.
+The Twin Prime Conjecture is obstructed by the parity barrier, which prevents classical
+multiplicative sieves from isolating prime pairs. We introduce an additive
+Turán variance framework over bounded, symmetric intervals. Using the discrete Krafft alignment,
+we construct an isomorphism under which a local penalty indicator governs twin prime existence.
+Passing to the frequency domain reveals a negative resonance at the third harmonic.
+We reduce the Twin Prime Conjecture to a finite-dimensional inequality: the bound
+$\mu_{\min}(n) < 1$ implies the existence of twin primes in a prescribed interval. We further show
+that independent 1-dimensional weights cannot overcome the logarithmic divergence of Mertens' sums,
+forcing the quotient to $\mu \ge 1$. This density deficit is a spectral manifestation of the parity
+barrier, indicating that a proof requires multidimensional cross-harmonic polynomials.
 \end{abstract}
 
 \keywords{Twin Prime Conjecture, Turán sieve, Krafft geometry, Parity barrier, Discrete Fourier Transform}
@@ -77,43 +75,40 @@ high-dimensional cross-harmonic polynomials to resolve the sieve geometry.
 \section{Introduction} \label{introduction}
 
 The Twin Prime Conjecture, which asserts the existence of infinitely many prime pairs differing by
-two, stands as one of the most celebrated unsolved problems in number theory. Historically,
-mathematicians have relied on sieve methods intuitively dating back to Brun and continuously
-refined by Selberg~\cite{Selberg1947} and others~\cite{MontgomeryVaughan2006} to approach questions
-of prime distribution. While these multiplicative inclusion-exclusion frameworks have yielded
-significant structural results—most notably strictly bounding the gaps between
-primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}—they inevitably encounter the parity
-barrier. This combinatorial limitation severely restricts classical sieves from successfully
-distinguishing integers with an even number of prime factors from those with an odd number,
-resulting in a structural paralysis that prevents standard approaches from generating an
-unconditional proof.
+two, is one of the central open problems in number theory. Classical benchmarks for its density were
+established by the Hardy--Littlewood conjecture~\cite{HardyLittlewood1923}. Sieve methods,
+originating with Brun~\cite{Brun1919} and refined by Selberg~\cite{Selberg1947} and
+others~\cite{MontgomeryVaughan2006}, have been used to approach questions of prime distribution.
+While these multiplicative inclusion-exclusion frameworks have yielded significant structural
+results—most notably strictly bounding the gaps between
+primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}—they encounter the parity barrier, a
+combinatorial obstruction that prevents classical sieves from distinguishing integers with an even
+number of prime factors from those with an odd number.
 
-To bypass this barrier, this paper introduces a pivot from a multiplicative inclusion-exclusion
+To bypass this barrier, this paper moves from a multiplicative inclusion-exclusion
 model toward an additive Turán variance framework~\cite{Turan1934}. Rather than counting survivors
 destructively via a product, we constrain our search to highly structured symmetric intervals
 $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. Following the discrete Krafft
 geometry~\cite{Krafft1801,Portela2026}, our framework utilizes the alignment residue
-$r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our bounded sieve window. Our formally verified
-Additive Sieve Isomorphism mechanism establishes that any surviving integer
-corresponds to a twin prime pair.
+$r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our bounded sieve window. Our additive sieve
+isomorphism (formally verified in Lean) shows that any surviving integer corresponds to a twin
+prime pair.
 
 Translating this discrete spatial model into the continuous frequency domain via the Discrete
-Fourier Transform and Parseval's identity reveals a geometric observation: the previously
+Fourier Transform and Parseval's identity reveals that the previously
 specified Krafft alignment forces a universal negative resonance precisely at the third harmonic.
-To leverage this efficiently, we execute a topological reduction over the space of
-multidimensional polynomial weights. We evaluate a minimum spectral ratio $\mu_{\min}(n)$,
-formally reducing the Twin Prime problem to a strictly finite-dimensional conditional inequality:
-assuming the analytic bound $\mu_{\min}(n) < 1$ holds, twin primes must fundamentally exist within
-$\mathcal{A}_n$.
+We perform a topological reduction over the space of polynomial weights. We evaluate a minimum
+spectral ratio $\mu_{\min}(n)$, formally reducing the Twin Prime problem to a strictly finite-
+dimensional conditional inequality: assuming the analytic bound $\mu_{\min}(n) < 1$ holds, twin
+primes exist within $\mathcal{A}_n$.
 
 Crucially, we also provide an explicit analytic result regarding the limitations of 1-dimensional
 harmonic weights. We prove that deploying purely independent, 1-dimensional harmonic weights
 inherently fails to overcome the local density bounds---specifically, because bounded independent
 phase corrections cannot structurally outpace the logarithmic divergence of Mertens' sums. This
-forces the quotient to $\mu \ge 1$. This continuous density deficit is the exact spectral
-manifestation of the parity problem, indicating that resolving the conjecture relies intrinsically
-on the full $2^{w(n)}$ dimensionality of polynomial cross-harmonics to produce a favorable sieve
-density. 
+forces the quotient to $\mu \ge 1$. This density deficit is a spectral form of the parity
+obstruction, indicating that resolving the conjecture relies intrinsically on the full $2^{w(n)}$
+dimensionality of polynomial cross-harmonics to produce a favorable sieve density.
 
 Throughout the text, \lean\ symbols are used as direct links to formalized code in the GitHub
 repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.2}
@@ -133,7 +128,7 @@ geometry of our prime window and evaluation space.
 \begin{definition}[The Prime Window and Primorial {[\href{\urlpfx/KrafftSieve/Defs.lean\#L39}{\lean} \& \href{\urlpfx/KrafftSieve/Defs.lean\#L44}{\lean}]}]
 Let $\mathcal{P}_n$ denote the set of primes evaluated by the sieve, bounded strictly as:
 $$\mathcal{P}_n = \{ p \text{ prime} \mid 5 \le p < 6n+2 \}$$
-We define $w = |\mathcal{P}_n|$ as the total count of these prime factors, and
+We define $w(n) = |\mathcal{P}_n|$ as the total count of these prime factors, and
 $q = \prod_{p \in \mathcal{P}_n} p$ as their associated primorial.
 \end{definition}
 
@@ -147,7 +142,7 @@ We constrain our search for twin primes to the highly structured symmetric inter
 $$\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$$
 \end{definition}
 
-This specific interval width is geometrically calibrated. The Krafft alignment residue $r_i^K$
+This specific interval width is chosen so that the Krafft alignment residue $r_i^K$
 effectively translates the standard divisibility conditions of twin prime candidates into a single
 modular congruence evaluated at the central coordinate $x$.
 
@@ -163,20 +158,20 @@ respectively. Multiplying the target coordinate congruence $x \equiv \pm r \pmod
 $6x \equiv \pm 6r \equiv \pm 1 \pmod{p}$, rigorously verifying the divisibility rules.
 \end{proof}
 
-To track the sieve's progress additively, we establish a global penalty metric that accumulates
+To track the sieve's progress additively, we establish a global penalty that accumulates
 across all primes in our window.
 
 \begin{definition}[Local and Global Hits {[\href{\urlpfx/KrafftSieve/Defs.lean\#L76}{\lean} \& \href{\urlpfx/KrafftSieve/Defs.lean\#L85}{\lean}]}]
-We characterize local hits through the indicator function $g_i(x) \in \{0, 1\}$. For an integer $x$,
-a hit occurs if it falls into the forbidden Krafft residue classes modulo $p_i$:
+We characterize local hits through the indicator function $g_i(x) \in \{0, 1\}$. For an integer
+$x$, a hit occurs if it falls into the forbidden Krafft residue classes modulo $p_i$:
 $$g_i(x) = \begin{cases} 1 & \text{if } x \equiv \pm r^K_i \pmod{p_i} \\ 0 & \text{otherwise}
 \end{cases}$$
 The global sieve penalty $c(x)$ is defined additively as the sum of all local hits across the
 primorial base:
-$$c(x) = \sum_{i=1}^w g_i(x)$$
+$$c(x) = \sum_{i=1}^{w(n)} g_i(x)$$
 \end{definition}
 
-Unlike classical inclusion-exclusion setups, $c(x)$ does not collapse destructively; an integer with
+Unlike classical inclusion-exclusion setups, $c(x)$ is non-negative; an integer with
 zero hits has successfully avoided all forbidden congruences. To ensure that surviving this
 localized sieve guarantees true primality, we rely on the strict algebraic boundaries of
 $\mathcal{A}_n$.
@@ -191,8 +186,7 @@ projection yields $6(6n^2 + 10n + 3) + 1 = 36n^2 + 60n + 19$. Comparing this to 
 bound $(6n+5)^2 = 36n^2 + 60n + 25$, the strict inequality holds trivially.
 \end{proof}
 
-This structural limit rigorously prevents composite numbers from masquerading as primes, forming the
-bedrock of our geometric reduction.
+This structural limit ensures that survivors are prime, which underpins the reduction.
 
 \begin{theorem}[Additive Sieve Isomorphism {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L286}{\lean}]}] \label{thm:additive_sieve}
 For any integer $n \ge 1$ and $x \in \mathcal{A}_n$, the global hit count evaluates to exactly zero,
@@ -211,7 +205,7 @@ $(6n+5)^2$, lacking prime factors up to this threshold unconditionally forces pr
 \section{Fourier Expansion and the Resonant Sieve Equation} \label{sec:resonance}
 
 To analyze the distribution of twin prime indices $x \in \mathcal{A}_n$ that survive the local hit
-penalties, we transition analytically into the frequency domain. We introduce an arbitrary,
+penalties, we pass to the frequency domain. We introduce an arbitrary,
 real-valued weight function $W(x)$ strictly supported within our bounded interval.
 
 \begin{definition}[Weighted Masses]
@@ -258,7 +252,7 @@ by:
 $$\hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q}$$
 \end{definition}
 
-By exploiting the strict bounds of $\mathcal{A}_n$, we can seamlessly extend our spatial sums over the
+By exploiting the strict bounds of $\mathcal{A}_n$, we can extend our spatial sums over the
 entire cyclic group without altering their values. This allows us to leverage Plancherel's theorem
 to expand the penalized mass into a Fourier series.
 
@@ -301,7 +295,7 @@ Fourier transform over the finite sum of local hits, yields the expansion.
 
 Because the local hit function $g_i(x)$ depends strictly on the residue of $x$ modulo the local prime
 $p_i$, projecting it onto the full cyclic group $\mathbb{Z}/q\mathbb{Z}$ causes its Fourier transform
-to manifest a highly sparse, deterministic Dirac comb structure.
+to take the form of a Dirac comb.
 
 \begin{lemma}[Dirac Comb Structure {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L349}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L571}{\lean}]}] \label{lem:dirac_comb_structure}
 The Discrete Fourier Transform (as defined in Definition \ref{def:dft}) of the local hit function,
@@ -326,7 +320,7 @@ $2\cos(\theta)$ amplitude.
 \end{proof}
 
 This sparsity allows us to explicitly separate the primary density term from the targeted oscillatory
-interference, generating the central analytic identity of the sieve. When evaluating the precise
+interference, yielding the main identity of the sieve. When evaluating the precise
 sub-comb frequency at the third harmonic $h = 3q/p_i$, the trigonometric phase perfectly anchors to
 the Krafft alignment integer.
 
@@ -351,25 +345,27 @@ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum
 \end{theorem}
 \begin{proof}
 Starting from Lemma \ref{lem:plancherel_hit_expansion}, we partition the inner sum over frequencies
-$h$ into the zero frequency $h=0$ and the non-zero frequencies. Applying Lemma \ref{lem:dirac_comb_structure},
-all non-zero frequencies $h$ where $\hat{g}_i(h) = 0$ are discarded. The sum collapses entirely to
-the sub-comb frequencies $h = k(q/p_i)$. Finally, applying Lemma \ref{lem:compact_support_equivalence}
-replaces $q\hat{W}(0)$ with the spatial mass $S_1(n, W)$, establishing the exact equation.
+$h$ into the zero frequency $h=0$ and the non-zero frequencies. Applying Lemma
+\ref{lem:dirac_comb_structure}, all non-zero frequencies $h$ where $\hat{g}_i(h) = 0$ are discarded.
+The sum collapses entirely to the sub-comb frequencies $h = k(q/p_i)$. Finally, applying Lemma
+\ref{lem:compact_support_equivalence} replaces $q\hat{W}(0)$ with the spatial mass $S_1(n, W)$,
+establishing the exact equation.
 \end{proof}
 
-This universal negative resonance presents a theoretical avenue to synthetically suppress $S_2(n, W)$ below the base population density $S_1(n, W)$.
+This negative resonance provides a mechanism to suppress $S_2(n, W)$ below the base population
+density $S_1(n, W)$.
 
 \begin{lemma}[Third Harmonic Extraction {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L760}{\lean}]}]
-For a strategically chosen weight function $W(x)$ whose spectral density is restricted strictly to
-the base harmonic $h=0$ and the precise third harmonics $h = 3q/p_i$, the \eqref{eq:resonant_sieve_equation}
-equation simplifies exactly to:
+For a weight function $W(x)$ whose spectral density is restricted strictly to
+the base harmonic $h=0$ and the precise third harmonics $h = 3q/p_i$, the
+\eqref{eq:resonant_sieve_equation} equation simplifies exactly to:
 $$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} - q \sum_{i=1}^{w(n)} \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
 \end{lemma}
 \begin{proof}
 By the spectral restriction of $W$, all terms in equation \eqref{eq:resonant_sieve_equation} where
-$k \neq 3$ vanish identically. For the surviving $k=3$ terms, applying Lemma \ref{lem:exact_krafft_cosine}
-universally inverts the sign of the interference sum, replacing the general cosine term with
-$-\cos(\pi/p_i)$.
+$k \neq 3$ vanish identically. For the surviving $k=3$ terms, applying Lemma
+\ref{lem:exact_krafft_cosine} universally inverts the sign of the interference sum, replacing the
+general cosine term with $-\cos(\pi/p_i)$.
 \end{proof}
 
 \section{The Analytic Parity Collision (1-Dimensional Bounds)} \label{sec:parity_collision}
@@ -381,14 +377,14 @@ mass:
 \begin{equation} \label{eq:sieve_density_quotient}
 \mu(n, W) = \frac{S_2(n, W)}{S_1(n, W)} 
 \end{equation}
-By Theorem \ref{thm:weighted_existence}, if we can synthesize a weight function such that
-$\mu(n, W) < 1$, the strict Definition \ref{def:krafft_admissibility} condition is satisfied.
 \end{definition}
 
-Having isolated the universal negative Krafft resonance at the third harmonic, the most intuitive
-approach to forcing this quotient below 1 is to deploy purely isolated, 1-dimensional harmonic
-weights. We can evaluate the efficacy of this approach by examining the isolated spectral capacity
-of the sieve.
+By Theorem \ref{thm:weighted_existence}, if we can synthesize a weight function such that
+$\mu(n, W) < 1$, the strict Definition \ref{def:krafft_admissibility} condition is satisfied.
+
+Having isolated the universal negative Krafft resonance at the third harmonic, a natural first
+attempt is to use 1-dimensional harmonic weights. We can evaluate the efficacy of this approach
+by examining the isolated spectral capacity of the sieve.
 
 \begin{definition}[Main Density and Resonance Capacity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L791}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L797}{\lean}]}]
 For a 1-dimensional harmonic weight system evaluated over $\mathcal{P}_n$, the primary un-weighted
@@ -405,7 +401,7 @@ cosine strictly forbids this.
 
 \begin{lemma}[The Harmonic Deficit {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L806}{\lean}]}]
 For any valid prime window $\mathcal{P}_n$, the resonance capacity of any purely 1-dimensional 3rd
-harmonic weight system is strictly overpowered by the sieve's main density term:
+harmonic weight system is strictly less than the sieve's main density term:
 \begin{equation} \label{eq:harmonic_deficit}
 \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} 
 \end{equation}
@@ -419,34 +415,42 @@ the finite non-empty set $\mathcal{P}_n$ rigorously preserves the strict inequal
 sums.
 \end{proof}
 
-While the strict inequality itself is algebraically elementary, its analytic consequences for sieve
-theory are profound. The significance lies not just in the deficit, but in the spectral signature of
-the divergence. 
+While the strict inequality itself is algebraically elementary, the significance lies not just in
+the deficit, but in the spectral signature of the divergence. 
 
-By Mertens' theorems \cite{MontgomeryVaughan2006}, the main density term $\sum \frac{2}{p_i}$ diverges
-logarithmically as $n \to \infty$. Conversely, the magnitude of the harmonic deficit
+\begin{proposition}[1-Dimensional Parity Collision] \label{prop:parity_collision}
+For any sufficiently large $n$, utilizing purely 1-dimensional independent harmonic waves forces
+the continuous sieve density quotient to $\mu(n, W) \ge 1$. It is analytically impossible to
+resolve the Twin Prime Configuration using strictly 1-dimensional variance bounds.
+\end{proposition}
+\begin{proof}
+\textit{Note: This proof relies on classical continuous analysis (Mertens' theorems) and limit
+behaviors as $n \to \infty$, which fall outside the scope of the project's discrete Lean
+formalization.}
+
+By Mertens' theorems \cite{MontgomeryVaughan2006}, the main density term $\sum \frac{2}{p_i}$
+diverges logarithmically as $n \to \infty$. Conversely, the magnitude of the harmonic deficit
 \eqref{eq:harmonic_deficit}, measured by the difference between the main term and the resonance
 capacity, can be bounded using the Taylor expansion $\cos(x) \ge 1 - x^2/2$:
 $$ \text{Deficit} = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\frac{\pi}{p_i}\right) \le \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} $$
 Because the sum $\sum p^{-3}$ strictly converges, the absolute suppression capacity of the
 1-dimensional harmonics falls infinitely behind the diverging main density. 
 
-This stark convergence/divergence reality mathematically forces the quotient $\mu \ge 1$ for any
-sufficiently large $n$ when utilizing 1-dimensional independent waves. A finite truncation of purely
-independent harmonics will inevitably drag the weight function into negative values at dense
+This convergence/divergence disparity forces the quotient $\mu \ge 1$ for any sufficiently
+large $n$ when utilizing 1-dimensional independent waves. A finite truncation of purely
+independent harmonics will force the weight function to take negative values at dense
 overlapping forbidden regions before it can reduce the overall Rayleigh quotient below 1. 
+\end{proof}
 
-This rigorously establishes a fundamental collision with the Parity Barrier: it is analytically
-impossible to resolve the Twin Prime Configuration using purely independent, 1-dimensional variance
-bounds. To circumvent this continuous density deficit, the weight geometry must inherently
-incorporate multidimensional cross-harmonic interactions.
+This establishes a barrier. To circumvent this continuous density deficit, the weight geometry
+must inherently incorporate multidimensional cross-harmonic interactions.
 
 \section{Topological Reduction to the Minimum Spectral Ratio} \label{sec:reduction}
 
 The analytic collision formalized in Section~\ref{sec:parity_collision} dictates that utilizing
 purely independent 1-dimensional harmonic waves fundamentally fails to bypass the continuous
-density deficit. To constructively overcome this, we must transition to a highly correlated,
-multidimensional weight geometry. We build this space using polynomials of the harmonic base
+density deficit. To constructively overcome this, we must transition to a correlated,
+multidimensional weight space. We build this space using polynomials of the harmonic base
 variables.
 
 \begin{definition}[Multidimensional Basis and Polynomial {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L43}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L51}{\lean}]}]
@@ -458,12 +462,11 @@ We construct the multidimensional polynomial $P(x)$ as a linear combination of t
 $$ P(x) = \sum_{S} \lambda_S B_S(x) $$
 \end{definition}
 
-This exponential expansion to a $2^{w(n)}$-dimensional basis provides the minimum algebraic dimension
-required to remain strictly closed under pointwise multiplication. Crucially, it allows us to
-elegantly enforce the strict non-negativity constraint of the Krafft sieve. 
+The resulting $2^{w(n)}$-dimensional basis is closed under pointwise multiplication, which allows
+us to enforce the strict non-negativity constraint of the Krafft sieve. 
 
 \begin{definition}[The Continuous Weight Function {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L60}{\lean}]}] \label{def:continuous_weight_func}
-We define the truly multidimensional weight function $W_\lambda(x)$ by squaring the polynomial $P(x)$
+We define the multidimensional weight function $W_\lambda(x)$ by squaring the polynomial $P(x)$
 and strictly restricting its support to the evaluation interval $\mathcal{A}_n$:
 $$ W_\lambda(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 & \text{otherwise}
 \end{cases} $$
@@ -471,18 +474,18 @@ $$ W_\lambda(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 &
 
 By casting the weight space as the square of a polynomial, we automatically satisfy the condition
 $W_\lambda(x) \ge 0$ for all $x$, circumventing the need for an intractable continuum of linear
-inequality constraints on the parameter vector $\lambda$. This formulation allows us to translate our
-spatial metrics entirely into the language of linear algebra.
+inequality constraints on the parameter vector $\lambda$. This formulation allows us to translate
+our spatial metrics entirely into the language of linear algebra.
 
 \begin{lemma}[Equivalence of Moments and Quadratic Forms {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L131}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L154}{\lean}]}]
 The spatial mass $S_1(n, W_\lambda)$ and the penalized mass $S_2(n, W_\lambda)$ map directly to
-continuous quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$. Specifically, the total mass evaluates
-to the squared norm of the polynomial over the interval:
+continuous quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$. Specifically, the total mass
+evaluates to the squared norm of the polynomial over the interval:
 $$ S_1(n, W_\lambda) = Q_1(\lambda) = \sum_{x \in \mathcal{A}_n} (P(x))^2 $$
 \end{lemma}
 \begin{proof}
-By definition, the total spatial mass is $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$. Substituting
-the construction $W_\lambda(x) = P(x)^2$ expands algebraically to
+By definition, the total spatial mass is $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$.
+Substituting the construction $W_\lambda(x) = P(x)^2$ expands algebraically to
 $\sum_{x} (\sum_S \lambda_S B_S(x))^2$. Distributing the product of the finite sums and rearranging
 the summation order by Fubini's theorem isolates the cross-terms of the basis functions, defining
 the matrix elements $M_1(S,T) = \sum_x B_S(x)B_T(x)$. This yields the explicit quadratic form
@@ -491,10 +494,11 @@ $S_2(n, W_\lambda) = Q_2(\lambda)$ follows identically by incorporating the line
 $c(x)$ into the inner sum.
 \end{proof}
 
-With our metrics translated into quadratic forms, the sieve density quotient \eqref{eq:sieve_density_quotient}
-transitions to the continuous Rayleigh quotient $R(\lambda) = Q_2(\lambda) / Q_1(\lambda)$
+With our metrics translated into quadratic forms, the sieve density quotient
+\eqref{eq:sieve_density_quotient} transitions to the continuous Rayleigh quotient
+$R(\lambda) = Q_2(\lambda) / Q_1(\lambda)$
 {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L95}{\lean}]}. Because this quotient is
-inherently scale-invariant, we can execute a topological reduction to isolate its absolute minimum.
+inherently scale-invariant, we reduce to a minimisation problem on a compact set.
 
 \begin{lemma}[Compactness of the Orthogonal Unit Sphere {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L442}{\lean}]}] \label{lem:compactness}
 Let $\ker(Q_1)$ denote the kernel of the quadratic form $Q_1$. Because the Rayleigh quotient is
@@ -522,7 +526,7 @@ defined as the absolute infimum of this attainable set.
 \end{definition}
 
 While an infimum defines a greatest lower bound, it does not inherently guarantee that this bound is
-physically attainable by a specific weight configuration. However, by leveraging the topological
+attained. However, by leveraging the topological
 compactness derived above, we can assert the existence of an exact optimal coefficient vector.
 
 \begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L603}{\lean}]}]
@@ -540,15 +544,15 @@ Extreme Value Theorem, a compact subset of the real numbers contains its infimum
 existence of the minimizer $\lambda_{opt}$.
 \end{proof}
 
-With the optimal multidimensional weight vector mathematically secured, we reach the culmination of
+With the existence of the minimiser established, we reach the culmination of
 the Krafft geometry. We can now formally link the continuous spectral bound $\mu_{min}(n)$ back to
 the discrete existence of twin primes within our evaluation interval.
 
 \begin{theorem}[Optimal Admissibility and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L640}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L668}{\lean}]}]
 The optimal multidimensional weight function $W_{opt}(x)$ synthesized from $\lambda_{opt}$ satisfies
 the strict Definition \ref{def:krafft_admissibility} condition ($S_2 < S_1$) if and only if
-$\mu_{\min}(n) < 1$. If this analytic bound holds, the geometric framework rigorously guarantees the
-existence of a Twin Prime pair within $\mathcal{A}_n$.
+$\mu_{\min}(n) < 1$. If this analytic bound holds, the geometric framework rigorously guarantees
+the existence of a Twin Prime pair within $\mathcal{A}_n$.
 \end{theorem}
 \begin{proof}
 By the definition of the minimum ratio, evaluating the moments with the optimal weight function yields
@@ -560,9 +564,9 @@ previously established Theorem \ref{thm:additive_sieve}, this state of structura
 the existence of at least one index $x \in \mathcal{A}_n$ that strictly generates a twin prime pair.
 \end{proof}
 
-This theorem completes the geometric reduction. The combinatorial paralysis of the parity barrier
-has been entirely translated into an analytic mandate: evaluating the spectral density of the
-cross-harmonic convolutions to confirm $\mu_{\min}(n) < 1$.
+This theorem completes the geometric reduction. The parity obstruction has been translated into an
+analytic condition: evaluating the spectral density of the cross-harmonic convolutions to confirm
+$\mu_{\min}(n) < 1$.
 
 \section{Discussion: Cross-Harmonic Convolutions and Future Directions} \label{sec:discussion}
 
@@ -574,7 +578,7 @@ mechanism of this bypass by examining the full inclusion-exclusion convolution.
 
 \subsection{The Perfect Sieve Weight and Spectral Convolution}
 
-To understand how cross-harmonics analytically break the parity barrier, consider the "perfect"
+To understand how cross-harmonics circumvent the parity barrier, consider the "perfect"
 spatial weight function $\omega(x)$, which evaluates exactly to $1$ when $c(x) = 0$ and $0$ elsewhere.
 It is given by the pointwise product of the allowed residue indicators:
 $$ \omega(x) = \prod_{i=1}^{w(n)} \big(1 - g_i(x)\big) $$
@@ -600,7 +604,7 @@ over-subtraction.
 \subsection{An Analytical Blueprint for the Minimum Ratio}
 
 The exact resolution of this convolution computationally requires navigating the massive
-$2^{w(n)}$-dimensional polynomial space, rendering brute-force eigenvalue verification impossible
+$2^{w(n)}$-dimensional polynomial space, making direct computation infeasible
 for large $n$. However, establishing Theorem \ref{thm:krafft_sieve_guarantee} unconditionally only
 requires demonstrating that $\mu_{\min}(n) < 1$. By the continuous Variational Principle, we are not
 required to locate the exact optimal minimizer $\lambda_{opt}$. Any analytically synthesized test
@@ -621,9 +625,10 @@ highest-magnitude cross-harmonic coefficients.
     harmonic deficit.
 \end{enumerate}
 
-While executing this final step demands sophisticated analytic machinery capable of resolving extensive
-nested combinatorial sums, the Krafft structure explicitly confirms that this pathway is
-deterministic. Crucially, this continuous analytic framework definitively maps a combinatorial obstacle into an explicit, resolvable linear algebra problem.
+While executing this final step demands sophisticated analytic machinery capable of resolving
+extensive nested combinatorial sums, the framework provides a well-defined approach. Crucially,
+this continuous analytic framework definitively maps a combinatorial obstacle into an explicit,
+resolvable linear algebra problem.
 
 \section{Conclusion} \label{sec:conclusion}
 
@@ -635,10 +640,10 @@ mapped discrete prime alignments to continuous variance spectra.
 Crucially, this continuous formulation allowed us to isolate the exact spectral manifestation of the
 parity barrier. We proved that 1-dimensional harmonic weights suffer from a continuous density deficit,
 forcing the sieve quotient $\mu \ge 1$ and structurally necessitating the use of multidimensional
-polynomial bases. By bridging topological compactness, harmonic resonance, and geometric intervals,
+polynomial bases. Combining topological compactness with harmonic analysis on geometric intervals,
 our reduction to $\mu_{\min}(n) < 1$ removes the combinatorial ambiguity of parity boundaries. It
 refines the twin prime problem entirely into estimating the spectral density of heavily structured
-cross-harmonic convolutions, providing a structurally certified linear framework to directly address
+cross-harmonic convolutions, providing a concrete framework for addressing
 the parity barrier.
 
 \section*{Acknowledgments}
