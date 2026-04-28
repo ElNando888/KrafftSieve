@@ -19,10 +19,9 @@ import KrafftSieve.SelbergWeights
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
--- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+-- flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
 set_option linter.style.induction false
@@ -138,7 +137,7 @@ lemma S_1_eq_Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
       · unfold A_n at *;
         rcases n with ( _ | _ | n ) <;> norm_num at *;
         · exact le_trans ( Nat.mod_le _ _ ) hx;
-        · rcases hx with ⟨ hx₁, hx₂ ⟩ ; interval_cases x <;> native_decide;
+        · rcases hx with ⟨ hx₁, hx₂ ⟩ ; interval_cases x <;> decide;
         · -- Since $q(n+2)$ is the product of all primes up to $6(n+2)+1$, and $x$ is
           -- within the interval $[6(n+2)^2 - 2(n+2), 6(n+2)^2 + 10(n+2) + 3]$,
           -- we have $x < q(n+2)$.

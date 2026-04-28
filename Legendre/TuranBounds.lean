@@ -17,10 +17,8 @@ open scoped BigOperators
 set_option linter.style.setOption false
 set_option linter.style.openClassical false
 set_option linter.style.refine false
-set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.induction false
-set_option linter.style.emptyLine false
 
 open Classical in
 noncomputable section

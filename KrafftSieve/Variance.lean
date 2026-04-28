@@ -14,11 +14,10 @@ import KrafftSieve.SelbergWeights
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously
 -- used. These are needed because the proofs use idioms (`refine'`,
--- `induction'`, `native_decide`, flexible `simp`) that would
+-- `induction'`, flexible `simp`) that would
 -- require major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
 

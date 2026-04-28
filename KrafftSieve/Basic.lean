@@ -21,10 +21,9 @@ open scoped BigOperators Real Nat Pointwise
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
 -- These are needed because the proofs use idioms (`refine'`, `induction'`,
--- `native_decide`, flexible `simp`) that would require major rewrites to remove.
+-- flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.style.nativeDecide false
 set_option linter.flexible false
 set_option linter.style.induction false
 
@@ -86,7 +85,7 @@ lemma p_dvd_q (n : ℕ) (i : Fin (w n)) : p n i ∣ q n :=
 /- q(n) is at least 10^20 for n >= 10. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
   induction' n, hn using Nat.le_induction with n hn ih
-  · native_decide +revert
+  · decide
   · refine' le_trans ih _
     exact Nat.le_of_dvd (Finset.prod_pos fun p hp =>
       (Finset.mem_filter.mp hp).2.2.pos) (q_mono n)
@@ -94,14 +93,14 @@ lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
 /- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
 theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
   by_cases hn10 : n < 10
-  · interval_cases n <;> native_decide
+  · interval_cases n <;> decide
   · have hn_ge_10 : n ≥ 10 := by linarith
     have h_q_ge : q n ≥ 10^20 := q_ge_q10_very_large n hn_ge_10
     by_cases hn_small : n ≤ 1000000000
     · apply lt_of_lt_of_le _ h_q_ge
       calc 6 * n^2 + 10 * n + 3
         _ ≤ 6 * 1000000000^2 + 10 * 1000000000 + 3 := by nlinarith
-        _ < 10^20 := by native_decide
+        _ < 10^20 := by norm_num
     · have hn_large : n > 1000000000 := by linarith
       have h_q_large : q n ≥ 5 ^ (Nat.log 2 n) := by
         have h_q_large : q n ≥ 5 ^ (Finset.card (Finset.filter (fun p => 5 ≤ p ∧ p.Prime)
