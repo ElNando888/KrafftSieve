@@ -18,14 +18,13 @@ import KrafftSieve.Basic
 
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`, `induction'`,
+-- These are needed because the proofs use idioms (`refine'`,
 -- flexible `simp`) that would require major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
 set_option linter.flexible false
 set_option linter.style.multiGoal false
 set_option linter.style.maxHeartbeats false
-set_option linter.style.induction false
 
 open scoped BigOperators
 open scoped Real
@@ -224,7 +223,7 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
         (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
         Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) * m := by
       intro m
-      induction' m with m ih;
+      refine Nat.recAux ?_ (fun m ih => ?_) m
       · norm_num;
       · rw [ Nat.succ_mul, Finset.sum_range_add, ih ];
         simp +decide [ Finset.sum_add_distrib, mul_add ];
