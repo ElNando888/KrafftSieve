@@ -20,12 +20,10 @@ open scoped BigOperators Real Nat Pointwise
 
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`, `induction'`,
--- flexible `simp`) that would require major rewrites to remove.
+-- These are needed because the proofs use idioms (`refine'`) that would require
+-- major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.flexible false
-set_option linter.style.induction false
 
 noncomputable section
 
@@ -84,9 +82,10 @@ lemma p_dvd_q (n : ℕ) (i : Fin (w n)) : p n i ∣ q n :=
 
 /- q(n) is at least 10^20 for n >= 10. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
-  induction' n, hn using Nat.le_induction with n hn ih
-  · decide
-  · refine' le_trans ih _
+  induction hn with
+  | refl => decide
+  | @step n hn ih =>
+    refine le_trans ih ?_
     exact Nat.le_of_dvd (Finset.prod_pos fun p hp =>
       (Finset.mem_filter.mp hp).2.2.pos) (q_mono n)
 
@@ -138,7 +137,8 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
             exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by
               linarith [ Finset.mem_Ico.mp hk ] ) )
               ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] );
-          simp +zetaDelta at *;
+          simp +zetaDelta only [ge_iff_le, not_lt, Nat.reducePow, not_le, gt_iff_lt, Finset.mem_Ico,
+            and_imp, Finset.le_eq_subset] at *;
           exact Finset.image_subset_iff.mpr fun k hk => Finset.mem_filter.mpr
             ⟨ Finset.mem_range.mpr ( h_prime_bound k ( Finset.mem_Ico.mp hk |>.1 )
               ( Finset.mem_Ico.mp hk |>.2 ) ),
@@ -149,7 +149,7 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
       refine' lt_of_lt_of_le _ h_q_large;
       have h_exp_growth : ∀ n ≥ 1000000000, 5 ^ (Nat.log 2 n) > 6 * n ^ 2 + 10 * n + 3 := by
         intro n hn
-        induction' n using Nat.strong_induction_on with n ih;
+        induction n using Nat.strongRecOn with | _ n ih =>
         by_cases hn_large : n ≥ 2 ^ 30;
         · have h_exp_growth : 5 ^ (Nat.log 2 n) ≥ 5 ^ (Nat.log 2 (n / 2) + 1) := by
             rw [ show Nat.log 2 n = Nat.log 2 ( n / 2 ) + 1 from ?_ ];

@@ -18,11 +18,10 @@ import KrafftSieve.SelbergWeights
 
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`,
--- flexible `simp`) that would require major rewrites to remove.
+-- These are needed because the proofs use idioms (`refine'`) that would require major
+-- rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.flexible false
 set_option linter.style.multiGoal false
 
 open scoped BigOperators
@@ -99,7 +98,7 @@ Helper: Q_1 equals the sum of squares of P_multi over A_n.
 private lemma Q_1_sum_sq (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
     Q_1 n lambda = ∑ x ∈ A_n n, (P_multi n lambda (x : ZMod (q n))) ^ 2 := by
   unfold Q_1 P_multi Matrix_1
-  simp +decide [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
+  simp +decide only [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
   exact Eq.symm (by
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun _ _ =>
@@ -111,7 +110,8 @@ The truly multidimensional weight function is non-negative everywhere.
 -/
 lemma W_truly_multi_nonneg (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ZMod (q n)) :
     W_truly_multi n lambda x ≥ 0 := by
-      by_cases hx : x.val ∈ A_n n <;> simp_all +decide [ W_truly_multi ];
+      by_cases hx : x.val ∈ A_n n <;> simp_all +decide only [W_truly_multi, ↓reduceIte, ge_iff_le,
+        le_refl];
       exact sq_nonneg _
 
 /--
@@ -131,7 +131,7 @@ lemma S_1_eq_Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
       unfold Q_1 S_1 W_truly_multi P_multi; norm_cast;
       simp only [ZMod.val_natCast, Finset.powerset_univ];
       rw [ Finset.sum_congr rfl fun x hx => if_pos ?_ ];
-      · simp +decide [ Matrix_1, sq, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ];
+      · simp +decide only [sq, Finset.mul_sum _ _ _, mul_comm, mul_left_comm, Matrix_1];
         rw [ Finset.sum_comm, Finset.sum_congr rfl fun _ _ => Finset.sum_comm ];
       · unfold A_n at *;
         rcases n with ( _ | _ | n ) <;> norm_num at *;
@@ -153,11 +153,12 @@ lemma S_2_eq_Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
     S_2 n (W_truly_multi n lambda) = Q_2 n lambda := by
       unfold Q_2 S_2 W_truly_multi;
       unfold P_multi Matrix_2; simp +decide [ Finset.sum_mul _ _ _, Finset.mul_sum ] ; ring_nf;
-      simp +decide [ Finset.sum_ite, Finset.sum_mul _ _ _, Finset.mul_sum,
-        mul_comm, mul_left_comm, pow_two ];
+      simp +decide only [pow_two, Finset.sum_mul _ _ _, Finset.mul_sum, mul_left_comm, mul_comm,
+        Finset.sum_ite, Finset.sum_const_zero, add_zero];
       rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun x hx => _ ;
       rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun y hy => _ ; ring_nf;
-      refine' Finset.sum_subset _ _ <;> simp +contextual [ Finset.subset_iff ];
+      refine' Finset.sum_subset _ _ <;> simp +contextual only [Finset.subset_iff, Finset.mem_filter,
+        implies_true, true_and, mul_eq_zero];
       intro z hz hz'; contrapose! hz'; simp_all only [Finset.mem_univ, ne_eq] ;
       rw [ Nat.mod_eq_of_lt ] ; exact hz;
       refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hz |>.2 ) _;
@@ -252,7 +253,7 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
     smul_mem' := by
       -- By definition of $Q_1$, we know that $Q_1(c • x) = c^2 * Q_1(x)$.
       have hQ1_smul : ∀ (c : ℝ) (x : Idx n → ℝ), Q_1 n (c • x) = c^2 * Q_1 n x := by
-        simp_all +decide [ Q_1, Matrix_1 ];
+        simp_all +decide only [Q_1, Finset.powerset_univ, Pi.smul_apply, smul_eq_mul, Matrix_1];
         exact fun c x => by
           rw [ Finset.mul_sum _ _ _ ]
           exact Finset.sum_congr rfl fun _ _ => by
@@ -300,7 +301,7 @@ def kernel_Q1_perp (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
       simp [dot_product],
     smul_mem' := by
       -- By definition of dot product, we have dot_product n u (c • x) = c * dot_product n u x.
-      simp [dot_product];
+      simp only [dot_product, Set.mem_setOf_eq, Pi.smul_apply, smul_eq_mul];
       exact fun c x hx u hu => by
         simpa only [ mul_left_comm, Finset.mul_sum _ _ _ ] using
           mul_eq_zero_of_right c ( hx u hu ) ;
@@ -333,14 +334,18 @@ lemma Q_1_not_zero (n : ℕ) : ∃ lambda : Idx n → ℝ, Q_1 n lambda ≠ 0 :=
   use fun S => if S = ∅ then 1 else 0
   rw [← S_1_eq_Q_1]
   unfold S_1 W_truly_multi P_multi basis_cos
-  simp
+  simp only [ZMod.val_natCast, Finset.powerset_univ, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
+    Finset.mem_univ, ↓reduceIte, Finset.prod_empty, one_pow, Finset.sum_boole, ne_eq,
+    Nat.cast_eq_zero, Finset.card_eq_zero, Finset.filter_eq_empty_iff, not_forall,
+    Decidable.not_not]
   -- The sum is over A_n. The term is (sum_S ...)^2.
   -- If lambda is delta_empty, sum_S is basis_cos(empty) = 1.
   -- So term is 1^2 = 1.
   -- Sum is |A_n| = L n.
   -- L n = 12n + 4 > 0.
   use 6 * n^2 - 2 * n;
-  rcases n with _ | _ | n <;> simp +arith +decide [ Nat.mul_succ, sq ] at *
+  rcases n with _ | _ | n <;> simp +arith +decide only [sq, Nat.mul_succ, Nat.reduceSubDiff,
+    exists_prop] at *
   unfold A_n; ring_nf; norm_num;
   rw [ Nat.mod_eq_of_lt ] <;> norm_num;
   · constructor <;> nlinarith [ Nat.sub_add_cancel ( by
@@ -403,7 +408,7 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
       · exact Submodule.sup_orthogonal_of_hasOrthogonalProjection
       · convert h using 1;
         constructor <;> intro h <;> rw [ Submodule.eq_top_iff' ] at * <;>
-          simp_all +decide [ Submodule.mem_sup, Submodule.mem_orthogonal ]
+          simp_all +decide only [Submodule.mem_sup, Submodule.mem_orthogonal, implies_true]
         intro x;
         obtain ⟨ y, hy, z, hz, h ⟩ := h ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm x )
         refine' ⟨ fun i => y i, _, fun i => z i, _, _ ⟩
@@ -417,7 +422,7 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
             simp +contextual [ mul_assoc, mul_comm, mul_left_comm ]
             simp +contextual [ ← Finset.mul_sum _ _ _ ]
         · intro u hu; specialize hz ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm u )
-          simp_all +decide [ inner ]
+          simp_all +decide only [inner, RCLike.inner_apply, conj_trivial, WithLp.equiv_symm_apply]
           convert hz _ using 1
           · exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
           · exact Submodule.subset_span hu
@@ -480,8 +485,9 @@ lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
       have h_Q2_def : ∀ (lambda : Idx n → ℝ),
           Q_2 n lambda = ∑ x ∈ A_n n, c n x * P_multi n lambda x ^ 2 := by
         intro lambda
-        simp [Q_2, Matrix_2]
-        simp +decide [ P_multi, Finset.mul_sum _ _ _, mul_comm, mul_left_comm, sq ]
+        simp only [Q_2, Finset.powerset_univ, Matrix_2]
+        simp +decide only [mul_comm, mul_left_comm, Finset.mul_sum _ _ _, P_multi,
+          Finset.powerset_univ, sq]
         exact Eq.symm ( by
           rw [ Finset.sum_comm ]
           exact Finset.sum_congr rfl fun _ _ =>
@@ -494,7 +500,7 @@ lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernel_Q1 n) :
           have := Q_1_eq_zero_iff n u |>.1 hu x hx
           simp_all only
         simp [h_P_multi_u_zero]
-      simp_all +decide [ Finset.sum_add_distrib, mul_add, add_sq ]
+      simp_all +decide only [mul_eq_zero, add_sq, mul_add, Finset.sum_add_distrib, add_eq_right]
       rw [ ← Finset.sum_add_distrib ]
       exact Finset.sum_eq_zero fun x hx => by cases h_c_u_zero x hx <;> simp +decide [ * ]
 
@@ -535,9 +541,13 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 
       -- Since $hu$ is in the orthogonal complement of the kernel of $Q_1$, we can scale it to
       -- have unit length.
       obtain ⟨c, hc⟩ : ∃ c : ℝ, c ≠ 0 ∧ dot_product n (c • hu) (c • hu) = 1 := by
-        by_cases h : dot_product n hu hu = 0 <;> simp_all +decide [ dot_product ];
-        · simp_all +decide [ Finset.sum_eq_zero_iff_of_nonneg, mul_self_nonneg ];
-          simp_all +decide [ show hu = 0 from funext h ];
+        by_cases h : dot_product n hu hu = 0 <;> simp_all +decide only [gt_iff_lt, dot_product,
+          ne_eq, Pi.smul_apply, smul_eq_mul];
+        · simp_all +decide only [Finset.mem_univ, mul_self_nonneg, imp_self, implies_true,
+          Finset.sum_eq_zero_iff_of_nonneg, mul_eq_zero, or_self, forall_const, mul_zero,
+          Finset.sum_const_zero, zero_ne_one, and_false, exists_const];
+          simp_all +decide only [show hu = 0 from funext h, zero_mem, add_zero, Pi.zero_apply,
+            implies_true];
           exact hQ1.ne' ( v );
         · use 1 / Real.sqrt (∑ S, hu S * hu S);
           field_simp [h];
@@ -548,7 +558,8 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 
                   div_self <| ne_of_gt <| lt_of_le_of_ne ( Finset.sum_nonneg fun _ _ =>
                     sq_nonneg _ ) <| Ne.symm <| by simpa only [ sq ] using h ] ⟩;
       refine' ⟨ c • hu, ⟨ _, hc.2 ⟩, _ ⟩;
-      · intro w hw; simp_all +decide [ dot_product ] ;
+      · intro w hw
+        simp_all +decide only [gt_iff_lt, ne_eq, dot_product, Pi.smul_apply, smul_eq_mul] ;
         convert hv w hw |> fun h => congr_arg ( · * c ) h using 1 <;> ring_nf;
         simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dot_product ];
       · rw [ Ratio_add_kernel n u hu v, Ratio_scale n hu c hc.1 ]
@@ -666,7 +677,8 @@ Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
 theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : mu_min n < 1) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
       have := mu_min_lt_one_implies_admissibility n h;
-      by_cases hn : n ≥ 1 <;> simp_all +decide [ Krafft_Admissibility ];
+      by_cases hn : n ≥ 1 <;> simp_all +decide only [Krafft_Admissibility, ge_iff_le, not_le,
+        Nat.lt_one_iff];
       obtain ⟨ W, hW₁, hW₂, hW₃ ⟩ := this;
       apply krafft_sieve_guarantee n hn ⟨ W, hW₁, hW₂, hW₃ ⟩
 

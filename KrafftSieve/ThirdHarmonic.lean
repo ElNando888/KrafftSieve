@@ -18,13 +18,11 @@ import KrafftSieve.Basic
 
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`,
--- flexible `simp`) that would require major rewrites to remove.
+-- These are needed because the proofs use idioms (`refine'`) that would require major
+-- rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.flexible false
 set_option linter.style.multiGoal false
-set_option linter.style.maxHeartbeats false
 
 open scoped BigOperators
 open scoped Real
@@ -68,7 +66,7 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     ∑ x : ZMod (q n), W x = S_1 n W := by
       rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (A_n n) ⊆
         Finset.univ from Finset.subset_univ _)];
-      · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp;
+      · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp?
         · intro x hx; rw [ Nat.mod_eq_of_lt ] ; simp_all only [ge_iff_le];
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) ( q_bound n hn );
         · intro a ha b hb hab;
@@ -126,9 +124,13 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
               rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
               field_simp;
               intro h; obtain ⟨k, hk⟩ := h; rw [neg_eq_iff_eq_neg] at hk
-              rw [div_eq_iff] at hk <;> norm_cast at * <;> simp_all
+              rw [div_eq_iff] at hk <;> norm_cast at * <;> simp_all only [neg_mul, Rat.divInt_ofNat,
+                Int.cast_neg]
               · rw [Int.subNatNat_eq_coe] at hk
-                replace hk := congr_arg (fun z => z : ℤ → ZMod (q n)) hk; simp_all
+                replace hk := congr_arg (fun z => z : ℤ → ZMod (q n)) hk
+                simp_all only [ZMod.natCast_val,
+                  Int.cast_sub, ZMod.intCast_cast, ZMod.cast_id', id_eq, Int.cast_neg, Int.cast_mul,
+                  Int.cast_natCast, CharP.cast_eq_zero, mul_zero, neg_zero]
                 exact hxy <| sub_eq_zero.mp hk;
               · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
                   Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
@@ -140,16 +142,21 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
             exact Eq.trans (Finset.sum_congr rfl fun _ _ => by
               rw [← Complex.exp_nat_mul] ; ring_nf) hz_pow;
           convert h_ortho using 1;
-          refine' Finset.sum_bij ( fun h _ => h.val ) _ _ _ _ <;> simp +decide [ ZMod.val ];
+          refine' Finset.sum_bij ( fun h _ => h.val ) _ _ _ _ <;> simp +decide only
+            [Finset.mem_univ, ZMod.val, Finset.mem_range, forall_const]
           · cases h : q n <;> simp_all only [neg_mul, ZMod.natCast_val, Nat.cast_add, Nat.cast_one,
             Fin.is_lt, implies_true];
             exact absurd h <| ne_of_gt <| Finset.prod_pos fun p hp =>
               Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
-          · rcases k : q n with ( _ | _ | k ) <;> simp_all +decide [ ZMod ];
+          · rcases k : q n with ( _ | _ | k ) <;> simp_all +decide only [ZMod, neg_mul,
+            ZMod.natCast_val, Nat.cast_add, Nat.cast_one];
             · exact absurd k <| ne_of_gt <| Finset.prod_pos fun p hp =>
                 Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2.2;
             · exact fun a₁ a₂ h => Fin.ext h;
-          · cases h : q n <;> simp_all +decide [ ZMod ];
+          · cases h : q n <;> simp_all +decide only [ZMod, Finset.range_zero, neg_mul,
+            ZMod.natCast_val, CharP.cast_eq_zero, div_zero, Complex.exp_zero, Finset.sum_const,
+            Finset.card_empty, zero_nsmul, not_lt_zero, exists_const, not_isEmpty_of_nonempty,
+            IsEmpty.exists_iff, implies_true];
             exact fun b hb => ⟨ ⟨ b, by linarith ⟩, rfl ⟩;
         -- By Fubini's theorem, we can interchange the order of summation.
         have h_fubini : ∑ h : ZMod (q n),
@@ -167,7 +174,7 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
               rw [mul_mul_mul_comm] ; rw [← Complex.exp_add] ; ring_nf);
         simp_all +decide [ ← Finset.sum_div _ _ _, ← Finset.sum_mul ];
       rw [ h_plancherel, Finset.mul_sum _ _ _ ] ; congr ; ext ; ring_nf;
-      by_cases h : q n = 0 <;> simp +decide [ h, mul_assoc, mul_comm, mul_left_comm ];
+      by_cases h : q n = 0 <;> simp? +decide [ h, mul_assoc, mul_comm, mul_left_comm ];
       norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
       left; ring_nf;
       constructor <;> congr! 1;
@@ -194,7 +201,7 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
         · norm_cast
         · intro x a
           simp_all only [ge_iff_le, not_false_eq_true, zero_mul]
-      · simp +decide [W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul];
+      · simp? +decide [W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul];
         exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans
           (Finset.sum_congr rfl fun _ _ => by ac_rfl))
 
@@ -226,9 +233,11 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
       refine Nat.recAux ?_ (fun m ih => ?_) m
       · norm_num;
       · rw [ Nat.succ_mul, Finset.sum_range_add, ih ];
-        simp +decide [ Finset.sum_add_distrib, mul_add ];
+        simp +decide only [neg_mul, ite_mul, one_mul, zero_mul, Nat.cast_add, Nat.cast_mul,
+          CharP.cast_eq_zero, mul_zero, zero_add, mul_add, Nat.cast_one, mul_one,
+          Finset.sum_add_distrib, add_right_inj];
         refine' Finset.sum_congr rfl fun x hx => _ ; split_ifs <;> ring_nf;
-        by_cases h : p n i = 0 <;> simp_all +decide [ mul_assoc, mul_comm, mul_left_comm ];
+        by_cases h : p n i = 0 <;> simp_all? +decide [ mul_assoc, mul_comm, mul_left_comm ];
         exact Complex.exp_eq_exp_iff_exists_int.mpr ⟨ -m * k, by push_cast; ring ⟩;
     convert h_sum_simplified (q n / p n i) using 1;
     · rw [Nat.div_mul_cancel];
@@ -276,7 +285,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
                 have h_prime : p n i ∈ P_n n := by
                   exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
                 exact (Finset.mem_filter.mp h_prime).right.left ] ) ];
-        simp_all +decide [ Nat.ModEq, Nat.mod_eq_of_lt ];
+        simp_all +decide only [Finset.mem_range, Nat.ModEq, Nat.mod_eq_of_lt];
         rw [ Nat.mod_eq_of_lt ];
         exact Nat.div_lt_of_lt_mul <| by
           linarith [ show p n i ≥ 5 from by
@@ -286,7 +295,8 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
       have h_sub : {r_K n i, (p n i - r_K n i) % p n i} ⊆ Finset.range (p n i) := ?_
       rw [← Finset.sum_subset h_sub]
       · refine' Finset.sum_congr rfl fun x hx => _;
-        simp +zetaDelta at *;
+        simp +zetaDelta only [Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, neg_mul,
+          ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_or, and_imp] at *;
         exact fun h₁ h₂ => False.elim <| h₁ <| by
           specialize h_sum_final x (by
             exact hx.elim
@@ -297,7 +307,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
                 exact p_prime n i)))
           simp_all only [or_self, iff_true]
       · grind +ring;
-      · simp +decide [Finset.insert_subset_iff]
+      · simp +decide only [Finset.insert_subset_iff, Finset.mem_range, Finset.singleton_subset_iff]
         exact ⟨Nat.div_lt_of_lt_mul <| by
           linarith [show p n i ≥ 5 from by
             have h_prime := Finset.mem_filter.mp (p_mem_P_n n i)
@@ -450,7 +460,7 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
           have h_prime := Finset.mem_filter.mp h_in_P
           exact Nat.mod_lt _ ((p_prime n i).pos)⟩
         generalize_proofs at *;
-        simp +zetaDelta at *;
+        simp +zetaDelta only [Nat.cast_mul] at *;
         convert congr_arg ( fun x : ℕ => x : ℕ → ZMod ( q n ) ) hk using 1;
         · convert rfl;
           convert ZMod.natCast_zmod_val h;
@@ -527,7 +537,7 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
             (fun r => Finset.image (fun m => r + m * (p n i))
               (Finset.range (q n / (p n i)))) := by
         ext x;
-        simp +zetaDelta at *;
+        simp +zetaDelta only [Finset.mem_range, Finset.mem_biUnion, Finset.mem_image] at *;
         constructor;
         · intro hx;
           use x % (p n i), Nat.mod_lt _ (Nat.Prime.pos (by
@@ -546,10 +556,13 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
           · norm_cast
           · intros a ha b hb hab
             nlinarith [Finset.mem_range.mp hx, Finset.mem_range.mp ha, Finset.mem_range.mp hb]
-      · intros r hr s hs hrs; simp_all +decide [ Finset.disjoint_left ] ;
+      · intros r hr s hs hrs
+        simp_all +decide only [Finset.coe_range, Set.mem_Iio, ne_eq,
+        Finset.disjoint_left, Finset.mem_image, Finset.mem_range, not_exists, not_and,
+        forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] ;
         intro a ha x hx H; exact hrs <| by nlinarith [ show a = x from by nlinarith ] ;
     convert h_split_sum using 1;
-    · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp;
+    · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp?
       · exact fun x => ZMod.val_lt x;
       · intro a₁ a₂ h
         haveI := Fact.mk (show 1 < q n from ?_)
@@ -583,7 +596,8 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
               Complex.exp (-2 * Real.pi * Complex.I * h.val * m * (p n i) / (q n)) := by
         intro r hr; rw [Finset.mul_sum _ _ _]; congr; ext m; push_cast
         rw [← Complex.exp_add]; ring_nf;
-      simp_all +decide [ Finset.sum_ite ];
+      simp_all +decide only [Nat.cast_mul, ne_eq, neg_mul, ZMod.natCast_val, Finset.sum_ite, not_or,
+        Finset.sum_const_zero, add_zero, Nat.cast_add, mul_ite, mul_one, mul_zero, Finset.mem_range]
       convert congr_arg (fun (x : ℂ) => (1 / (q n : ℂ)) * x) h_split_sum using 1;
       · unfold g_hat; norm_num [ Finset.sum_ite ] ;
         unfold g ;
@@ -612,7 +626,7 @@ private lemma resonant_sieve_split (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → 
     have h_split : ∀ h : ZMod (q n), g_hat n i h ≠ 0 →
         ∃ k ∈ Finset.range (p n i),
           h = (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) := by
-      intro h hh; contrapose! hh; simp_all;
+      intro h hh; contrapose! hh; simp_all only [ge_iff_le, Finset.mem_range, Nat.cast_mul, ne_eq]
       convert dirac_comb_zero n i h _
       intro k
       simp_all only [Nat.cast_mul, ne_eq, Fin.is_lt, not_false_eq_true]
@@ -643,7 +657,8 @@ private lemma resonant_sieve_split (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → 
       have h_ha := Nat.mod_eq_of_lt (Finset.mem_range.mp ha)
       have h_hb := Nat.mod_eq_of_lt (Finset.mem_range.mp hb)
       exact h_ha ▸ h_hb ▸ h_eq;
-    · simp +zetaDelta at *
+    · simp +zetaDelta only [ge_iff_le, ne_eq, Finset.mem_range, Nat.cast_mul, Finset.mem_univ,
+      Finset.mem_image, not_exists, not_and, mul_eq_zero, map_eq_zero, forall_const] at *
       exact fun x hx => Or.inr <| Classical.not_not.1 fun hx' => by
         obtain ⟨k, hk₁, hk₂⟩ := h_split x hx'
         exact hx k hk₁ <| hk₂.symm
