@@ -17,8 +17,6 @@ open scoped BigOperators
 set_option linter.style.setOption false
 set_option linter.style.openClassical false
 set_option linter.style.refine false
-set_option linter.flexible false
-set_option linter.style.induction false
 
 noncomputable section
 
@@ -63,7 +61,7 @@ def Bk (n : ℕ) : Fin 6 → Finset ℤ
 theorem Bk_card_le (n : ℕ) (k : Fin 6) : (Bk n k).card ≤ 2 * n + 1 := by
   revert k;
   intros k
-  simp [Bk];
+  simp only [Bk];
   fin_cases k <;> simp +decide [ B1, B2, B3, B4, B5, B6 ] <;> omega;
 
 /-! ## Legendre targeting property -/
@@ -86,7 +84,8 @@ theorem legendre_targeting (n : ℕ) (_hn : n ≥ 1) (k : Fin 6) (x : ℤ)
     (hx : x ∈ Bk n k) :
     (6 * (n : ℤ) + k.val - 1) ^ 2 < 6 * x - 1 ∧
     6 * x + 1 < (6 * (n : ℤ) + k.val) ^ 2 := by
-      fin_cases k <;> simp +decide [ Bk ] at hx ⊢;
+      fin_cases k <;> simp +decide only [Bk, CharP.cast_eq_zero, add_zero, Nat.cast_one,
+        add_sub_cancel_right, Nat.cast_ofNat] at hx ⊢;
       all_goals erw [ Finset.mem_Icc ] at hx; constructor <;> nlinarith;
 
 /-! ## Sieve hit indicators -/

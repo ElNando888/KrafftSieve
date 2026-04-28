@@ -19,8 +19,6 @@ open scoped BigOperators
 set_option linter.style.setOption false
 set_option linter.style.openClassical false
 set_option linter.style.refine false
-set_option linter.flexible false
-set_option linter.style.induction false
 
 open Classical in
 noncomputable section
@@ -77,7 +75,8 @@ theorem cover_requires_enough_primes_plus (n : ℕ) (k : Fin 6)
       have h_inj : ∀ x y : ℤ, x ∈ U_plus n k → y ∈ U_plus n k → x ≠ y → (f x : ℤ) ≠ (f y : ℤ) := by
         intros x y hx hy hxy h_eq
         have := large_prime_covers_at_most_one_plus n k (f x) (hf x hx |>.1) ?_ <;>
-          simp_all +decide [Finset.card_le_one]
+          simp_all +decide only [ne_eq, Nat.cast_inj, Finset.card_le_one, Finset.mem_filter,
+            and_imp]
         · grind
         · exact Finset.mem_filter.mp (hf y hy |>.1) |>.2.2.2
       have h_card : Finset.card (Finset.image f (U_plus n k)) ≤ Finset.card (P_large n) :=
@@ -182,8 +181,11 @@ theorem effective_coverage_bound (n : ℕ) (k : Fin 6)
       · aesop;
       · exact Finset.union_subset ( Finset.image_subset_iff.mpr fun x _ => hf_plus.2 x |>.1 ) 
           ( Finset.image_subset_iff.mpr fun x _ => hf_minus.2 x |>.1 );
-      · simp_all +decide [ Finset.subset_iff ];
-        intro p x hx hx' y hy hy'; subst_vars; simp_all +decide [ wasted_primes ] ;
+      · simp_all +decide only [Subtype.forall, Finset.univ_eq_attach, Finset.card_attach,
+        Finset.subset_iff, Finset.mem_inter, Finset.mem_image, Finset.mem_attach, true_and,
+        Subtype.exists, and_imp, forall_exists_index];
+        intro p x hx hx' y hy hy'; subst_vars; simp_all +decide only [wasted_primes,
+          Finset.mem_filter, true_and] ;
         exact ⟨ ⟨ x, hx, hf_plus.2 x hx |>.2 ⟩, ⟨ y, hy, hy'.symm ▸ hf_minus.2 y hy |>.2 ⟩ ⟩
 
 /-! ## Main contradiction scaffold -/
@@ -400,7 +402,10 @@ theorem sieve_survivor_prime_plus (n : ℕ) (hn : n ≥ 1) (k : Fin 6) (x : ℤ)
         · omega;
       · have hp_lt : p^2 ≤ (6 * x + 1).natAbs := by
           obtain ⟨ q, hq ⟩ := hp_div.left;
-          rcases q with ( _ | _ | q ) <;> simp_all +decide [ sq ];
+          rcases q with ( _ | _ | q ) <;> simp_all +decide only [ge_iff_le, mul_zero,
+            not_false_eq_true, dvd_zero, forall_const, true_and, Int.natAbs_eq_zero, sq,
+            Int.natAbs_zero, nonpos_iff_eq_zero, mul_eq_zero, or_self, dvd_mul_right, true_and,
+            zero_add, mul_one, not_true_eq_false];
           · omega;
           · exact Nat.mul_le_mul_left _ ( hp_div _ ( Nat.minFac_prime ( by aesop ) ) 
               ( Nat.minFac_dvd _ ) |> le_trans <| 
@@ -415,7 +420,8 @@ theorem sieve_survivor_prime_plus (n : ℕ) (hn : n ≥ 1) (k : Fin 6) (x : ℤ)
               nlinarith only [ hp_lt, 
                 ‹p ^ 2 ≤ ( 6 * x + 1 |> Int.natAbs ) › ];
             omega;
-          rcases hp_cases with ( rfl | rfl | rfl ) <;> simp_all +decide ;
+          rcases hp_cases with ( rfl | rfl | rfl ) <;> simp_all +decide only [ge_iff_le,
+            add_le_add_iff_left, add_lt_add_iff_left] ;
           · exact absurd hp_prime ( by 
               rw [ show 6 * n + 2 = 2 * ( 3 * n + 1 ) by ring ] ;
               exact Nat.not_prime_mul ( by norm_num ) ( by linarith ) );

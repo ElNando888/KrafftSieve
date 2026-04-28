@@ -13,11 +13,7 @@ import Legendre.SieveSplitting
 
 open scoped BigOperators
 
-set_option linter.style.setOption false
 set_option linter.style.openClassical false
-set_option linter.style.refine false
-set_option linter.flexible false
-set_option linter.style.induction false
 
 noncomputable section
 
@@ -42,7 +38,7 @@ theorem large_prime_at_most_one_hit (n : ℕ) (p : ℕ) (hp : p > 2 * n)
       obtain ⟨ x, hx ⟩ := h_div;
       -- Since $a$ and $b$ are in the interval $Bk n k$, we have $|a - b| \leq 2n$.
       have h_diff_le : |a - b| ≤ 2 * n := by
-        fin_cases k <;> simp +decide [ Bk ] at ha hb ⊢ <;>
+        fin_cases k <;> simp +decide only [Bk] at ha hb ⊢ <;>
           rw [ abs_le ] <;> constructor <;>
           linarith! [ Finset.mem_Icc.mp ha, Finset.mem_Icc.mp hb ] ;
       nlinarith [ abs_le.mp h_diff_le, show x = 0 by nlinarith [ abs_le.mp h_diff_le ] ]
@@ -117,7 +113,7 @@ theorem paired_strike_separation (n : ℕ) (k : Fin 6) (p : ℕ) (_hp : p ∈ P_
         simpa [ mul_sub ] using h_mod_plus.sub h_mod_minus;
       rw [ Int.modEq_iff_dvd ] at *;
       obtain h | h := halpha <;> 
-        simp_all +decide ;
+        simp_all +decide only [Int.reduceNeg, mul_one] ;
       · obtain ⟨ k, hk ⟩ := h_mod_diff;
         exact ⟨ -k * m - ( x_plus - x_minus ), by nlinarith ⟩;
       · obtain ⟨ k, hk ⟩ := h_mod_diff;

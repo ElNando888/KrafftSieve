@@ -14,11 +14,7 @@ import KrafftSieve.OptimalWeights
 
 open scoped BigOperators
 
-set_option linter.style.setOption false
 set_option linter.style.openClassical false
-set_option linter.style.refine false
-set_option linter.flexible false
-set_option linter.style.induction false
 
 open Classical in
 noncomputable section
@@ -138,7 +134,7 @@ contradiction. Use Int.Prime.not_dvd or direct argument that p ≥ 5 implies ¬(
 theorem I_plus_mul_I_minus_eq_zero (p : ℕ) (_hp : Nat.Prime p) (hp5 : 5 ≤ p) (x : ℤ) :
     I_plus_ind p x * I_minus_ind p x = 0 := by
       unfold I_plus_ind I_minus_ind;
-      split_ifs <;> simp_all +decide [ sub_eq_add_neg ];
+      split_ifs <;> simp_all +decide only [sub_eq_add_neg, Int.reduceNeg];
       exact absurd ( Int.dvd_sub ‹ ( p : ℤ ) ∣ 6 * x + 1 › ‹ ( p : ℤ ) ∣ 6 * x + -1 › ) 
         ( by norm_num; exact mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith ) )
 
