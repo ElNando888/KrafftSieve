@@ -13,11 +13,10 @@ import KrafftSieve.SelbergWeights
 
 -- The following targeted linter suppressions replace the blanket
 -- `set_option linter.mathlibStandardSet false` that was previously
--- used. These are needed because the proofs use idioms (`refine'`,
--- flexible `simp`) that would require major rewrites to remove.
+-- used. These are needed because the proofs use idioms (`refine'`) that would require
+-- major rewrites to remove.
 set_option linter.style.setOption false
 set_option linter.style.refine false
-set_option linter.flexible false
 set_option linter.style.multiGoal false
 
 open scoped BigOperators
@@ -80,7 +79,8 @@ density μ.
 -/
 theorem f_hat_zero_eq_mu (n : ℕ) (r : Fin (w n) → ℕ) :
     f_hat n r 0 = μ n r := by
-  simp [f_hat, μ];
+  simp only [f_hat, one_div, neg_mul, ZMod.val_zero, zero_mul, CharP.cast_eq_zero, mul_zero,
+    zero_div, Complex.exp_zero, mul_one, μ, Complex.ofReal_div, Complex.ofReal_natCast];
   rw [ inv_mul_eq_div, div_eq_div_iff ] <;>
     norm_cast <;> norm_num [ q_ne_zero ];
   · unfold f N; aesop;
@@ -121,7 +121,7 @@ lemma sum_exp_orthogonality (n : ℕ)
             field_simp;
             rintro ⟨ m, hm ⟩;
             rw [ div_eq_iff ] at hm <;>
-              norm_cast at * <;> simp_all;
+              norm_cast at * <;> simp_all only [ZMod.natCast_val]
             · replace hm :=
                 congr_arg
                   ( fun x : ℤ => x : ℤ →
@@ -161,7 +161,9 @@ lemma sum_exp_orthogonality (n : ℕ)
             Nat.mod_eq_of_lt hy.out ▸ by
               simpa [ ZMod.natCast_eq_natCast_iff ]
                 using hxy;
-    · simp +zetaDelta at *;
+    · simp +zetaDelta only [Finset.mem_univ, Finset.mem_image, Finset.mem_range, not_exists,
+      not_and, ZMod.natCast_val, Complex.exp_ne_zero, imp_false, not_forall,
+      Decidable.not_not, forall_const] at *;
       intro x
       exact ⟨ x.val, by exact x.val_lt,
         by exact ZMod.natCast_zmod_val x ⟩ ;
@@ -241,9 +243,15 @@ lemma f_hat_normSq_expansion (n : ℕ)
           Complex.exp (2 * Real.pi * Complex.I *
             (h.val * y.val : ℕ) /
             (q n : ℂ)) := by
-      simp_all +decide
-        [ Complex.ext_iff, Complex.exp_re,
-          Complex.exp_im ];
+      simp_all +decide only [one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val, Complex.ext_iff,
+        Complex.mul_re, Complex.inv_re, Complex.natCast_re, Complex.normSq_natCast,
+        div_self_mul_self', Complex.re_sum, Complex.ofReal_re, Complex.exp_re,
+        Complex.div_natCast_re, Complex.neg_re, Complex.re_ofNat, Complex.im_ofNat,
+        Complex.ofReal_im, mul_zero, sub_zero, Complex.I_re, Complex.mul_im, zero_mul, add_zero,
+        Complex.I_im, mul_one, sub_self, zero_sub, neg_neg, Complex.div_natCast_im, Complex.neg_im,
+        zero_add, Complex.exp_im, Complex.inv_im, Complex.natCast_im, neg_zero, zero_div,
+        Complex.im_sum, Complex.conj_re, mul_eq_mul_left_iff, inv_eq_zero, Nat.cast_eq_zero,
+        Complex.conj_im];
       norm_num [ neg_div, mul_div_assoc,
         Real.cos_neg, Real.sin_neg ];
       have h_exp : ∀ x : ZMod (q n),
@@ -410,7 +418,8 @@ theorem parseval_identity (n : ℕ)
       rw [ Finset.sum_ite, Finset.filter_ne' ];
       have := parseval_standard n r
       have := variance_expansion n r
-      simp_all +decide [ sub_eq_add_neg ] ;
+      simp_all +decide only [one_div, sub_eq_add_neg, Finset.sum_const_zero, Finset.mem_univ,
+        Finset.sum_erase_eq_sub, zero_add, add_right_inj, neg_inj] ;
       rw [ f_hat_zero_eq_mu ]
       norm_num [ Complex.normSq ] ; ring;
 
@@ -470,7 +479,9 @@ lemma f_hat_conj_symm (n : ℕ)
               Finset.prod_pos fun p hp =>
                 Nat.Prime.pos <|
                   Finset.mem_filter.mp hp |>.2.2;
-      simp +zetaDelta at *;
+      simp +zetaDelta only [neg_mul, ZMod.natCast_val, one_div, Nat.cast_mul, map_mul, map_inv₀,
+        map_natCast, map_sum, Complex.conj_ofReal, mul_eq_mul_left_iff, inv_eq_zero,
+        Nat.cast_eq_zero] at *;
       left; congr; ext x; rw [ h_exp ]
       rw [ Complex.ext_iff ]
       norm_num [ Complex.exp_re,
