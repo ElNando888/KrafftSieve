@@ -66,7 +66,9 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     ∑ x : ZMod (q n), W x = S_1 n W := by
       rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (A_n n) ⊆
         Finset.univ from Finset.subset_univ _)];
-      · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp?
+      · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp only [Finset.mem_image,
+          forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, ZMod.val_natCast, exists_prop,
+          exists_exists_and_eq_and, ZMod.natCast_val, ZMod.cast_id', id_eq, implies_true]
         · intro x hx; rw [ Nat.mod_eq_of_lt ] ; simp_all only [ge_iff_le];
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) ( q_bound n hn );
         · intro a ha b hb hab;
@@ -174,7 +176,11 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
               rw [mul_mul_mul_comm] ; rw [← Complex.exp_add] ; ring_nf);
         simp_all +decide [ ← Finset.sum_div _ _ _, ← Finset.sum_mul ];
       rw [ h_plancherel, Finset.mul_sum _ _ _ ] ; congr ; ext ; ring_nf;
-      by_cases h : q n = 0 <;> simp? +decide [ h, mul_assoc, mul_comm, mul_left_comm ];
+      by_cases h : q n = 0 <;> simp +decide only [mul_comm, ZMod.natCast_val, mul_assoc,
+        mul_left_comm, ne_eq, Nat.cast_eq_zero, h, not_false_eq_true, mul_inv_cancel₀,
+        Nat.cast_mul, one_mul, map_mul, map_inv₀, map_natCast, map_sum, mul_eq_mul_left_iff,
+        inv_eq_zero, or_false, CharP.cast_eq_zero, inv_zero, zero_mul, mul_zero, neg_zero,
+        Complex.exp_zero, mul_one, map_zero];
       norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im ];
       left; ring_nf;
       constructor <;> congr! 1;
@@ -201,7 +207,9 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
         · norm_cast
         · intro x a
           simp_all only [ge_iff_le, not_false_eq_true, zero_mul]
-      · simp? +decide [W_hat, g_hat, Finset.mul_sum _ _ _, Finset.sum_mul];
+      · simp +decide only [W_hat, one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val,
+        Finset.mul_sum _ _ _, g_hat, map_sum, map_mul, map_inv₀, map_natCast, Complex.conj_ofReal,
+        Finset.sum_mul];
         exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm.trans
           (Finset.sum_congr rfl fun _ _ => by ac_rfl))
 
@@ -562,7 +570,8 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
         forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] ;
         intro a ha x hx H; exact hrs <| by nlinarith [ show a = x from by nlinarith ] ;
     convert h_split_sum using 1;
-    · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp?
+    · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp only [Finset.mem_univ,
+      Finset.mem_range, forall_const, exists_const, neg_mul, Nat.cast_mul, ZMod.natCast_val]
       · exact fun x => ZMod.val_lt x;
       · intro a₁ a₂ h
         haveI := Fact.mk (show 1 < q n from ?_)
