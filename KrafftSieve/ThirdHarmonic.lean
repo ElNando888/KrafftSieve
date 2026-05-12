@@ -34,7 +34,7 @@ noncomputable section
 
 /--
 Define $\hat{W}(h)$ (Fourier Transform of the Weight):
-Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(x)$ over 
+Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(x)$ over
 $\mathbb{Z}/q\mathbb{Z}$:
 $$ \hat{W}(h) = \frac{1}{q} \sum_{x=0}^{q-1} W(x) e^{-2\pi i h x / q} $$
 -/
@@ -245,8 +245,15 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
           CharP.cast_eq_zero, mul_zero, zero_add, mul_add, Nat.cast_one, mul_one,
           Finset.sum_add_distrib, add_right_inj];
         refine' Finset.sum_congr rfl fun x hx => _ ; split_ifs <;> ring_nf;
-        by_cases h : p n i = 0 <;> simp_all? +decide [ mul_assoc, mul_comm, mul_left_comm ];
-        exact Complex.exp_eq_exp_iff_exists_int.mpr ⟨ -m * k, by push_cast; ring ⟩;
+        by_cases h : p n i = 0
+        · simp_all +decide only [mul_zero, Finset.range_zero, mul_comm, mul_neg,
+          CharP.cast_eq_zero, div_zero, mul_left_comm, zero_mul, neg_zero, zero_div,
+          Complex.exp_zero, mul_ite, mul_one, Finset.sum_boole, Finset.filter_empty,
+          Finset.card_empty, mul_assoc, Finset.sum_empty, Finset.notMem_empty];
+        · simp_all +decide only [mul_comm, mul_neg, mul_left_comm, mul_assoc, ite_mul, one_mul,
+          zero_mul, mul_ite, mul_zero, Finset.mem_range, ne_eq, Nat.cast_eq_zero, not_false_eq_true,
+          mul_inv_cancel_left₀, mul_inv_cancel_of_invertible, mul_one];
+          exact Complex.exp_eq_exp_iff_exists_int.mpr ⟨ -m * k, by push_cast; ring_nf ⟩
     convert h_sum_simplified (q n / p n i) using 1;
     · rw [Nat.div_mul_cancel];
       exact Finset.dvd_prod_of_mem _ (Finset.mem_filter.mpr ⟨Finset.mem_range.mpr
@@ -591,7 +598,7 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
 lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
     (h_not_multiple : ∀ k : Fin (p n i), h ≠ (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) :
     g_hat n i h = 0 := by
-      -- The inner sum is a geometric series where $\zeta = e^{-2\pi i p_i / q}$ 
+      -- The inner sum is a geometric series where $\zeta = e^{-2\pi i p_i / q}$
       -- is a primitive $M$-th root of unity, with $M = q/p_i$.
       have h_geo_series := dirac_comb_zero_geo_series n i h h_not_multiple
       -- Split the sum into residue classes modulo $p_i$.
@@ -618,8 +625,8 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
 
 /-
 The Resonant Sieve Equation
-By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$, 
-and applying the Dirac Comb lemmas, establish the exact equation for the weighted 
+By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$,
+and applying the Dirac Comb lemmas, establish the exact equation for the weighted
 hit mass $S_2(n)$:
 $$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} +
   q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i}
@@ -822,7 +829,7 @@ def resonanceCapacity (n : ℕ) : ℝ :=
 /--
 The Harmonic Deficit (Parity Barrier Collision)
 The resonance capacity of any purely one-dimensional 3rd harmonic weight system is strictly
-overpowered by the sieve aggregate main density. This formalizes the collision with the 
+overpowered by the sieve aggregate main density. This formalizes the collision with the
 Sieve Parity limit.
 -/
 lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
@@ -832,7 +839,7 @@ lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
   have h_lt : ∀ p ∈ P_n n, (2 : ℝ) / p * Real.cos (Real.pi / p) < (2 : ℝ) / p := by
     intros p hp
     have h_cos_lt_one : Real.cos (Real.pi / p) < 1 := by
-      nlinarith [ Real.sin_sq_add_cos_sq ( Real.pi / p ), 
+      nlinarith [ Real.sin_sq_add_cos_sq ( Real.pi / p ),
       Real.sin_pos_of_pos_of_lt_pi ( show 0 < Real.pi / p from
         div_pos Real.pi_pos <| Nat.cast_pos.2 <| Nat.Prime.pos <| Finset.mem_filter.1 hp |>.2.2 ) <|
         div_lt_self Real.pi_pos <| Nat.one_lt_cast.2 <| Nat.Prime.one_lt <|
