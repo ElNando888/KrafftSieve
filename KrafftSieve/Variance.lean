@@ -85,11 +85,9 @@ theorem f_hat_zero_eq_mu (n : ℕ) (r : Fin (w n) → ℕ) :
     norm_cast <;> norm_num [ q_ne_zero ];
   · unfold f N; aesop;
   · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
-      Nat.Prime.ne_zero <|
-        Finset.mem_filter.mp hp |>.2.2;
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2;
   · exact Finset.prod_ne_zero_iff.mpr fun p hp =>
-      Nat.Prime.ne_zero <|
-        Finset.mem_filter.mp hp |>.2.2
+      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2
 
 /-
 Lemma: Orthogonality of the exponential sum.
@@ -113,9 +111,7 @@ lemma sum_exp_orthogonality (n : ℕ)
         · -- Let $z = e^{2 \pi i k / q}$.
           -- Since $k \neq 0$,
           -- $z$ is a primitive $q$-th root of unity.
-          set z : ℂ :=
-            Complex.exp (2 * Real.pi * Complex.I *
-              k.val / (q n : ℂ))
+          set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k.val / (q n : ℂ))
           have hz : z ≠ 1 := by
             rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
             field_simp;
@@ -123,9 +119,7 @@ lemma sum_exp_orthogonality (n : ℕ)
             rw [ div_eq_iff ] at hm <;>
               norm_cast at * <;> simp_all only [ZMod.natCast_val]
             · replace hm :=
-                congr_arg
-                  ( fun x : ℤ => x : ℤ →
-                    ZMod ( q n ) ) hm
+                congr_arg ( fun x : ℤ => x : ℤ → ZMod ( q n ) ) hm
               simp_all;
             · exact Nat.ne_of_gt <|
                 Finset.prod_pos fun p hp =>
@@ -151,11 +145,9 @@ lemma sum_exp_orthogonality (n : ℕ)
               ring );
           convert h_geo_series using 2 ; ring_nf;
           rw [ ← Complex.exp_nat_mul ] ;
-          rw [ Nat.mod_eq_of_lt
-            ( Finset.mem_range.mp ‹_› ) ]
+          rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp ‹_› ) ]
           ring_nf;
-          simp +decide
-            [ mul_assoc, mul_comm, mul_left_comm ];
+          simp +decide [ mul_assoc, mul_comm, mul_left_comm ];
       · exact fun x hx y hy hxy =>
           Nat.mod_eq_of_lt hx.out ▸
             Nat.mod_eq_of_lt hy.out ▸ by
@@ -165,8 +157,7 @@ lemma sum_exp_orthogonality (n : ℕ)
       not_and, ZMod.natCast_val, Complex.exp_ne_zero, imp_false, not_forall,
       Decidable.not_not, forall_const] at *;
       intro x
-      exact ⟨ x.val, by exact x.val_lt,
-        by exact ZMod.natCast_zmod_val x ⟩ ;
+      exact ⟨ x.val, by exact x.val_lt, by exact ZMod.natCast_zmod_val x ⟩ ;
 
 /-
 Orthogonality of the exponential sum over x.
@@ -184,8 +175,7 @@ lemma orthogonality_x (n : ℕ)
           ⟨ fun x y hxy => by
               subst hxy; simp_all only,
             fun x => ⟨ x, by aesop ⟩ ⟩ ) ] ;
-      norm_num [ mul_assoc, mul_comm,
-        mul_left_comm ]
+      norm_num [ mul_assoc, mul_comm, mul_left_comm ]
 
 /-
 Application of orthogonality to simplify the double
@@ -210,9 +200,7 @@ lemma sum_orthogonality_application (n : ℕ)
       intro x y; split_ifs with h; simp_all;
       have := sum_exp_orthogonality n ( y - x ) ;
       simp_all +decide [ sub_eq_iff_eq_add ] ;
-    simp_all +decide
-      [ sq, mul_assoc, mul_comm,
-        Finset.mul_sum _ _ _ ]
+    simp_all +decide [ sq, mul_assoc, mul_comm, Finset.mul_sum _ _ _ ]
 
 /-
 Expansion of the squared magnitude of a single
@@ -240,9 +228,7 @@ lemma f_hat_normSq_expansion (n : ℕ)
     have h_conj : starRingEnd ℂ (f_hat n r h) =
         (1 / (q n : ℂ)) * ∑ y : ZMod (q n),
           (f n r y : ℂ) *
-          Complex.exp (2 * Real.pi * Complex.I *
-            (h.val * y.val : ℕ) /
-            (q n : ℂ)) := by
+          Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val : ℕ) / (q n : ℂ)) := by
       simp_all +decide only [one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val, Complex.ext_iff,
         Complex.mul_re, Complex.inv_re, Complex.natCast_re, Complex.normSq_natCast,
         div_self_mul_self', Complex.re_sum, Complex.ofReal_re, Complex.exp_re,
@@ -252,11 +238,9 @@ lemma f_hat_normSq_expansion (n : ℕ)
         zero_add, Complex.exp_im, Complex.inv_im, Complex.natCast_im, neg_zero, zero_div,
         Complex.im_sum, Complex.conj_re, mul_eq_mul_left_iff, inv_eq_zero, Nat.cast_eq_zero,
         Complex.conj_im];
-      norm_num [ neg_div, mul_div_assoc,
-        Real.cos_neg, Real.sin_neg ];
+      norm_num [ neg_div, mul_div_assoc, Real.cos_neg, Real.sin_neg ];
       have h_exp : ∀ x : ZMod (q n),
-          Complex.re (h.val * x.val) =
-            h.val * x.val ∧
+          Complex.re (h.val * x.val) = h.val * x.val ∧
           Complex.im (h.val * x.val) = 0 := by
         norm_cast ; aesop;
       aesop;
@@ -267,14 +251,9 @@ lemma f_hat_normSq_expansion (n : ℕ)
     · -- By combining the exponents, we can see that
       -- the LHS and RHS are equal.
       have h_exp : ∀ x y : ZMod (q n),
-          Complex.exp ((q n : ℂ)⁻¹ * Real.pi *
-            Complex.I * h.val *
-            (y - x).val * 2) =
-          Complex.exp ((q n : ℂ)⁻¹ * Real.pi *
-            Complex.I * h.val * y.val * 2) *
-          Complex.exp (-(q n : ℂ)⁻¹ * Real.pi *
-            Complex.I * h.val *
-            x.val * 2) := by
+          Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * (y - x).val * 2) =
+          Complex.exp ((q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * y.val * 2) *
+          Complex.exp (-(q n : ℂ)⁻¹ * Real.pi * Complex.I * h.val * x.val * 2) := by
         intro x y; rw [ ← Complex.exp_add ]
         ring_nf;
         rw [ Complex.exp_eq_exp_iff_exists_int ];
@@ -283,16 +262,11 @@ lemma f_hat_normSq_expansion (n : ℕ)
         -- modulo $q n$. Therefore, $(y - x).val$ is
         -- equal to $y.val - x.val$ plus some
         -- multiple of $q n$.
-        obtain ⟨k, hk⟩ : ∃ k : ℤ,
-            (y - x).val =
-              y.val - x.val + k * q n := by
-          have h_mod :
-              (y - x).val ≡
-                y.val - x.val [ZMOD q n] := by
-            simp +decide
-              [ ← ZMod.intCast_eq_intCast_iff ];
-          exact h_mod.symm.dvd.imp
-            fun k hk => by linarith;
+        obtain ⟨k, hk⟩ : ∃ k : ℤ, (y - x).val = y.val - x.val + k * q n := by
+          have h_mod : (y - x).val ≡ y.val - x.val [ZMOD q n] := by
+            simp +decide only [ZMod.natCast_val, ← ZMod.intCast_eq_intCast_iff, ZMod.intCast_cast,
+              dvd_refl, ZMod.cast_sub, ZMod.cast_id', id_eq, Int.cast_sub];
+          exact h_mod.symm.dvd.imp fun k hk => by linarith;
         use k * h.val
         push_cast [ ← @Int.cast_inj ℂ ] at *
         rw [ hk ] ; ring_nf;
@@ -304,14 +278,11 @@ lemma f_hat_normSq_expansion (n : ℕ)
                   Finset.mem_filter.mp
                     hp |>.2.2 ) ]
         ring;
-      simp +decide only
-        [mul_assoc, Finset.mul_sum _ _ _,
-          Finset.sum_mul];
+      simp +decide only [mul_assoc, Finset.mul_sum _ _ _, Finset.sum_mul];
       exact Finset.sum_comm.trans
         ( Finset.sum_congr rfl fun _ _ =>
           Finset.sum_congr rfl fun _ _ => by
-            push_cast [ ← mul_assoc,
-              ← Complex.exp_add ]
+            push_cast [ ← mul_assoc, ← Complex.exp_add ]
             rw [ h_exp ] ; ring_nf )
 
 /-
@@ -354,8 +325,7 @@ lemma parseval_standard (n : ℕ)
           exact fun h ↦
             f_hat_normSq_expansion n r h;
         simp +zetaDelta at *;
-        simp +decide only
-          [h_expand, Finset.mul_sum]
+        simp +decide only [h_expand, Finset.mul_sum]
         ring_nf;
         exact Finset.sum_comm.trans
           ( Finset.sum_congr rfl fun _ _ =>
@@ -371,8 +341,7 @@ lemma parseval_standard (n : ℕ)
           (1 / (q n : ℂ)^2) * (q n : ℂ) *
             ∑ x : ZMod (q n),
               (f n r x : ℂ)^2 := by
-        rw [ h_sum,
-          sum_orthogonality_application ]
+        rw [ h_sum, sum_orthogonality_application ]
         ring;
       convert h_final using 1
       norm_num [ sq, mul_assoc ] ; ring_nf;
@@ -459,17 +428,15 @@ lemma f_hat_conj_symm (n : ℕ)
             ((-h).val * x.val) / (q n : ℂ)) =
           Complex.exp (2 * Real.pi * Complex.I *
             (h.val * x.val) / (q n : ℂ)) := by
-        have h_exp :
-            (-h).val ≡ -h.val [ZMOD q n] := by
-          simp +decide
-            [ ← ZMod.intCast_eq_intCast_iff ];
+        have h_exp : (-h).val ≡ -h.val [ZMOD q n] := by
+          simp +decide [ ← ZMod.intCast_eq_intCast_iff ];
         obtain ⟨ k, hk ⟩ := h_exp.symm.dvd;
         intro x
         rw [ Complex.exp_eq_exp_iff_exists_int ]
         use -k * x.val
         push_cast [ ← @Int.cast_inj ℂ ] at *
-        simp_all +decide [ mul_assoc, mul_comm,
-          mul_left_comm, div_eq_mul_inv ]
+        simp_all +decide only [ZMod.natCast_val, sub_neg_eq_add, mul_comm, mul_neg, neg_mul,
+          mul_assoc, div_eq_mul_inv, mul_left_comm]
         ring_nf;
         field_simp;
         rw [ div_sub', mul_div_assoc' ];
@@ -503,8 +470,7 @@ lemma harmonic_variance_lower_bound (n : ℕ)
       2 * Complex.normSq (f_hat n r h) := by
       have := f_hat_conj_symm n r h;
       rw [ parseval_identity ];
-      rw [ Finset.sum_eq_add_sum_diff_singleton
-        ( Finset.mem_univ h ) ];
+      rw [ Finset.sum_eq_add_sum_diff_singleton ( Finset.mem_univ h ) ];
       rw [ Finset.sum_eq_add_sum_diff_singleton
         ( Finset.mem_sdiff.mpr
           ⟨ Finset.mem_univ ( -h ), ?_ ⟩ ) ] <;>
@@ -516,8 +482,7 @@ lemma harmonic_variance_lower_bound (n : ℕ)
               else Complex.normSq
                 ( f_hat n r x ) from
           Finset.sum_nonneg fun x hx => by
-            split_ifs <;>
-              norm_num [ Complex.normSq_nonneg ] ];
+            split_ifs <;> norm_num [ Complex.normSq_nonneg ] ];
       · intro h_eq; have := q_odd n
         simp_all +decide
           [ neg_eq_iff_add_eq_zero ] ;
