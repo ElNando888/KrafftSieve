@@ -16,14 +16,6 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
--- The following targeted linter suppressions replace the blanket
--- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`) that would require
--- major rewrites to remove.
-set_option linter.style.setOption false
-set_option linter.style.refine false
-set_option linter.style.multiGoal false
-
 open scoped BigOperators
 open scoped Real
 open scoped Nat
@@ -71,8 +63,8 @@ theorem survives_iff (n : ℕ) (x : ZMod (q n)) :
       unfold f A A_i; simp +decide [Finset.mem_filter]
 
 /-
-Krafft Algebraic Equivalence: For any prime p >= 5 
-and any integer x, let r = floor((p+1)/6). Then x = ±r (mod p) if and only if 
+Krafft Algebraic Equivalence: For any prime p >= 5
+and any integer x, let r = floor((p+1)/6). Then x = ±r (mod p) if and only if
 p | (6x-1) or p | (6x+1).
 -/
 lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (x : ℤ) :
@@ -103,8 +95,8 @@ lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (
       grind
 
 /-
-Interval Projection Bound: For any x in A_n, the 
-value 6x+1 is strictly bounded by the square of the next possible prime after P_n: 
+Interval Projection Bound: For any x in A_n, the
+value 6x+1 is strictly bounded by the square of the next possible prime after P_n:
 6x + 1 < (6n+5)^2.
 -/
 lemma interval_projection_bound (n : ℕ) (x : ℕ) (hx : x ∈ A_n n) :
@@ -165,7 +157,8 @@ lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1)
     ¬(p_val : ℤ) ∣ (6 * x - 1) ∧ ¬(p_val : ℤ) ∣ (6 * x + 1) := by
       obtain ⟨i, hi⟩ := mem_P_n_iff_exists_index n p_val |>.1 hp
       have h_cong : (x.cast : ZMod p_val) ≠ r_K n i ∧ (x.cast : ZMod p_val) ≠ -r_K n i := by
-        convert survives_iff n x |>.1 h_survives i; aesop
+        convert survives_iff n x |>.1 h_survives i;
+        · aesop
         all_goals subst hi; norm_cast
         · rw [ZMod.cast_eq_val]
           norm_num [ZMod.natCast_zmod_val]
@@ -183,8 +176,8 @@ lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1)
       simp_all +decide [r_K]
 
 /-
-The Sieve Isomorphism: Assume x in A_n. By the Fundamental 
-Theorem of Arithmetic and the Sieve of Eratosthenes bound from earlier, x survives the Krafft 
+The Sieve Isomorphism: Assume x in A_n. By the Fundamental
+Theorem of Arithmetic and the Sieve of Eratosthenes bound from earlier, x survives the Krafft
 sieve if and only if both 6x-1 and 6x+1 are prime numbers.
 -/
 lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :

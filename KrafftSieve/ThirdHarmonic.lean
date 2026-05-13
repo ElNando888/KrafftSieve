@@ -16,13 +16,7 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
--- The following targeted linter suppressions replace the blanket
--- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`) that would require major
--- rewrites to remove.
-set_option linter.style.setOption false
-set_option linter.style.refine false
-set_option linter.style.multiGoal false
+set_option linter.unusedVariables false
 
 open scoped BigOperators
 open scoped Real
@@ -66,17 +60,18 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     ∑ x : ZMod (q n), W x = S_1 n W := by
       rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (A_n n) ⊆
         Finset.univ from Finset.subset_univ _)];
-      · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp only [Finset.mem_image,
+      · refine Finset.sum_bij ( fun x hx => x.val ) ?_ ?_ ?_ ?_ <;> simp only [Finset.mem_image,
           forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, ZMod.val_natCast, exists_prop,
           exists_exists_and_eq_and, ZMod.natCast_val, ZMod.cast_id', id_eq, implies_true]
-        · intro x hx; rw [ Nat.mod_eq_of_lt ] ; simp_all only [ge_iff_le];
+        · intro x hx; rw [ Nat.mod_eq_of_lt ]
+          · simp_all only [ge_iff_le]
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hx |>.2 ) ( q_bound n hn );
         · intro a ha b hb hab;
           rw [ ZMod.natCast_eq_natCast_iff ]
           simp_all only [ge_iff_le]
           exact hab;
         · intro b hb;
-          refine' ⟨ b, hb, Nat.mod_eq_of_lt _ ⟩;
+          refine ⟨ b, hb, Nat.mod_eq_of_lt ?_ ⟩;
           exact lt_of_le_of_lt ( Finset.mem_Icc.mp hb |>.2 ) ( q_bound n hn );
       · intro x hx; contrapose! h_supp; aesop;
 
@@ -116,7 +111,8 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
           (∑ h : ZMod (q n), Complex.exp
             (-2 * Real.pi * Complex.I * (h.val * (x.val - y.val)) / (q n : ℂ))) =
             if x = y then (q n : ℂ) else 0 := by
-          intro x y; split_ifs with hxy; simp_all ;
+          intro x y; split_ifs with hxy
+          · simp_all
           have h_ortho : ∑ h ∈ Finset.range (q n),
             Complex.exp (-2 * Real.pi * Complex.I * (h * (x.val - y.val)) / (q n)) = 0 := by
             -- Let $z = e^{-2\pi i (x.val - y.val) / q_n}$. Since $x \neq y$, $z$ is a
@@ -144,7 +140,7 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
             exact Eq.trans (Finset.sum_congr rfl fun _ _ => by
               rw [← Complex.exp_nat_mul] ; ring_nf) hz_pow;
           convert h_ortho using 1;
-          refine' Finset.sum_bij ( fun h _ => h.val ) _ _ _ _ <;> simp +decide only
+          refine Finset.sum_bij ( fun h _ => h.val ) ?_ ?_ ?_ ?_ <;> simp +decide only
             [Finset.mem_univ, ZMod.val, Finset.mem_range, forall_const]
           · cases h : q n <;> simp_all only [neg_mul, ZMod.natCast_val, Nat.cast_add, Nat.cast_one,
             Fin.is_lt, implies_true];
@@ -244,7 +240,7 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
         simp +decide only [neg_mul, ite_mul, one_mul, zero_mul, Nat.cast_add, Nat.cast_mul,
           CharP.cast_eq_zero, mul_zero, zero_add, mul_add, Nat.cast_one, mul_one,
           Finset.sum_add_distrib, add_right_inj];
-        refine' Finset.sum_congr rfl fun x hx => _ ; split_ifs <;> ring_nf;
+        refine Finset.sum_congr rfl fun x hx => ?_ ; split_ifs <;> ring_nf;
         by_cases h : p n i = 0
         · simp_all +decide only [mul_zero, Finset.range_zero, mul_comm, mul_neg,
           CharP.cast_eq_zero, div_zero, mul_left_comm, zero_mul, neg_zero, zero_div,
@@ -301,27 +297,27 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
                   exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
                 exact (Finset.mem_filter.mp h_prime).right.left ] ) ];
         simp_all +decide only [Finset.mem_range, Nat.ModEq, Nat.mod_eq_of_lt];
-        rw [ Nat.mod_eq_of_lt ];
+        rw [ Nat.mod_eq_of_lt ]
         exact Nat.div_lt_of_lt_mul <| by
           linarith [ show p n i ≥ 5 from by
             have h_prime : p n i ∈ P_n n := by
               exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
-            exact Finset.mem_filter.mp h_prime |>.2.1 ] ;
+            exact Finset.mem_filter.mp h_prime |>.2.1 ]
       have h_sub : {r_K n i, (p n i - r_K n i) % p n i} ⊆ Finset.range (p n i) := ?_
-      rw [← Finset.sum_subset h_sub]
-      · refine' Finset.sum_congr rfl fun x hx => _;
-        simp +zetaDelta only [Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, neg_mul,
-          ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_or, and_imp] at *;
-        exact fun h₁ h₂ => False.elim <| h₁ <| by
-          specialize h_sum_final x (by
-            exact hx.elim
-              (fun hx => hx.symm ▸ Nat.div_lt_of_lt_mul (by
-                linarith [Nat.Prime.two_le (show Nat.Prime (p n i) from by grind)]))
-              fun hx => hx.symm ▸ Nat.mod_lt _ (Nat.Prime.pos (show Nat.Prime (p n i) from by
-                have h_in_P := p_mem_P_n n i
-                exact p_prime n i)))
-          simp_all only [or_self, iff_true]
-      · grind +ring;
+      · rw [← Finset.sum_subset h_sub]
+        · refine Finset.sum_congr rfl fun x hx => ?_;
+          simp +zetaDelta only [Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, neg_mul,
+            ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_or, and_imp] at *;
+          exact fun h₁ h₂ => False.elim <| h₁ <| by
+            specialize h_sum_final x (by
+              exact hx.elim
+                (fun hx => hx.symm ▸ Nat.div_lt_of_lt_mul (by
+                  linarith [Nat.Prime.two_le (show Nat.Prime (p n i) from by grind)]))
+                fun hx => hx.symm ▸ Nat.mod_lt _ (Nat.Prime.pos (show Nat.Prime (p n i) from by
+                  have h_in_P := p_mem_P_n n i
+                  exact p_prime n i)))
+            simp_all only [or_self, iff_true]
+        · grind
       · simp +decide only [Finset.insert_subset_iff, Finset.mem_range, Finset.singleton_subset_iff]
         exact ⟨Nat.div_lt_of_lt_mul <| by
           linarith [show p n i ≥ 5 from by
@@ -332,8 +328,9 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
             exact h_prime.2.2⟩
     rw [ h_sum_final, Finset.sum_pair ];
     · rw [ Nat.mod_eq_of_lt ];
-      · rw [ Nat.cast_sub ( show r_K n i ≤ p n i from _ ) ] ; ring_nf;
-        · have hp : p n i ≠ 0 := by
+      · rw [ Nat.cast_sub ( show r_K n i ≤ p n i from _ ) ]
+        · ring_nf
+          have hp : p n i ≠ 0 := by
             have h_in_P := p_mem_P_n n i
             have h_prime := Finset.mem_filter.mp h_in_P
             exact Nat.ne_of_gt ((p_prime n i).pos)
@@ -343,7 +340,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
             have h_in_P := p_mem_P_n n i
             exact p_ge_5 n i
           exact Nat.div_le_of_le_mul <| by linarith [h_ge_5]
-      · refine' Nat.sub_lt _ _;
+      · refine Nat.sub_lt ?_ ?_;
         · have h_in_P := p_mem_P_n n i
           have h_prime := Finset.mem_filter.mp h_in_P
           exact (p_prime n i).pos
@@ -360,7 +357,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
             exact p_ge_5 n i;
           exact h_prime_ge_5 i;
         omega;
-      · refine' Nat.sub_lt _ _
+      · refine Nat.sub_lt ?_ ?_
         · have h_in_P := p_mem_P_n n i
           exact (p_prime n i).pos
         · have h_in_P := p_mem_P_n n i
@@ -380,7 +377,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
           (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
           Complex.exp (-2 * Real.pi * Complex.I * (h.val * x : ℕ) / (q n : ℂ)) := by
         intro h hh; unfold g_hat; norm_num [ ZMod.cast_id, ZMod.natCast_zmod_val, hh ] ;
-        refine' Or.inl ( Finset.sum_bij ( fun x _ => x.val ) _ _ _ _ ) <;> norm_num;
+        refine Or.inl ( Finset.sum_bij ( fun x _ => x.val ) ?_ ?_ ?_ ?_ ) <;> norm_num;
         · intro a; exact ZMod.val_lt a;
         · intro a₁ a₂ h
           haveI := Fact.mk (show Nat.Prime 2 from by decide)
@@ -400,7 +397,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
         · rw [h_sum_simplified, ← Finset.sum_mul _ _ _, h_sum_final]
           norm_num [Complex.cos]; ring_nf
           have h_q_ne_zero : q n ≠ 0 := by
-            refine' Finset.prod_ne_zero_iff.mpr fun p hp => _
+            refine Finset.prod_ne_zero_iff.mpr fun p hp => ?_
             exact Nat.Prime.ne_zero (Finset.mem_filter.mp hp).2.2
           norm_num [h_q_ne_zero]
         · convert congr_arg ( fun x : ℂ => ( 1 / ( q n : ℂ ) ) * x ) h_sum_simplified using 1;
@@ -414,7 +411,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
               exact ⟨Finset.mem_range.mpr (by aesop), h_prime.2⟩
             · have h_in_P := p_mem_P_n n i
               exact p_ne_zero n i
-          · refine' lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos _ _)) _
+          · refine lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos ?_ ?_)) ?_
             · apply Nat.le_of_dvd
               · exact Finset.prod_pos fun p hp => Nat.Prime.pos (Finset.mem_filter.mp hp).2.2
               · apply Finset.dvd_prod_of_mem
@@ -423,7 +420,7 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
             · exact Nat.mul_div_le _ _;
       · norm_num [ZMod.val_mul]
         rw [Nat.mod_eq_of_lt]
-        refine' lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos _ _)) _
+        refine lt_of_lt_of_le (mul_lt_mul_of_pos_right k.is_lt (Nat.div_pos ?_ ?_)) ?_
         · apply Nat.le_of_dvd
           · exact Finset.prod_pos fun x hx => Nat.Prime.pos (Finset.mem_filter.mp hx).2.2
           · have h_in_P := p_mem_P_n n i
@@ -455,14 +452,14 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
         -- Since $q n \mid h.val * p n i$, we can write $h.val = k * (q n / p n i)$
         -- for some integer $k$.
         obtain ⟨k, hk⟩ : ∃ k : ℕ, h.val = k * (q n / p n i) := by
-          refine' exists_eq_mul_left_of_dvd _;
+          refine exists_eq_mul_left_of_dvd ?_;
           have h_pi_pos : p n i > 0 := by
             have h_prime : p n i ∈ P_n n := by
               have h_perm : ∀ x ∈ primes_list n, x ∈ P_n n := by
                 exact fun x hx => Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 hx
               exact h_perm _ (List.get_mem _ _)
             exact Nat.Prime.pos (Finset.mem_filter.mp h_prime |>.2.2)
-          refine' Nat.dvd_of_mul_dvd_mul_right h_pi_pos _
+          refine Nat.dvd_of_mul_dvd_mul_right h_pi_pos ?_
           have h_in_P := p_mem_P_n n i
           have h_div : p n i ∣ q n := by
             apply Finset.dvd_prod_of_mem
@@ -507,8 +504,8 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
       rw [ geom_sum_eq ] <;> norm_num [ h_zeta_ne_one ];
       · rw [← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨-h.val, ?_⟩]
         · ring_nf; aesop
-        · rw [Nat.cast_div] <;> norm_num; ring_nf
-          · by_cases hq : q n = 0 <;> by_cases hp : p n i = 0 <;> aesop
+        · rw [Nat.cast_div] <;> norm_num;
+          · ring_nf; by_cases hq : q n = 0 <;> by_cases hp : p n i = 0 <;> aesop
           · have h_in_P := p_mem_P_n n i
             have h_prime := Finset.mem_filter.mp h_in_P
             apply Finset.dvd_prod_of_mem
@@ -577,13 +574,13 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
         forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] ;
         intro a ha x hx H; exact hrs <| by nlinarith [ show a = x from by nlinarith ] ;
     convert h_split_sum using 1;
-    · refine' Finset.sum_bij ( fun x hx => x.val ) _ _ _ _ <;> simp only [Finset.mem_univ,
+    · refine Finset.sum_bij ( fun x hx => x.val ) ?_ ?_ ?_ ?_ <;> simp only [Finset.mem_univ,
       Finset.mem_range, forall_const, exists_const, neg_mul, Nat.cast_mul, ZMod.natCast_val]
       · exact fun x => ZMod.val_lt x;
       · intro a₁ a₂ h
         haveI := Fact.mk (show 1 < q n from ?_)
-        exact ZMod.val_injective _ h
-        refine' lt_of_lt_of_le _ (Finset.prod_le_prod' fun x hx =>
+        · exact ZMod.val_injective _ h
+        refine lt_of_lt_of_le ?_ (Finset.prod_le_prod' fun x hx =>
           Nat.Prime.two_le <| Finset.mem_filter.mp hx |>.2.2)
         norm_num [q]
         exact Finset.Nonempty.ne_empty ⟨5, Finset.mem_filter.mpr ⟨

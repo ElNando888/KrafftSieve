@@ -15,9 +15,9 @@ import KrafftSieve.SelbergWeights
 -- `set_option linter.mathlibStandardSet false` that was previously
 -- used. These are needed because the proofs use idioms (`refine'`) that would require
 -- major rewrites to remove.
-set_option linter.style.setOption false
-set_option linter.style.refine false
-set_option linter.style.multiGoal false
+-- set_option linter.style.setOption false
+-- set_option linter.style.refine false
+-- set_option linter.style.multiGoal false
 
 open scoped BigOperators
 open scoped Real
@@ -193,13 +193,12 @@ lemma sum_orthogonality_application (n : ℕ)
     -- Apply the orthogonality result to simplify
     -- the inner sum over $h$.
     have h_inner : ∀ x y : ZMod (q n),
-        ∑ h : ZMod (q n),
-          Complex.exp (2 * Real.pi * Complex.I *
-            h.val * (y - x).val / (q n : ℂ)) =
+        ∑ h : ZMod (q n), Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) =
           if y = x then (q n : ℂ) else 0 := by
-      intro x y; split_ifs with h; simp_all;
-      have := sum_exp_orthogonality n ( y - x ) ;
-      simp_all +decide [ sub_eq_iff_eq_add ] ;
+      intro x y; split_ifs with h
+      · simp_all
+      have := sum_exp_orthogonality n ( y - x )
+      simp_all +decide [ sub_eq_iff_eq_add ]
     simp_all +decide [ sq, mul_assoc, mul_comm, Finset.mul_sum _ _ _ ]
 
 /-

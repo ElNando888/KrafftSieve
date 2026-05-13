@@ -16,14 +16,6 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.SelbergWeights
 
--- The following targeted linter suppressions replace the blanket
--- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`) that would require major
--- rewrites to remove.
-set_option linter.style.setOption false
-set_option linter.style.refine false
-set_option linter.style.multiGoal false
-
 open scoped BigOperators
 open scoped Real
 open scoped Nat
@@ -155,13 +147,14 @@ lemma S_2_eq_Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
       unfold P_multi Matrix_2; simp +decide [ Finset.sum_mul _ _ _, Finset.mul_sum ] ; ring_nf;
       simp +decide only [pow_two, Finset.sum_mul _ _ _, Finset.mul_sum, mul_left_comm, mul_comm,
         Finset.sum_ite, Finset.sum_const_zero, add_zero];
-      rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun x hx => _ ;
-      rw [ ← Finset.sum_comm ] ; refine' Finset.sum_congr rfl fun y hy => _ ; ring_nf;
-      refine' Finset.sum_subset _ _ <;> simp +contextual only [Finset.subset_iff, Finset.mem_filter,
-        implies_true, true_and, mul_eq_zero];
+      rw [ ← Finset.sum_comm ] ; refine Finset.sum_congr rfl fun x hx => ?_ ;
+      rw [ ← Finset.sum_comm ] ; refine Finset.sum_congr rfl fun y hy => ?_ ; ring_nf;
+      refine Finset.sum_subset ?_ ?_ <;> simp +contextual only [Finset.subset_iff,
+        Finset.mem_filter, implies_true, true_and, mul_eq_zero];
       intro z hz hz'; contrapose! hz'; simp_all only [Finset.mem_univ, ne_eq] ;
-      rw [ Nat.mod_eq_of_lt ] ; exact hz;
-      refine' lt_of_le_of_lt ( Finset.mem_Icc.mp hz |>.2 ) _;
+      rw [ Nat.mod_eq_of_lt ]
+      · exact hz
+      refine lt_of_le_of_lt ( Finset.mem_Icc.mp hz |>.2 ) ?_;
       exact q_bound n ( Nat.pos_of_ne_zero ( by
         rintro rfl; exact absurd hz' ( by unfold c; aesop ) ) )
 
@@ -197,7 +190,7 @@ theorem mu_min_lt_one_implies_admissibility (n : ℕ) (h : mu_min n < 1) :
       obtain ⟨r, hr⟩ : ∃ r ∈ attainable_ratios n, r < 1 := by
         contrapose! h;
         apply le_csInf;
-        · refine' ⟨ _, ⟨ fun S => if S = ∅ then 1 else 0, _, rfl ⟩ ⟩ ; norm_num;
+        · refine ⟨ _, ⟨ fun S => if S = ∅ then 1 else 0, ?_, rfl ⟩ ⟩ ; norm_num;
           unfold Q_1;
           unfold Matrix_1; norm_num [ Finset.sum_ite ] ;
           unfold basis_cos; norm_num;
@@ -242,7 +235,7 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
         rw [ show ( ∑ x : Idx n, ∑ x_1 : Idx n,
           b x * Matrix_1 n x x_1 * a x_1 ) = ∑ x : Idx n, ∑ x_1 : Idx n,
           a x * Matrix_1 n x x_1 * b x_1 from ?_ ] ;
-        ring;
+        · ring
         rw [ Finset.sum_comm ] ; congr ; ext ; congr ; ext ; ring_nf;
         unfold Matrix_1; simp +decide [ mul_assoc, mul_comm ] ;
       have h_nonneg : ∀ (lambda : Idx n → ℝ), Q_1 n lambda ≥ 0 := fun lambda =>
@@ -350,7 +343,7 @@ lemma Q_1_not_zero (n : ℕ) : ∃ lambda : Idx n → ℝ, Q_1 n lambda ≠ 0 :=
   rw [ Nat.mod_eq_of_lt ] <;> norm_num;
   · constructor <;> nlinarith [ Nat.sub_add_cancel ( by
       nlinarith : n * 2 ≤ 20 + n * 24 + n ^ 2 * 6 ) ];
-  · refine' lt_of_lt_of_le _ ( q_bound _ _ );
+  · refine lt_of_lt_of_le ?_ ( q_bound _ ?_ );
     · exact Nat.lt_succ_of_le ( Nat.sub_le_of_le_add <| by nlinarith );
     · linarith
 
@@ -380,14 +373,14 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
   -- Since kernel_Q1 n and kernel_Q1_perp n are complementary subspaces, their direct sum is
   -- the entire space.
   have h_compl : kernel_Q1 n ⊔ kernel_Q1_perp n = ⊤ := by
-    convert Submodule.sup_orthogonal_of_hasOrthogonalProjection;
-    rotate_left;
-    exact ℝ;
-    exact EuclideanSpace ℝ ( Idx n );
-    all_goals try infer_instance;
-    exact Submodule.span ℝ { v : EuclideanSpace ℝ ( Idx n ) | Q_1 n ( fun i => v i ) = 0 }
-    · constructor;
-      intro v;
+    convert Submodule.sup_orthogonal_of_hasOrthogonalProjection
+    rotate_left
+    · exact ℝ
+    · exact EuclideanSpace ℝ ( Idx n )
+    all_goals try infer_instance
+    · exact Submodule.span ℝ { v : EuclideanSpace ℝ ( Idx n ) | Q_1 n ( fun i => v i ) = 0 }
+    · constructor
+      intro v
       have h_decomp : ∀ v : EuclideanSpace ℝ (Idx n),
           ∃ w ∈ Submodule.span ℝ {v : EuclideanSpace ℝ (Idx n) | Q_1 n (fun i => v i) = 0},
           v - w ∈ (Submodule.span ℝ
@@ -411,8 +404,8 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
           simp_all +decide only [Submodule.mem_sup, Submodule.mem_orthogonal, implies_true]
         intro x;
         obtain ⟨ y, hy, z, hz, h ⟩ := h ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm x )
-        refine' ⟨ fun i => y i, _, fun i => z i, _, _ ⟩
-        · refine' Submodule.span_induction _ _ _ _ hy
+        refine ⟨ fun i => y i, ?_, fun i => z i, ?_, ?_ ⟩
+        · refine Submodule.span_induction ?_ ?_ ?_ ?_ hy
           · intro x_2 h_2
             simp_all only [WithLp.equiv_symm_apply, Set.mem_setOf_eq]
             exact h_2
@@ -554,10 +547,10 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : Q_1 
           exact ⟨ one_div_ne_zero <| ne_of_gt <| Real.sqrt_pos.mpr <| lt_of_le_of_ne (
             Finset.sum_nonneg fun _ _ => sq_nonneg _ ) <| Ne.symm <| by
               simpa only [ sq ] using h, by
-                rw [ ← Finset.sum_div, Real.sq_sqrt <| Finset.sum_nonneg fun _ _ => sq_nonneg _, 
+                rw [ ← Finset.sum_div, Real.sq_sqrt <| Finset.sum_nonneg fun _ _ => sq_nonneg _,
                   div_self <| ne_of_gt <| lt_of_le_of_ne ( Finset.sum_nonneg fun _ _ =>
                     sq_nonneg _ ) <| Ne.symm <| by simpa only [ sq ] using h ] ⟩;
-      refine' ⟨ c • hu, ⟨ _, hc.2 ⟩, _ ⟩;
+      refine ⟨ c • hu, ⟨ ?_, hc.2 ⟩, ?_ ⟩;
       · intro w hw
         simp_all +decide only [gt_iff_lt, ne_eq, dot_product, Pi.smul_apply, smul_eq_mul] ;
         convert hv w hw |> fun h => congr_arg ( · * c ) h using 1 <;> ring_nf;
@@ -594,15 +587,15 @@ lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := b
   -- wherever $Q_1$ is non-zero.
   have h_cont : ContinuousOn (fun lambda : Idx n → ℝ => Q_2 n lambda / Q_1 n lambda)
       (sphere_perp n) := by
-    refine' ContinuousOn.div _ _ _
-    · refine' Continuous.continuousOn _
-      refine' continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => _
+    refine ContinuousOn.div ?_ ?_ ?_
+    · refine Continuous.continuousOn ?_
+      refine continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => ?_
       fun_prop
-    · refine' Continuous.continuousOn _
-      refine' continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => _
+    · refine Continuous.continuousOn ?_
+      refine continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => ?_
       fun_prop
     · exact fun x hx => ne_of_gt <| Q_1_pos_on_sphere_perp n x hx
-  refine' h_cont.congr fun x hx => _
+  refine h_cont.congr fun x hx => ?_
   unfold Ratio
   simp_all only [ite_eq_right_iff, div_zero, implies_true]
 

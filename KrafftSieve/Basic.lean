@@ -18,13 +18,6 @@ import KrafftSieve.Defs
 
 open scoped BigOperators Real Nat Pointwise
 
--- The following targeted linter suppressions replace the blanket
--- `set_option linter.mathlibStandardSet false` that was previously used.
--- These are needed because the proofs use idioms (`refine'`) that would require
--- major rewrites to remove.
-set_option linter.style.setOption false
-set_option linter.style.refine false
-
 noncomputable section
 
 /-- Instance proof that q is non-zero. -/
@@ -109,11 +102,11 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
             Finset.prod_le_prod_of_subset_of_one_le' ( Finset.filter_subset_filter _ <|
             Finset.range_mono <| Nat.le_refl _ ) fun x hx _ => Nat.one_le_iff_ne_zero.mpr <|
             Nat.Prime.ne_zero <| Finset.mem_filter.mp hx |>.2.2;
-        refine' le_trans _ h_q_large;
-        refine' pow_le_pow_right₀ ( by norm_num ) _;
-        refine' le_trans _ ( Finset.card_mono <|
+        refine le_trans ?_ h_q_large;
+        refine pow_le_pow_right₀ ( by norm_num ) ?_;
+        refine le_trans ?_ ( Finset.card_mono <|
           show Finset.filter ( fun p => 5 ≤ p ∧ Nat.Prime p ) ( Finset.range ( 6 * n + 2 ) ) ≥
-          Finset.image (fun k => Nat.nth Nat.Prime k) (Finset.Ico 2 ( Nat.log 2 n + 2 )) from _ );
+          Finset.image (fun k => Nat.nth Nat.Prime k) (Finset.Ico 2 ( Nat.log 2 n + 2 )) from ?_ );
         · rw [ Finset.card_image_of_injective _ fun a b h =>
             Nat.nth_injective ( Nat.infinite_setOf_prime ) h ]
           simp +arith +decide
@@ -121,19 +114,19 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
           ∀ k ∈ Finset.Ico 2 (Nat.log 2 n + 2), Nat.nth Nat.Prime k < 6 * n + 2 := by
             intros k hk
             have h_prime_bound : Nat.nth Nat.Prime k ≤ 2 ^ (k + 1) := by
-              refine' Nat.le_of_lt_succ _;
-              refine' Nat.nth_lt_of_lt_count _;
-              refine' Nat.le_induction _ _ k ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) <;>
+              refine Nat.le_of_lt_succ ?_;
+              refine Nat.nth_lt_of_lt_count ?_;
+              refine Nat.le_induction ?_ ?_ k ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) <;>
                 intros <;> simp_all +decide only [ Nat.pow_succ' ];
               rw [ Nat.count_eq_card_filter_range ] at *;
-              refine' lt_of_le_of_lt ( Nat.succ_le_of_lt ‹_› ) _;
-              refine' Finset.card_lt_card _;
+              refine lt_of_le_of_lt ( Nat.succ_le_of_lt ‹_› ) ?_;
+              refine Finset.card_lt_card ?_;
               norm_num [ Finset.ssubset_def, Finset.subset_iff ];
               exact ⟨ fun x hx₁ hx₂ => ⟨ by linarith, hx₂ ⟩, by
                 rcases Nat.exists_prime_lt_and_le_two_mul ( 2 * 2 ^ ‹_› )
                   ( by linarith [ Nat.one_le_pow ‹_› 2 zero_lt_two ] ) with ⟨ p, hp₁, hp₂ ⟩ ;
                 exact ⟨ p, by linarith, hp₁, fun hx₃ => by linarith ⟩ ⟩;
-            refine' lt_of_le_of_lt h_prime_bound _;
+            refine lt_of_le_of_lt h_prime_bound ?_;
             exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by
               linarith [ Finset.mem_Ico.mp hk ] ) )
               ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] );
@@ -146,7 +139,7 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
                 show Nat.nth Nat.Prime k ≥ 5 from
                   Nat.le_trans ( by norm_num ) ( Nat.nth_monotone ( Nat.infinite_setOf_prime )
                     ( show k ≥ 2 from Finset.mem_Ico.mp hk |>.1 ) ) ], Nat.prime_nth_prime k ⟩;
-      refine' lt_of_lt_of_le _ h_q_large;
+      refine lt_of_lt_of_le ?_ h_q_large;
       have h_exp_growth : ∀ n ≥ 1000000000, 5 ^ (Nat.log 2 n) > 6 * n ^ 2 + 10 * n + 3 := by
         intro n hn
         induction n using Nat.strongRecOn with | _ n ih =>
