@@ -17,8 +17,8 @@
 \hypersetup{colorlinks=false,allbordercolors=blue,pdfborderstyle={/S/U/W 1}}
 % \label, \ref and \cite commands are highly recommended
 
-%\def\catchline#1#2#3#4#5{}
-%\def\wsdraftnote{}
+\def\catchline#1#2#3#4#5{}
+\def\wsdraftnote{}
 
 %\graphicspath{ {./images/} }
 
@@ -58,13 +58,19 @@
 \begin{abstract}
 The Twin Prime Conjecture is notoriously obstructed by the parity barrier, which prevents classical
 multiplicative sieves from isolating prime pairs. In this paper, we introduce an additive
-Turán sieve framework evaluated over bounded, symmetric intervals. Utilizing a centered modular alignment (which we term the Krafft alignment),
-we construct an additive sieve formulation where the existence of twin primes corresponds to the vanishing of a local penalty function.
-By evaluating the character sums associated with this sieve, we isolate a destructive interference term at the evaluation point $h = 3q/p$.
-We reduce the Twin Prime Conjecture to a variational optimization problem over a finite-dimensional parameter space: establishing that the minimum sieve weight quotient satisfies $\mu_{\min}(n) < 1$ guarantees the existence of twin primes in a prescribed interval. We further show
-that independent, one-dimensional sieve weights are strictly insufficient to overcome the logarithmic divergence of Mertens' sums,
-forcing the quotient to $\mu \ge 1$. This structural deficit constitutes a spectral manifestation of the Selberg parity
-barrier, demonstrating that any successful sieve must intrinsically rely on higher-order correlations and multidimensional exponential sums. All discrete definitions and structural lemmas in this paper have been formally verified in Lean 4.
+Turán sieve framework evaluated over bounded, symmetric intervals. Utilizing a centered modular
+alignment (which we term the Krafft alignment), we construct an additive sieve formulation where the
+existence of twin primes corresponds to the vanishing of a local penalty function. By evaluating the
+character sums associated with this sieve, we isolate a destructive interference term at the
+evaluation point $h = 3q/p$. We reduce the Twin Prime Conjecture to a variational optimization
+problem over a finite-dimensional parameter space: establishing that the minimum sieve weight
+quotient satisfies $\mu_{\min}(n) < 1$ guarantees the existence of twin primes in a prescribed
+interval. We further show that independent, one-dimensional sieve weights are strictly insufficient
+to overcome the logarithmic divergence of Mertens' sums, forcing the quotient to $\mu \ge 1$. This
+structural deficit constitutes a spectral manifestation of the Selberg parity barrier, demonstrating
+that any successful sieve must intrinsically rely on higher-order correlations and multidimensional
+exponential sums. All discrete definitions and structural lemmas in this paper have been formally
+verified in Lean 4.
 \end{abstract}
 
 \keywords{Twin Prime Conjecture, Turán sieve, Krafft geometry, Parity barrier, Discrete Fourier Transform}
@@ -77,17 +83,38 @@ The Twin Prime Conjecture, asserting the existence of infinitely many prime pair
 is a central open problem in analytic number theory. Classical benchmarks for its density were
 established by the Hardy--Littlewood conjecture~\cite{HardyLittlewood1923}. Sieve methods,
 originating with Brun~\cite{Brun1919} and fundamentally refined by Selberg~\cite{Selberg1947} and
-many others~\cite{MontgomeryVaughan2006}, have historically provided the main avenues of attack on prime distribution.
-While these multiplicative inclusion-exclusion frameworks have yielded extraordinary structural
-results---most notably the bounded gaps between
-primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}---they inevitably encounter the parity barrier. This combinatorial obstruction, first articulated by Selberg, demonstrates that classical sieves cannot fundamentally distinguish between integers possessing an even number of prime factors and those possessing an odd number, thus precluding a direct proof of the Twin Prime Conjecture using these methods alone.
+many others~\cite{MontgomeryVaughan2006}, have historically provided the main avenues of attack on
+prime distribution. While these multiplicative inclusion-exclusion frameworks have yielded
+extraordinary structural results---most notably the bounded gaps between
+primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}---they inevitably encounter the parity
+barrier. This combinatorial obstruction, first articulated by Selberg, demonstrates that classical
+sieves cannot fundamentally distinguish between integers possessing an even number of prime factors
+and those possessing an odd number, thus precluding a direct proof of the Twin Prime Conjecture
+using these methods alone.
 
-To bypass this barrier, this paper develops an additive Turán sieve framework~\cite{Turan1934}. Rather than counting surviving elements through a multiplicative product, we restrict our evaluation to a highly structured symmetric interval $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. Through a centered modular alignment (which we refer to as the Krafft alignment~\cite{Krafft1801,Portela2026}), our framework uses the specific residue $r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our sieve window. We establish an additive sieve formulation where a carefully defined local penalty function must vanish for an integer in this interval to generate a twin prime pair.
+To bypass this barrier, this paper develops an additive Turán sieve framework~\cite{Turan1934}. Rather
+than counting surviving elements through a multiplicative product, we restrict our evaluation to a
+highly structured symmetric interval $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. Through a centered
+modular alignment (which we refer to as the Krafft alignment~\cite{Krafft1801,Portela2026}), our
+framework uses the specific residue $r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our sieve window.
+We establish an additive sieve formulation where a carefully defined local penalty function must vanish
+for an integer in this interval to generate a twin prime pair.
 
-By evaluating the character sums associated with this discrete sieve over the cyclic group via the Discrete Fourier Transform and Plancherel's theorem, we show that the Krafft alignment inherently forces destructive interference at the evaluation point corresponding to $h = 3q/p_i$.
-Using a compactness argument over the space of multidimensional sieve weights, we define a minimum sieve weight quotient, $\mu_{\min}(n)$, successfully reducing the Twin Prime problem to a finite-dimensional optimization: if the bound $\mu_{\min}(n) < 1$ holds, twin primes must exist within $\mathcal{A}_n$.
+By evaluating the character sums associated with this discrete sieve over the cyclic group via the
+Discrete Fourier Transform and Plancherel's theorem, we show that the Krafft alignment inherently
+forces destructive interference at the evaluation point corresponding to $h = 3q/p_i$.
+Using a compactness argument over the space of multidimensional sieve weights, we define a minimum
+sieve weight quotient, $\mu_{\min}(n)$, successfully reducing the Twin Prime problem to a
+finite-dimensional optimization: if the bound $\mu_{\min}(n) < 1$ holds, twin primes must exist within
+$\mathcal{A}_n$.
 
-Furthermore, we propose a variational optimization of the sieve weights to minimize the penalty contribution. By treating the weights as a convex optimization problem in the frequency domain, we show that independent, one-dimensional sieve weights are structurally insufficient to overcome the local density bounds. Because isolated character sum evaluations cannot outpace the logarithmic divergence of Mertens' sums, the sieve quotient is strictly forced to $\mu \ge 1$. This analytic deficit reveals that resolving the conjecture strictly requires exploiting the full multidimensional space of higher-order correlations.
+Furthermore, we propose a variational optimization of the sieve weights to minimize the penalty
+contribution. By treating the weights as a convex optimization problem in the frequency domain, we
+show that independent, one-dimensional sieve weights are structurally insufficient to overcome the
+local density bounds. Because isolated character sum evaluations cannot outpace the logarithmic
+divergence of Mertens' sums, the sieve quotient is strictly forced to $\mu \ge 1$. This analytic
+deficit reveals that resolving the conjecture strictly requires exploiting the full multidimensional
+space of higher-order correlations.
 
 Throughout the text, \lean\ symbols are used as direct links to formalized code in the GitHub
 repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.2}
@@ -125,48 +152,74 @@ $$\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$$
 
 This specific interval width is chosen so that the alignment residue $r_i^K$
 effectively translates the standard divisibility conditions of twin prime candidates into a single
-modular congruence evaluated at the central coordinate $x$. The following lemma makes this equivalence precise.
+modular congruence evaluated at the central coordinate $x$. The following lemma makes this
+equivalence precise.
 
 \begin{lemma}[Modular Alignment Equivalence {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L81}{\lean}]}]
-For any prime factor $p \ge 5$ and any integer $x$, let $r = \lfloor(p+1)/6\rfloor$. Then $x \equiv \pm r \pmod{p}$ if and only if $p \mid (6x-1)$ or $p \mid (6x+1)$.
+For any prime factor $p \ge 5$ and any integer $x$, let $r = \lfloor(p+1)/6\rfloor$. Then
+$x \equiv \pm r \pmod{p}$ if and only if $p \mid (6x-1)$ or $p \mid (6x+1)$.
 \end{lemma}
 \begin{proof}
-Since $p \ge 5$ is prime, we have either $p \equiv 1 \pmod 6$ or $p \equiv 5 \pmod 6$. If $p \equiv 1 \pmod 6$, then $r = (p-1)/6$, and therefore $6r = p-1 \equiv -1 \pmod p$. If $p \equiv 5 \pmod 6$, then $r = (p+1)/6$, yielding $6r = p+1 \equiv 1 \pmod p$. In both cases, $6r \equiv \pm 1 \pmod{p}$.
-Assuming $x \equiv \pm r \pmod{p}$, multiplying both sides by $6$ gives $6x \equiv \pm 6r \equiv \pm 1 \pmod{p}$. This implies $6x \mp 1 \equiv 0 \pmod p$, meaning $p$ divides either $6x-1$ or $6x+1$. The steps are reversible, establishing the equivalence.
+Since $p \ge 5$ is prime, we have either $p \equiv 1 \pmod 6$ or $p \equiv 5 \pmod 6$.
+If $p \equiv 1 \pmod 6$, then $r = (p-1)/6$, and therefore $6r = p-1 \equiv -1 \pmod p$.
+If $p \equiv 5 \pmod 6$, then $r = (p+1)/6$, yielding $6r = p+1 \equiv 1 \pmod p$. In both cases,
+$6r \equiv \pm 1 \pmod{p}$.
+Assuming $x \equiv \pm r \pmod{p}$, multiplying both sides by $6$ gives
+$6x \equiv \pm 6r \equiv \pm 1 \pmod{p}$. This implies $6x \mp 1 \equiv 0 \pmod p$, meaning $p$
+divides either $6x-1$ or $6x+1$. The steps are reversible, establishing the equivalence.
 \end{proof}
 
-To track the sieve's progress additively rather than through a multiplicative inclusion-exclusion product, we establish an indicator function for the forbidden residue classes and a global penalty function that accumulates across all primes in our window.
+To track the sieve's progress additively rather than through a multiplicative inclusion-exclusion
+product, we establish an indicator function for the forbidden residue classes and a global penalty
+function that accumulates across all primes in our window.
 
 \begin{definition}[Local Indicator and Global Penalty Function {[\href{\urlpfx/KrafftSieve/Defs.lean\#L76}{\lean} \& \href{\urlpfx/KrafftSieve/Defs.lean\#L85}{\lean}]}]
-We define the local indicator function $g_i(x) \in \{0, 1\}$ to detect whether an integer $x$ falls into the forbidden residue classes modulo $p_i$:
+We define the local indicator function $g_i(x) \in \{0, 1\}$ to detect whether an integer $x$ falls
+into the forbidden residue classes modulo $p_i$:
 $$g_i(x) = \begin{cases} 1 & \text{if } x \equiv \pm r^K_i \pmod{p_i} \\ 0 & \text{otherwise}
 \end{cases}$$
-The global penalty function $c(x)$ is defined additively as the sum of all local indicators across the prime window:
+The global penalty function $c(x)$ is defined additively as the sum of all local indicators across
+the prime window:
 $$c(x) = \sum_{i=1}^{w(n)} g_i(x)$$
 \end{definition}
 
-Unlike classical inclusion-exclusion setups which track the surviving elements destructively, $c(x)$ is non-negative and simply counts the number of forbidden congruences satisfied by $x$. An integer with zero penalty ($c(x)=0$) has successfully avoided all prime factors in $\mathcal{P}_n$. To ensure that avoiding these specific prime factors is sufficient to guarantee true primality, we rely on the strict algebraic boundaries of the interval $\mathcal{A}_n$.
+Unlike classical inclusion-exclusion setups which track the surviving elements destructively, $c(x)$
+is non-negative and simply counts the number of forbidden congruences satisfied by $x$. An integer
+with zero penalty ($c(x)=0$) has successfully avoided all prime factors in $\mathcal{P}_n$. To ensure
+that avoiding these specific prime factors is sufficient to guarantee true primality, we rely on
+the strict algebraic boundaries of the interval $\mathcal{A}_n$.
 
 \begin{lemma}[Interval Projection Bound {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L111}{\lean}]}] \label{lem:interval_bound}
 For any integer coordinate $x \in \mathcal{A}_n$, the projected upper bound $6x+1$ is strictly less
 than the square of the next possible prime candidate after the sieve window, namely $6x+1 < (6n+5)^2$.
 \end{lemma}
 \begin{proof}
-The maximum possible coordinate in the interval $\mathcal{A}_n$ is given by $x = 6n^2 + 10n + 3$. Evaluating the projection for this maximal coordinate yields $6(6n^2 + 10n + 3) + 1 = 36n^2 + 60n + 19$. 
-The next prime candidate strictly greater than the upper bound of $\mathcal{P}_n$ (which is $6n+1$) is at least $6n+5$. Comparing our maximal projection to the square of this candidate gives $(6n+5)^2 = 36n^2 + 60n + 25$. 
-Since $36n^2 + 60n + 19 < 36n^2 + 60n + 25$, the strict inequality $6x+1 < (6n+5)^2$ holds for all $x \in \mathcal{A}_n$.
+The maximum possible coordinate in the interval $\mathcal{A}_n$ is given by $x = 6n^2 + 10n + 3$.
+Evaluating the projection for this maximal coordinate yields $6(6n^2 + 10n + 3) + 1 = 36n^2 + 60n + 19$. 
+The next prime candidate strictly greater than the upper bound of $\mathcal{P}_n$ (which is $6n+1$)
+is at least $6n+5$. Comparing our maximal projection to the square of this candidate gives
+$(6n+5)^2 = 36n^2 + 60n + 25$.  Since $36n^2 + 60n + 19 < 36n^2 + 60n + 25$, the strict inequality
+$6x+1 < (6n+5)^2$ holds for all $x \in \mathcal{A}_n$.
 \end{proof}
 
-This structural limit is the cornerstone of the reduction, as it ensures that any survivors within the interval are forced to be prime.
+This structural limit is the cornerstone of the reduction, as it ensures that any survivors within
+the interval are forced to be prime.
 
 \begin{theorem}[Additive Sieve Formulation {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L286}{\lean}]}] \label{thm:additive_sieve}
-For any integer $n \ge 1$ and any $x \in \mathcal{A}_n$, the global penalty function evaluates to exactly zero,
-$c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime numbers.
+For any integer $n \ge 1$ and any $x \in \mathcal{A}_n$, the global penalty function evaluates to
+exactly zero, $c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime numbers.
 \end{theorem}
 \begin{proof}
-By the definition of the global penalty function, $c(x) = 0$ if and only if $g_i(x) = 0$ for all $1 \le i \le w(n)$. This means $x \not\equiv \pm r^K_i \pmod{p_i}$ for all primes $p_i \in \mathcal{P}_n$. By Lemma 2.1, this guarantees that neither $6x-1$ nor $6x+1$ has any prime divisors in $\mathcal{P}_n$.
-Integers of the form $6x \pm 1$ are intrinsically coprime to 2 and 3. Therefore, $6x-1$ and $6x+1$ have no prime factors strictly less than $6n+5$. 
-Because Lemma \ref{lem:interval_bound} structurally guarantees that the maximum possible value of $6x+1$ across the entire interval $\mathcal{A}_n$ is strictly less than $(6n+5)^2$, any composite number of the form $6x \pm 1$ must have a prime factor strictly less than $6n+5$. Since all such factors have been eliminated, it follows unconditionally that both $6x-1$ and $6x+1$ must be prime.
+By the definition of the global penalty function, $c(x) = 0$ if and only if $g_i(x) = 0$ for all
+$1 \le i \le w(n)$. This means $x \not\equiv \pm r^K_i \pmod{p_i}$ for all primes $p_i \in \mathcal{P}_n$.
+By Lemma 2.1, this guarantees that neither $6x-1$ nor $6x+1$ has any prime divisors in $\mathcal{P}_n$.
+Integers of the form $6x \pm 1$ are intrinsically coprime to 2 and 3. Therefore, $6x-1$ and $6x+1$
+have no prime factors strictly less than $6n+5$. 
+Because Lemma \ref{lem:interval_bound} structurally guarantees that the maximum possible value of
+$6x+1$ across the entire interval $\mathcal{A}_n$ is strictly less than $(6n+5)^2$, any composite
+number of the form $6x \pm 1$ must have a prime factor strictly less than $6n+5$. Since all
+such factors have been eliminated, it follows unconditionally that both $6x-1$ and $6x+1$ must be
+prime.
 \end{proof}
 
 \section{Character Sum Expansion and the Main Sieve Identity} \label{sec:resonance}
@@ -191,7 +244,9 @@ $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
 The global penalty function $c(x)$ is a sum of non-negative indicator functions, forcing $c(x) \ge 0$.
 Consequently, any non-zero penalty must satisfy $c(x) \ge 1$. If $c(x) \ge 1$ for all
 coordinates where $W(x) > 0$, then the sum $S_2(n, W) = \sum W(x)c(x)$ must be greater than or
-equal to $S_1(n, W) = \sum W(x)$. This contradicts the strict inequality $S_2 < S_1$. Therefore, there must exist at least one coordinate $x$ with exactly zero penalty ($c(x)=0$) carrying strictly positive weight.
+equal to $S_1(n, W) = \sum W(x)$. This contradicts the strict inequality $S_2 < S_1$. Therefore,
+there must exist at least one coordinate $x$ with exactly zero penalty ($c(x)=0$) carrying
+strictly positive weight.
 \end{proof}
 
 \begin{definition}[Sieve Admissibility] \label{def:krafft_admissibility}
@@ -207,8 +262,8 @@ exists an integer $x \in \mathcal{A}_n$ such that $6x-1$ and $6x+1$ form a twin 
 \begin{proof}
 If Definition \ref{def:krafft_admissibility} is satisfied, then Theorem \ref{thm:weighted_existence}
 guarantees the presence of at least one target coordinate $x \in \mathcal{A}_n$ experiencing exactly
-zero penalty ($c(x) = 0$). Under Theorem \ref{thm:additive_sieve}, the absence of a penalty strictly dictates
-that both projected integers, $6x-1$ and $6x+1$, are prime.
+zero penalty ($c(x) = 0$). Under Theorem \ref{thm:additive_sieve}, the absence of a penalty strictly
+dictates that both projected integers, $6x-1$ and $6x+1$, are prime.
 \end{proof}
 
 \begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
@@ -241,7 +296,11 @@ product in the spatial domain equals the scaled inner product in the frequency d
 $$ \sum_{x \in \mathbb{Z}/q\mathbb{Z}} f(x) \overline{g(x)} = q \sum_{h \in \mathbb{Z}/q\mathbb{Z}} \hat{f}(h) \overline{\hat{g}(h)} $$
 \end{lemma}
 \begin{proof}
-Expanding the Fourier transforms on the right-hand side yields a triple sum over $h, x, y$. Interchanging the order of summation isolates the sum over $h$: $\sum_{h} e^{-2\pi i h (x-y) / q}$. By the standard orthogonality relation for roots of unity, this inner sum evaluates to $q$ if $x \equiv y \pmod q$ and $0$ otherwise. This collapses the sum to the diagonal $x = y$, recovering the original spatial inner product.
+Expanding the Fourier transforms on the right-hand side yields a triple sum over $h, x, y$.
+Interchanging the order of summation isolates the sum over $h$: $\sum_{h} e^{-2\pi i h (x-y) / q}$.
+By the standard orthogonality relation for roots of unity, this inner sum evaluates to $q$ if
+$x \equiv y \pmod q$ and $0$ otherwise. This collapses the sum to the diagonal $x = y$,
+recovering the original spatial inner product.
 \end{proof}
 
 \begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L187}{\lean}]}] \label{lem:plancherel_hit_expansion}
@@ -274,8 +333,8 @@ $h \in \mathbb{Z}/q\mathbb{Z}$:
 The local indicator function $g_i(x)$ is periodic with period $p_i$. When evaluating the sum $\sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q}$, we can write $x = y + m p_i$ for $0 \le y < p_i$ and $0 \le m < q/p_i$. Factoring the sum yields an inner sum over $m$ of the form $\sum_{m} e^{-2\pi i h m p_i / q}$. If $h$ is not a multiple of $q/p_i$, this geometric sum corresponds to a full set of roots of unity and vanishes identically. If $h = k(q/p_i)$, the exponential becomes $1$, and the inner sum over $m$ evaluates to $q/p_i$. The remaining sum over the two surviving residues $y \equiv \pm r^K_i \pmod{p_i}$ yields the symmetric exponential terms $e^{2\pi i k r^K_i / p_i} + e^{-2\pi i k r^K_i / p_i} = 2\cos(2\pi k r^K_i / p_i)$. Multiplying by the normalizer $1/q$ completes the proof.
 \end{proof}
 
-This sparsity allows us to explicitly separate the principal expected density term from the targeted oscillatory
-interference, yielding the main identity of the sieve. When evaluating the precise
+This sparsity allows us to explicitly separate the principal expected density term from the targeted
+oscillatory interference, yielding the main identity of the sieve. When evaluating the precise
 exponential sum at $h = 3q/p_i$, the trigonometric phase perfectly anchors to
 the alignment residue, causing destructive interference.
 
@@ -292,8 +351,8 @@ the result.
 \end{proof}
 
 \begin{theorem}[The Main Sieve Identity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L688}{\lean}]}]
-For any strictly supported weight function $W(x)$, the penalized sum isolates into a principal expected density
-term and an oscillatory interference sum:
+For any strictly supported weight function $W(x)$, the penalized sum isolates into a principal expected
+density term and an oscillatory interference sum:
 \begin{equation} \label{eq:resonant_sieve_equation}
 S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum_{k=1}^{p_i-1} \hat{W}\!\left(k \frac{q}{p_i}\right) \frac{2}{p_i} \cos\!\left( \frac{2 \pi k r^K_i}{p_i} \right) 
 \end{equation}
@@ -333,27 +392,30 @@ To evaluate the structural efficiency of a given weight function, we define the 
 \end{definition}
 
 By Theorem \ref{thm:weighted_existence}, if we can synthesize a weight function such that
-$\mu(n, W) < 1$, the strict sieve admissibility condition (Definition \ref{def:krafft_admissibility}) is satisfied.
+$\mu(n, W) < 1$, the strict sieve admissibility condition (Definition \ref{def:krafft_admissibility})
+is satisfied.
 
 Having isolated the universal destructive interference at $h = 3q/p_i$, a natural first
-attempt is to construct weight functions composed entirely of independent, one-dimensional exponential sums. We can evaluate the efficacy of this approach
-by examining the isolated spectral capacity of the sieve.
+attempt is to construct weight functions composed entirely of independent, one-dimensional
+exponential sums. We can evaluate the efficacy of this approach by examining the isolated spectral
+capacity of the sieve.
 
 \begin{definition}[Principal Density and Character Suppression Capacity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L791}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L797}{\lean}]}]
 For a one-dimensional character weight system evaluated over $\mathcal{P}_n$, the principal
 expected density is governed by the harmonic sum over the prime window:
 $$ \text{Principal Term}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} $$
-The corresponding maximum theoretical suppression available from the targeted frequencies is defined as
-the suppression capacity:
+The corresponding maximum theoretical suppression available from the targeted frequencies is defined
+as the suppression capacity:
 $$ \text{Suppression Capacity}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
 \end{definition}
 
-If the suppression capacity could exceed or match the principal density term, a one-dimensional sieve could
-theoretically suppress the penalized sum $S_2$ below $S_1$. However, the geometry of the character sum strictly forbids this.
+If the suppression capacity could exceed or match the principal density term, a one-dimensional sieve
+could theoretically suppress the penalized sum $S_2$ below $S_1$. However, the geometry of the character
+sum strictly forbids this.
 
 \begin{lemma}[The Spectral Deficit {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L806}{\lean}]}]
-For any valid prime window $\mathcal{P}_n$, the suppression capacity of any purely one-dimensional character
-weight system is strictly less than the sieve's principal density term:
+For any valid prime window $\mathcal{P}_n$, the suppression capacity of any purely one-dimensional
+character weight system is strictly less than the sieve's principal density term:
 \begin{equation} \label{eq:harmonic_deficit}
 \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} 
 \end{equation}
@@ -367,11 +429,12 @@ the finite non-empty set $\mathcal{P}_n$ rigidly preserves the strict inequality
 sums.
 \end{proof}
 
-While the strict inequality itself is algebraically elementary, its significance lies in the asymptotic behavior of the divergence. 
+While the strict inequality itself is algebraically elementary, its significance lies in the
+asymptotic behavior of the divergence. 
 
 \begin{proposition}[One-Dimensional Parity Barrier] \label{prop:parity_collision}
-For any sufficiently large $n$, utilizing purely independent, one-dimensional exponential sum weights forces
-the sieve weight quotient to $\mu(n, W) \ge 1$. It is analytically impossible to
+For any sufficiently large $n$, utilizing purely independent, one-dimensional exponential sum weights
+forces the sieve weight quotient to $\mu(n, W) \ge 1$. It is analytically impossible to
 resolve the Twin Prime Conjecture using strictly one-dimensional variance bounds.
 \end{proposition}
 \begin{proof}
@@ -380,17 +443,21 @@ diverges logarithmically as $n \to \infty$. Conversely, the magnitude of the spe
 \eqref{eq:harmonic_deficit}, measured by the difference between the principal term and the suppression
 capacity, can be bounded using the Taylor expansion $\cos(x) \ge 1 - x^2/2$:
 $$ \text{Deficit} = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\frac{\pi}{p_i}\right) \le \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} $$
-Because the sum $\sum p^{-3}$ strictly converges over the primes, the absolute suppression capacity of the
-one-dimensional character evaluations falls infinitely behind the logarithmically diverging principal density. 
+Because the sum $\sum p^{-3}$ strictly converges over the primes, the absolute suppression capacity
+of the one-dimensional character evaluations falls infinitely behind the logarithmically diverging
+principal density. 
 
 This convergence-divergence disparity forces the quotient $\mu \ge 1$ for any sufficiently
-large $n$ when utilizing one-dimensional independent evaluations. This spectral deficit is precisely the analytic manifestation of the well-known Selberg parity barrier within our additive framework. A finite truncation of purely
-independent character sums will inevitably force the weight function to take negative values at dense
-overlapping forbidden regions before it can reduce the overall weight quotient below 1. 
+large $n$ when utilizing one-dimensional independent evaluations. This spectral deficit is precisely
+the analytic manifestation of the well-known Selberg parity barrier within our additive framework.
+(A finite truncation of purely independent character sums will inevitably force the weight function
+to take negative values at dense overlapping forbidden regions before it can reduce the overall
+weight quotient below 1.) 
 \end{proof}
 
-This establishes a firm mathematical obstruction. To circumvent this continuous density deficit and overcome the parity barrier, the sieve weight geometry
-must inherently incorporate multidimensional exponential sums and higher-order correlations.
+This establishes a firm mathematical obstruction. To circumvent this continuous density deficit and
+overcome the parity barrier, the sieve weight geometry must inherently incorporate multidimensional
+exponential sums and higher-order correlations.
 
 \section{Variational Optimization of the Sieve Weight Quotient} \label{sec:reduction}
 
@@ -455,8 +522,8 @@ as $\mathcal{S}^{\perp}$. This bounded subspace $\mathcal{S}^{\perp}$ is compact
 \end{lemma}
 \begin{proof}
 Within the finite-dimensional Euclidean space of the coefficients, compactness is equivalent to the
-subspace being both closed and bounded (Heine-Borel theorem). The orthogonal complement $\ker(Q_1)^\perp$ forms a closed
-linear subspace. The unit sphere condition, enforced by the standard dot product
+subspace being both closed and bounded (Heine-Borel theorem). The orthogonal complement $\ker(Q_1)^\perp$
+forms a closed linear subspace. The unit sphere condition, enforced by the standard dot product
 $\lambda \cdot \lambda = 1$, defines a set that is closed and bounded. Because
 $\mathcal{S}^{\perp}$ is the strict intersection of these sets, it is definitively compact. 
 \end{proof}
@@ -471,7 +538,8 @@ $\mathcal{S}^{\perp}$ under the mapping $R(\lambda)$. The minimum sieve quotient
 defined as the absolute infimum of this attainable set.
 \end{definition}
 
-By leveraging the topological compactness derived above, we can assert the existence of an exact optimal coefficient vector.
+By leveraging the topological compactness derived above, we can assert the existence of an exact
+optimal coefficient vector.
 
 \begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L603}{\lean}]}]
 The minimum sieve quotient $\mu_{\min}(n)$ is strictly attained by an optimal coefficient vector
@@ -503,9 +571,10 @@ By the definition of the minimum ratio, evaluating the moments with the optimal 
 exactly $S_2(n, W_{opt}) / S_1(n, W_{opt}) = R(\lambda_{opt}) = \mu_{\min}(n)$. Since $S_1$ is strictly
 positive for the optimal non-zero weight, it follows algebraically that $S_2 < S_1$ holds if and only
 if the ratio $\mu_{\min}(n) < 1$. If this strict inequality is satisfied, the weight function $W_{opt}$
-inherently fulfills the admissibility condition of Definition \ref{def:krafft_admissibility}. By directly applying the
-previously established Theorem \ref{thm:additive_sieve}, this state of structural admissibility forces
-the existence of at least one index $x \in \mathcal{A}_n$ that precisely generates a twin prime pair.
+inherently fulfills the admissibility condition of Definition \ref{def:krafft_admissibility}. By
+directly applying the previously established Theorem \ref{thm:additive_sieve}, this state of structural
+admissibility forces the existence of at least one index $x \in \mathcal{A}_n$ that precisely generates
+a twin prime pair.
 \end{proof}
 
 This theorem completes the geometric reduction. The parity obstruction has been translated into an
@@ -537,13 +606,12 @@ $$ \Omega_h = \big(q\delta_{h,0} - \hat{g}_1(h)\big) \circledast \big(q\delta_{h
 where $\circledast$ denotes the circular discrete convolution over $\mathbb{Z}/q\mathbb{Z}$.
 
 When this convolution is expanded, it naturally generates higher-order cross-correlations (e.g.,
-$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums are structurally indispensable.
-Where isolated character evaluations fail by allowing negative functional overlaps, the
+$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums are structurally
+indispensable. Where isolated character evaluations fail by allowing negative functional overlaps, the
 cross-correlations act as structurally precise corrective phases. They constructively interfere
 precisely at the intersections of forbidden congruences, clamping the multidimensional weight function
-tightly at zero. This multidimensional
-scaling simultaneously preserves non-negativity and protects the principal density term from
-over-subtraction.
+tightly at zero. This multidimensional scaling simultaneously preserves non-negativity and protects
+the principal density term from over-subtraction.
 
 \subsection{An Analytical Blueprint for the Minimum Ratio}
 
@@ -555,8 +623,8 @@ required to locate the exact optimal minimizer $\lambda_{opt}$. Any analytically
 vector $\lambda_{test}$ corresponding to a weight matrix that pushes the sieve weight quotient strictly
 below 1 is sufficient. 
 
-Advancing the resolution of the Twin Prime Conjecture within this additive sieve framework therefore requires
-executing the following analytical roadmap:
+Advancing the resolution of the Twin Prime Conjecture within this additive sieve framework therefore
+requires executing the following analytical roadmap:
 \begin{enumerate}
     \item Expand the theoretical multidimensional convolution $\Omega_h$ and extract the lowest-order,
 highest-magnitude cross-correlation coefficients.
@@ -588,7 +656,8 @@ polynomial bases. Combining topological compactness with harmonic analysis on ge
 our reduction to $\mu_{\min}(n) < 1$ removes the combinatorial ambiguity of parity boundaries. It
 refines the twin prime problem entirely into estimating the spectral density of heavily structured
 higher-order correlations, providing a concrete variational framework for addressing
-the parity barrier. All structural lemmas and equivalence bounds supporting this reduction have been machine-verified in Lean 4.
+the parity barrier. All structural lemmas and equivalence bounds supporting this reduction have been
+machine-verified in Lean 4.
 
 \section*{Acknowledgments}
 The author acknowledges the use of generative AI (Gemini 3.1 Pro~\cite{geminiteam2025}) for LaTeX
