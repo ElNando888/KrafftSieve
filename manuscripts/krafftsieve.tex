@@ -225,7 +225,8 @@ prime.
 \section{Character Sum Expansion and the Main Sieve Identity} \label{sec:resonance}
 
 To analyze the distribution of twin prime indices $x \in \mathcal{A}_n$ that avoid the local
-penalties, we evaluate the sieve through its character sums over the cyclic group. We introduce an arbitrary,
+penalties, we first construct a weighted sifting condition in the spatial domain, which we will
+subsequently evaluate through its character sums over the cyclic group. We begin by introducing an arbitrary,
 real-valued weight function $W(x)$ strictly supported within our bounded evaluation interval $\mathcal{A}_n$.
 
 \begin{definition}[Sieve Weight Sums]
@@ -266,10 +267,11 @@ zero penalty ($c(x) = 0$). Under Theorem \ref{thm:additive_sieve}, the absence o
 dictates that both projected integers, $6x-1$ and $6x+1$, are prime.
 \end{proof}
 
-\begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
 We shift into the frequency domain by expanding our functions over the characters of the
-cyclic group $\mathbb{Z}/q\mathbb{Z}$. For any function $f(x)$, its frequency coefficients are given
-by:
+cyclic group $\mathbb{Z}/q\mathbb{Z}$.
+
+\begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
+For any function $f(x)$, the frequency coefficients of its Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$ are given by:
 $$\hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q}$$
 \end{definition}
 
@@ -330,7 +332,15 @@ $h \in \mathbb{Z}/q\mathbb{Z}$:
 \end{enumerate}
 \end{lemma}
 \begin{proof}
-The local indicator function $g_i(x)$ is periodic with period $p_i$. When evaluating the sum $\sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q}$, we can write $x = y + m p_i$ for $0 \le y < p_i$ and $0 \le m < q/p_i$. Factoring the sum yields an inner sum over $m$ of the form $\sum_{m} e^{-2\pi i h m p_i / q}$. If $h$ is not a multiple of $q/p_i$, this geometric sum corresponds to a full set of roots of unity and vanishes identically. If $h = k(q/p_i)$, the exponential becomes $1$, and the inner sum over $m$ evaluates to $q/p_i$. The remaining sum over the two surviving residues $y \equiv \pm r^K_i \pmod{p_i}$ yields the symmetric exponential terms $e^{2\pi i k r^K_i / p_i} + e^{-2\pi i k r^K_i / p_i} = 2\cos(2\pi k r^K_i / p_i)$. Multiplying by the normalizer $1/q$ completes the proof.
+The local indicator function $g_i(x)$ is periodic with period $p_i$. When evaluating the sum
+$\sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q}$, we can write $x = y + m p_i$ for $0 \le y < p_i$ and
+$0 \le m < q/p_i$. Factoring the sum yields an inner sum over $m$ of the form
+$\sum_{m} e^{-2\pi i h m p_i / q}$. If $h$ is not a multiple of $q/p_i$, this geometric sum
+corresponds to a full set of roots of unity and vanishes identically. If $h = k(q/p_i)$, the
+exponential becomes $1$, and the inner sum over $m$ evaluates to $q/p_i$. The remaining sum over
+the two surviving residues $y \equiv \pm r^K_i \pmod{p_i}$ yields the symmetric exponential terms
+$e^{2\pi i k r^K_i / p_i} + e^{-2\pi i k r^K_i / p_i} = 2\cos(2\pi k r^K_i / p_i)$. Multiplying by
+the normalizer $1/q$ completes the proof.
 \end{proof}
 
 This sparsity allows us to explicitly separate the principal expected density term from the targeted
