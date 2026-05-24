@@ -138,7 +138,12 @@ We define $w(n) = |\mathcal{P}_n|$ as the total count of these prime factors, an
 $q = \prod_{p \in \mathcal{P}_n} p$ as their associated primorial.
 \end{definition}
 
-The underlying geometric transformation we employ is rooted in an arithmetic equivalence first noted by the astronomer W. L. Krafft in 1798 \cite{Krafft1801}. While the Diophantine form $6ab \pm a \pm b$ itself remains relatively obscure, the equivalence between twin prime pairs and the sifting of natural indices avoiding these forms was notably acknowledged by W. Sierpiński in his selection of number theory problems \cite{sierpinski} (and is documented as OEIS sequence A002822 \cite{oeis}). We formalize this historically noted mapping as a discrete residue condition.
+The underlying geometric transformation we employ is rooted in an arithmetic equivalence first noted
+by the astronomer W. L. Krafft in 1798 \cite{Krafft1801}. While the Diophantine form $6ab \pm a \pm b$
+itself remains relatively obscure, the equivalence between twin prime pairs and the sifting of
+natural indices avoiding these forms was notably acknowledged by W. Sierpiński in his selection of
+number theory problems \cite{sierpinski} (and is documented as OEIS sequence A002822 \cite{oeis}).
+We formalize this historically noted mapping as a discrete residue condition.
 
 \begin{definition}[The Krafft Residues {[\href{\urlpfx/KrafftSieve/Defs.lean\#L63}{\lean}]}]
 For each prime $p_i \in \mathcal{P}_n$, we establish the target Krafft alignment residue as:
@@ -226,8 +231,9 @@ prime.
 
 To analyze the distribution of twin prime indices $x \in \mathcal{A}_n$ that avoid the local
 penalties, we first construct a weighted sifting condition in the spatial domain, which we will
-subsequently evaluate through its character sums over the cyclic group. We begin by introducing an arbitrary,
-real-valued weight function $W(x)$ strictly supported within our bounded evaluation interval $\mathcal{A}_n$.
+subsequently evaluate through its character sums over the cyclic group. We begin by introducing an
+arbitrary, real-valued weight function $W(x)$ strictly supported within our bounded evaluation
+interval $\mathcal{A}_n$.
 
 \begin{definition}[Sieve Weight Sums]
 For an arbitrary real-valued weight function $W(x)$ supported strictly on $\mathcal{A}_n$, we
@@ -271,7 +277,8 @@ We shift into the frequency domain by expanding our functions over the character
 cyclic group $\mathbb{Z}/q\mathbb{Z}$.
 
 \begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
-For any function $f(x)$, the frequency coefficients of its Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$ are given by:
+For any function $f(x)$, the frequency coefficients of its Fourier Transform over
+$\mathbb{Z}/q\mathbb{Z}$ are given by:
 $$\hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q}$$
 \end{definition}
 
@@ -326,7 +333,8 @@ By writing $x = y + m p_i$ with $0 \le y < p_i$ and $0 \le m < q/p_i$, we can fa
 \hat{g}_i(h) &= \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q} \\
              &= \frac{1}{q} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i h y/q} \sum_{m=0}^{q/p_i - 1} e^{-2\pi i h m p_i / q}.
 \end{align*}
-The inner sum over $m$ vanishes identically unless $h$ is a multiple of $q/p_i$. When $h = k(q/p_i)$, the sum over $m$ evaluates to $q/p_i$, yielding
+The inner sum over $m$ vanishes identically unless $h$ is a multiple of $q/p_i$. When $h = k(q/p_i)$,
+the sum over $m$ evaluates to $q/p_i$, yielding
 \begin{align*}
 \hat{g}_i\left(k \frac{q}{p_i}\right) &= \frac{1}{p_i} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i k y / p_i}.
 \end{align*}
@@ -364,10 +372,10 @@ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} + q \sum_{i=1}^{w(n)} \sum
 \begin{proof}
 Starting from Lemma \ref{lem:plancherel_hit_expansion}, we partition the inner sum over frequencies
 $h$ into the zero frequency $h=0$ and the non-zero frequencies. Applying Lemma
-\ref{lem:dirac_comb_structure}, all frequencies $h$ that are not multiples of $q/p_i$ evaluate to $\hat{g}_i(h) = 0$ and are discarded.
-The sum collapses entirely to the frequencies $h = k(q/p_i)$. Finally, applying Lemma
-\ref{lem:compact_support_equivalence} replaces $q\hat{W}(0)$ with the spatial mass $S_1(n, W)$,
-establishing the exact equation.
+\ref{lem:dirac_comb_structure}, all frequencies $h$ that are not multiples of $q/p_i$ evaluate to
+$\hat{g}_i(h) = 0$ and are discarded. The sum collapses entirely to the frequencies $h = k(q/p_i)$.
+Finally, applying Lemma \ref{lem:compact_support_equivalence} replaces $q\hat{W}(0)$ with the
+spatial mass $S_1(n, W)$, establishing the exact equation.
 \end{proof}
 
 This destructive interference provides a mechanism to suppress $S_2(n, W)$ below the base population
@@ -389,7 +397,8 @@ general cosine term with $-\cos(\pi/p_i)$.
 \section{The Parity Barrier in One Dimension} \label{sec:parity_collision}
 
 \begin{definition}[The Sieve Weight Quotient]
-To evaluate the structural efficiency of a given weight function, we define the sieve weight quotient $\mu(n, W)$ as the ratio of the penalized weight sum to the total weight sum:
+To evaluate the structural efficiency of a given weight function, we define the sieve weight
+quotient $\mu(n, W)$ as the ratio of the penalized weight sum to the total weight sum:
 \begin{equation} \label{eq:sieve_density_quotient}
 \mu(n, W) = \frac{S_2(n, W)}{S_1(n, W)} 
 \end{equation}
@@ -425,9 +434,11 @@ character weight system is strictly less than the sieve's principal density term
 \end{equation}
 \end{lemma}
 \begin{proof}
-For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$, which strictly bounds the cosine function: $\cos(\pi/p_i) < 1$. Multiplying by the strictly positive amplitude $2/p_i$ yields
+For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$, which strictly bounds
+the cosine function: $\cos(\pi/p_i) < 1$. Multiplying by the strictly positive amplitude $2/p_i$ yields
 $$ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i}. $$
-Summing these strict, term-by-term inequalities across the finite non-empty set $\mathcal{P}_n$ preserves the strict inequality:
+Summing these strict, term-by-term inequalities across the finite non-empty set $\mathcal{P}_n$
+preserves the strict inequality:
 $$ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}, $$
 which completes the proof.
 \end{proof}
@@ -501,15 +512,18 @@ evaluates to the squared norm of the polynomial over the interval:
 $$ S_1(n, W_\lambda) = Q_1(\lambda) = \sum_{x \in \mathcal{A}_n} (P(x))^2 $$
 \end{lemma}
 \begin{proof}
-By definition, $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$. Substituting the construction $W_\lambda(x) = (P(x))^2$, we expand the square and exchange the order of summation:
+By definition, $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$. Substituting the construction
+$W_\lambda(x) = (P(x))^2$, we expand the square and exchange the order of summation:
 \begin{align*}
 S_1(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} \left( \sum_S \lambda_S B_S(x) \right)^2 \\
                   &= \sum_{x \in \mathcal{A}_n} \sum_{S, T} \lambda_S B_S(x) B_T(x) \lambda_T \\
                   &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x) \right) \lambda_T.
 \end{align*}
-Defining the matrix elements $M_1(S,T) = \sum_{x \in \mathcal{A}_n} B_S(x)B_T(x)$ yields the quadratic form $Q_1(\lambda) = \sum_{S, T} \lambda_S M_1(S,T) \lambda_T$. 
+Defining the matrix elements $M_1(S,T) = \sum_{x \in \mathcal{A}_n} B_S(x)B_T(x)$ yields the
+quadratic form $Q_1(\lambda) = \sum_{S, T} \lambda_S M_1(S,T) \lambda_T$. 
 
-The derivation for $S_2(n, W_\lambda)$ proceeds identically by incorporating the linear penalty function $c(x)$ into the inner sum:
+The derivation for $S_2(n, W_\lambda)$ proceeds identically by incorporating the linear penalty
+function $c(x)$ into the inner sum:
 \begin{align*}
 S_2(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} c(x) \left( \sum_S \lambda_S B_S(x) \right)^2 \\
                   &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} c(x) B_S(x) B_T(x) \right) \lambda_T,
