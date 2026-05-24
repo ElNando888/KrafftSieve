@@ -62,9 +62,9 @@ Turán sieve framework evaluated over bounded, symmetric intervals. Utilizing a 
 alignment (which we term the Krafft alignment), we construct an additive sieve formulation where the
 existence of twin primes corresponds to the vanishing of a local penalty function. By evaluating the
 character sums associated with this sieve, we isolate a destructive interference term at the
-evaluation point $h = 3q/p$. We reduce the Twin Prime Conjecture to a variational optimization
-problem over a finite-dimensional parameter space: establishing that the minimum sieve weight
-quotient satisfies $\mu_{\min}(n) < 1$ guarantees the existence of twin primes in a prescribed
+evaluation point $h = 3q/p$. We subsequently reduce the Twin Prime Conjecture to a variational
+optimization problem over a finite-dimensional parameter space: establishing that the minimum sieve
+weight quotient satisfies $\mu_{\min}(n) < 1$ guarantees the existence of twin primes in a prescribed
 interval. We further show that independent, one-dimensional sieve weights are strictly insufficient
 to overcome the logarithmic divergence of Mertens' sums, forcing the quotient to $\mu \ge 1$. This
 structural deficit constitutes a spectral manifestation of the Selberg parity barrier, demonstrating
@@ -105,8 +105,8 @@ Discrete Fourier Transform and Plancherel's theorem, we show that the Krafft ali
 forces destructive interference at the evaluation point corresponding to $h = 3q/p_i$.
 Using a compactness argument over the space of multidimensional sieve weights, we define a minimum
 sieve weight quotient, $\mu_{\min}(n)$, successfully reducing the Twin Prime problem to a
-finite-dimensional optimization: if the bound $\mu_{\min}(n) < 1$ holds, twin primes must exist within
-$\mathcal{A}_n$.
+finite-dimensional optimization: if the bound $\mu_{\min}(n) < 1$ holds, twin prime indices must
+exist within $\mathcal{A}_n$.
 
 Furthermore, we propose a variational optimization of the sieve weights to minimize the penalty
 contribution. By treating the weights as a convex optimization problem in the frequency domain, we
@@ -146,7 +146,7 @@ $$r^K_i = \left\lfloor \frac{p_i + 1}{6} \right\rfloor$$
 \end{definition}
 
 \begin{definition}[The Evaluation Interval {[\href{\urlpfx/KrafftSieve/Defs.lean\#L68}{\lean}]}]
-We constrain our search for twin primes to the highly structured symmetric interval $\mathcal{A}_n$:
+We constrain our search for twin prime indices to the highly structured symmetric interval $\mathcal{A}_n$:
 $$\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$$
 \end{definition}
 
@@ -292,19 +292,6 @@ yields $\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = 
 completes the proof.
 \end{proof}
 
-\begin{lemma}[Plancherel's Theorem over $\mathbb{Z}/q\mathbb{Z}$ {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L104}{\lean}]}] \label{lem:plancherel_thm}
-Let $f, g: \mathbb{Z}/q\mathbb{Z} \to \mathbb{C}$ be arbitrary complex-valued functions. The inner
-product in the spatial domain equals the scaled inner product in the frequency domain:
-$$ \sum_{x \in \mathbb{Z}/q\mathbb{Z}} f(x) \overline{g(x)} = q \sum_{h \in \mathbb{Z}/q\mathbb{Z}} \hat{f}(h) \overline{\hat{g}(h)} $$
-\end{lemma}
-\begin{proof}
-Expanding the Fourier transforms on the right-hand side yields a triple sum over $h, x, y$.
-Interchanging the order of summation isolates the sum over $h$: $\sum_{h} e^{-2\pi i h (x-y) / q}$.
-By the standard orthogonality relation for roots of unity, this inner sum evaluates to $q$ if
-$x \equiv y \pmod q$ and $0$ otherwise. This collapses the sum to the diagonal $x = y$,
-recovering the original spatial inner product.
-\end{proof}
-
 \begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L187}{\lean}]}] \label{lem:plancherel_hit_expansion}
 For a weight function $W(x)$ supported strictly on $\mathcal{A}_n$, the weighted penalty sum $S_2(n, W)$
 decomposes into the Fourier domain as:
@@ -313,7 +300,7 @@ $$ S_2(n, W) = q \sum_{i=1}^{w(n)} \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}
 \begin{proof}
 Substitute the additive definition $c(x) = \sum g_i(x)$ into $S_2(n, W)$. Because $W(x)$ has compact
 support on $\mathcal{A}_n$, the sum extends to $\mathbb{Z}/q\mathbb{Z}$ without altering the value.
-Applying Lemma \ref{lem:plancherel_thm} to $W(x)$ and $c(x)$, and utilizing the linearity of the
+Applying the standard discrete Plancherel theorem to $W(x)$ and $c(x)$, and utilizing the linearity of the
 Fourier transform over the finite sum of local indicators, yields the expansion.
 \end{proof}
 
@@ -568,13 +555,13 @@ existence of the minimizer $\lambda_{opt}$.
 
 With the existence of the minimiser established, we reach the culmination of
 the sieve geometry. We can now formally link the continuous bound $\mu_{\min}(n)$ back to
-the discrete existence of twin primes within our evaluation interval.
+the discrete existence of twin prime indices within our evaluation interval.
 
 \begin{theorem}[Optimal Admissibility and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L640}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L668}{\lean}]}]
 The optimal multidimensional weight function $W_{opt}(x)$ synthesized from $\lambda_{opt}$ satisfies
 the strict admissibility condition ($S_2 < S_1$) if and only if
 $\mu_{\min}(n) < 1$. If this analytic bound holds, the framework rigorously guarantees
-the existence of a twin prime pair within $\mathcal{A}_n$.
+the existence of an index for a twin prime pair within $\mathcal{A}_n$.
 \end{theorem}
 \begin{proof}
 By the definition of the minimum ratio, evaluating the moments with the optimal weight function yields
@@ -616,7 +603,7 @@ $$ \Omega_h = \big(q\delta_{h,0} - \hat{g}_1(h)\big) \circledast \big(q\delta_{h
 where $\circledast$ denotes the circular discrete convolution over $\mathbb{Z}/q\mathbb{Z}$.
 
 When this convolution is expanded, it naturally generates higher-order cross-correlations (e.g.,
-$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums are structurally
+$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums are fundamentally
 indispensable. Where isolated character evaluations fail by allowing negative functional overlaps, the
 cross-correlations act as structurally precise corrective phases. They constructively interfere
 precisely at the intersections of forbidden congruences, clamping the multidimensional weight function
