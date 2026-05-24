@@ -180,7 +180,7 @@ The Sieve Isomorphism: Assume x in A_n. By the Fundamental
 Theorem of Arithmetic and the Sieve of Eratosthenes bound from earlier, x survives the Krafft
 sieve if and only if both 6x-1 and 6x+1 are prime numbers.
 -/
-lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
+lemma sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     f n (r_K n) x = 1 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
       rw [survives_iff];
       constructor <;> intro h
@@ -277,14 +277,14 @@ lemma sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
           · exact h_qn ▸ p_dvd_q n i
 
 /--
-Additive Sieve Isomorphism:
+Additive Sieve Equivalence:
 Prove that an integer $x \in \mathcal{A}_n$ survives the Krafft sieve (meaning both $6x-1$
 and $6x+1$ are prime) if and only if its global hit counter is exactly zero:
 $$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
 -/
-lemma additive_sieve_isomorphism (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
+lemma additive_sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     c n x = 0 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      have := @sieve_isomorphism n hn x; simp_all only [ge_iff_le, forall_const]; (
+      have := @sieve_equivalence n hn x; simp_all only [ge_iff_le, forall_const]; (
       unfold c f at *; simp_all only [ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
       unfold A at this; simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
       unfold g; simp_all
@@ -323,10 +323,10 @@ theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : �
         else by nlinarith [ hW x, h_c_ge_one x hx ( lt_of_le_of_ne ( hW x ) ( Ne.symm hx' ) ) ]
 
 /--
-Definition of the Krafft Admissibility condition
+Definition of the Krafft Sufficiency condition
 Existence of a weight function $W$ such that $S_2(n, W) < S_1(n, W)$.
 -/
-def Krafft_Admissibility (n : ℕ) : Prop :=
+def Krafft_Sufficiency (n : ℕ) : Prop :=
   ∃ W : ZMod (q n) → ℝ, (∀ x, W x ≥ 0) ∧
   (∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) ∧
   S_2 n W < S_1 n W
@@ -337,13 +337,13 @@ Admit that there exists a valid non-negative weight function $W(x)$ supported on
 $\mathcal{A}_n$ such that the magnitude of the negative third-harmonic resonance strictly
 overpowers the main term, yielding:
 $$ S_2(n, W) < S_1(n, W) $$
-Conclude that by the Weighted Existence Principle and the Additive Sieve Isomorphism, a Twin Prime
+Conclude that by the Weighted Existence Principle and the Additive Sieve Equivalence, a Twin Prime
 index is unconditionally guaranteed in $\mathcal{A}_n$.
 -/
-theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Admissibility n) :
+theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Sufficiency n) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
       obtain ⟨ W, hW_nonneg, _, hW_ineq ⟩ := h_admit
       obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq
-      exact ⟨ x, hx.1, additive_sieve_isomorphism n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
+      exact ⟨ x, hx.1, additive_sieve_equivalence n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
 
 end

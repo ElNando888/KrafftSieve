@@ -160,10 +160,10 @@ lemma S_2_eq_Q_2 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
 
 /--
 Lemma: The existence of coefficients $\lambda$ such that $Q_2(\lambda) < Q_1(\lambda)$
-is sufficient for Krafft Admissibility.
+is sufficient for Krafft Sufficiency.
 -/
 lemma sufficiency_of_Q (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (h : Q_2 n lambda < Q_1 n lambda) :
-    Krafft_Admissibility n := by
+    Krafft_Sufficiency n := by
       use W_truly_multi n lambda;
       exact ⟨ fun x => W_truly_multi_nonneg n lambda x,
               fun x hx => W_truly_multi_support n lambda x hx,
@@ -182,10 +182,10 @@ noncomputable def mu_min (n : ℕ) : ℝ := sInf (attainable_ratios n)
 
 /--
 Theorem: If the minimum attainable ratio $\mu_{min}(n)$ is strictly less than 1,
-then the Krafft Admissibility condition holds.
+then the Krafft Sufficiency condition holds.
 -/
-theorem mu_min_lt_one_implies_admissibility (n : ℕ) (h : mu_min n < 1) :
-    Krafft_Admissibility n := by
+theorem mu_min_lt_one_implies_sufficiency (n : ℕ) (h : mu_min n < 1) :
+    Krafft_Sufficiency n := by
       -- By definition of infimum, there exists a ratio $r$ in the attainable set such that $r < 1$.
       obtain ⟨r, hr⟩ : ∃ r ∈ attainable_ratios n, r < 1 := by
         contrapose! h;
@@ -636,10 +636,10 @@ noncomputable def W_opt (n : ℕ) : ZMod (q n) → ℝ :=
   W_truly_multi n (lambda_opt n)
 
 /--
-Theorem: The optimal weight function satisfies the Krafft Admissibility condition if and only if
+Theorem: The optimal weight function satisfies the Krafft Sufficiency condition if and only if
 $\mu_{min}(n) < 1$.
 -/
-theorem W_opt_is_admissible_iff (n : ℕ) :
+theorem W_opt_is_sufficient_iff (n : ℕ) :
     (S_2 n (W_opt n) < S_1 n (W_opt n)) ↔ mu_min n < 1 := by
       constructor
       · intro h
@@ -669,8 +669,8 @@ Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
 -/
 theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : mu_min n < 1) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      have := mu_min_lt_one_implies_admissibility n h;
-      by_cases hn : n ≥ 1 <;> simp_all +decide only [Krafft_Admissibility, ge_iff_le, not_le,
+      have := mu_min_lt_one_implies_sufficiency n h;
+      by_cases hn : n ≥ 1 <;> simp_all +decide only [Krafft_Sufficiency, ge_iff_le, not_le,
         Nat.lt_one_iff];
       obtain ⟨ W, hW₁, hW₂, hW₃ ⟩ := this;
       apply krafft_sieve_guarantee n hn ⟨ W, hW₁, hW₂, hW₃ ⟩
