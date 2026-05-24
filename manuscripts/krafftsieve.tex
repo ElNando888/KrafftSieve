@@ -194,7 +194,7 @@ with zero penalty ($c(x)=0$) has successfully avoided all prime factors in $\mat
 that avoiding these specific prime factors is sufficient to guarantee true primality, we rely on
 the strict algebraic boundaries of the interval $\mathcal{A}_n$.
 
-\begin{lemma}[Interval Projection Bound {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L111}{\lean}]}] \label{lem:interval_bound}
+\begin{lemma}[Interval Projection Bound {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L102}{\lean}]}] \label{lem:interval_bound}
 For any integer $x \in \mathcal{A}_n$, the value $6x+1$ is strictly less
 than the square of the next possible prime candidate after the sieve window, namely $6x+1 < (6n+5)^2$.
 \end{lemma}
@@ -210,7 +210,7 @@ $6x+1 < (6n+5)^2$ holds for all $x \in \mathcal{A}_n$.
 This bound is key to the reduction, as it ensures that any survivors within
 the interval are forced to be prime.
 
-\begin{theorem}[Additive Sieve Formulation {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L286}{\lean}]}] \label{thm:additive_sieve}
+\begin{theorem}[Additive Sieve Formulation {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L285}{\lean}]}] \label{thm:additive_sieve}
 For any integer $n \ge 1$ and any $x \in \mathcal{A}_n$, the global penalty function evaluates to
 exactly zero, $c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime numbers.
 \end{theorem}
@@ -242,7 +242,7 @@ $$S_1(n, W) = \sum_{x \in \mathcal{A}_n} W(x)$$
 $$S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x)$$
 \end{definition}
 
-\begin{lemma}[The Weighted Existence Principle {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L310}{\lean}]}]  \label{thm:weighted_existence}
+\begin{lemma}[The Weighted Existence Principle {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L309}{\lean}]}]  \label{thm:weighted_existence}
 If there exists a non-negative weight function $W(x)$ such that the global penalized sum is strictly
 less than the base weight sum, $S_2(n, W) < S_1(n, W)$, then there must exist at least one integer
 $x \in \mathcal{A}_n$ such that $W(x) > 0$ and $c(x) = 0$.
@@ -262,7 +262,7 @@ $W: \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ that is non-negative everywhere, supp
 $\mathcal{A}_n$, and satisfies the strict inequality $S_2(n, W) < S_1(n, W)$.
 \end{definition}
 
-\begin{theorem}[Sieve Sufficiency Guarantee {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L344}{\lean}]}] \label{thm:krafft_sieve_guarantee}
+\begin{theorem}[Sieve Sufficiency Guarantee {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L343}{\lean}]}] \label{thm:krafft_sieve_guarantee}
 For any integer $n \ge 1$, if Definition \ref{def:krafft_admissibility} is satisfied, then there
 exists an integer $x \in \mathcal{A}_n$ such that $6x-1$ and $6x+1$ form a twin prime pair.
 \end{theorem}
@@ -286,7 +286,7 @@ By exploiting the bounds of $\mathcal{A}_n$, we can extend our spatial sums over
 entire cyclic group without altering their values. This allows us to apply Plancherel's theorem
 to expand the penalized mass into a series of exponential sums.
 
-\begin{lemma}[Compact Support Equivalence {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L92}{\lean}]}] \label{lem:compact_support_equivalence}
+\begin{lemma}[Compact Support Equivalence {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L85}{\lean}]}] \label{lem:compact_support_equivalence}
 Assume the weight function $W(x)$ is supported within the interval $\mathcal{A}_n$, meaning
 $W(x) = 0$ for all $x \notin \mathcal{A}_n$. Then the total weight $S_1(n, W)$ is
 proportional to the zero-frequency Fourier coefficient of the weight function:
@@ -301,7 +301,7 @@ $$\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = \frac{
 Multiplying by $q$ completes the proof.
 \end{proof}
 
-\begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L187}{\lean}]}] \label{lem:plancherel_hit_expansion}
+\begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L194}{\lean}]}] \label{lem:plancherel_hit_expansion}
 For a weight function $W(x)$ supported on $\mathcal{A}_n$, the weighted penalty sum $S_2(n, W)$
 decomposes into the Fourier domain as:
 $$ S_2(n, W) = q \sum_{i=1}^{w(n)} \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
@@ -316,7 +316,7 @@ Fourier transform over the finite sum of local indicators, yields the expansion.
 Because the local indicator function $g_i(x)$ depends only on the residue of $x$ modulo the local prime
 $p_i$, projecting it onto the full cyclic group $\mathbb{Z}/q\mathbb{Z}$ yields a highly sparse spectrum.
 
-\begin{lemma}[Indicator Function Spectrum {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L349}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L571}{\lean}]}] \label{lem:dirac_comb_structure}
+\begin{lemma}[Indicator Function Spectrum {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L369}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L595}{\lean}]}] \label{lem:dirac_comb_structure}
 The Discrete Fourier Transform (as defined in Definition \ref{def:dft}) of the local indicator function,
 $\hat{g}_i(h)$, evaluates to zero for all frequencies
 except those that are precise integer multiples of $q/p_i$. Specifically, let
@@ -350,7 +350,7 @@ oscillatory interference, yielding the main identity of the sieve. When evaluati
 exponential sum at $h = 3q/p_i$, the trigonometric phase aligns with
 the alignment residue, causing destructive interference.
 
-\begin{lemma}[Evaluation of the Character Sum at $h = 3q/p_i$ {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L716}{\lean}]}] \label{lem:exact_krafft_cosine}
+\begin{lemma}[Evaluation of the Character Sum at $h = 3q/p_i$ {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L742}{\lean}]}] \label{lem:exact_krafft_cosine}
 For any prime factor $p_i \ge 5$, substituting the alignment residue $r_i^K = \lfloor(p_i+1)/6\rfloor$ evaluated precisely at $k=3$ yields a strictly negative term:
 $$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) $$
 \end{lemma}
@@ -362,7 +362,7 @@ Applying the standard trigonometric identity $\cos(\pi \pm \theta) = -\cos(\thet
 the result.
 \end{proof}
 
-\begin{theorem}[The Main Sieve Identity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L688}{\lean}]}]
+\begin{theorem}[The Main Sieve Identity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L714}{\lean}]}]
 For any weight function $W(x)$ supported on $\mathcal{A}_n$, the penalized sum isolates into a principal expected
 density term and an oscillatory interference sum:
 \begin{equation} \label{eq:resonant_sieve_equation}
@@ -381,7 +381,7 @@ total weight $S_1(n, W)$, establishing the exact equation.
 This destructive interference can suppress $S_2(n, W)$ below the total weight
 $S_1(n, W)$.
 
-\begin{lemma}[Isolation of the $h=3q/p_i$ Term {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L760}{\lean}]}]
+\begin{lemma}[Isolation of the $h=3q/p_i$ Term {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L786}{\lean}]}]
 For a weight function $W(x)$ whose spectral support is restricted to
 the base harmonic $h=0$ and the precise frequencies $h = 3q/p_i$, the
 sieve identity \eqref{eq:resonant_sieve_equation} simplifies exactly to:
@@ -413,7 +413,7 @@ attempt is to construct weight functions composed entirely of independent, one-d
 exponential sums. We can assess the limitations of this approach by examining the isolated spectral
 capacity of the sieve.
 
-\begin{definition}[Principal Density and Character Suppression Capacity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L791}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L797}{\lean}]}]
+\begin{definition}[Principal Density and Character Suppression Capacity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L817}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L823}{\lean}]}]
 For a one-dimensional character weight system evaluated over $\mathcal{P}_n$, the principal
 expected density is governed by the harmonic sum over the prime window:
 $$ \text{Principal Term}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} $$
@@ -426,7 +426,7 @@ If the suppression capacity could exceed or match the principal density term, a 
 could theoretically suppress the penalized sum $S_2$ below $S_1$. However, the geometry of the character
 sum strictly forbids this.
 
-\begin{lemma}[The Spectral Deficit {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L806}{\lean}]}]
+\begin{lemma}[The Spectral Deficit {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L832}{\lean}]}]
 For any valid prime window $\mathcal{P}_n$, the suppression capacity of any purely one-dimensional
 character weight system is strictly less than the sieve's principal density term:
 \begin{equation} \label{eq:harmonic_deficit}
@@ -481,7 +481,7 @@ density deficit. To constructively overcome this, we must transition to a correl
 multidimensional weight space. We build this space using higher-order correlations of the fundamental
 character variables.
 
-\begin{definition}[Multidimensional Basis and Polynomial {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L43}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L51}{\lean}]}]
+\begin{definition}[Multidimensional Basis and Polynomial {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L32}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L40}{\lean}]}]
 For any subset of prime indices $S \subseteq \{1, \dots, w(n)\}$, we define the multidimensional
 basis function as the product of the targeted trigonometric evaluations:
 $$ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) $$
@@ -493,7 +493,7 @@ $$ P(x) = \sum_{S} \lambda_S B_S(x) $$
 The resulting $2^{w(n)}$-dimensional basis is closed under pointwise multiplication, which allows
 us to ensure the non-negativity of the sieve weight function. 
 
-\begin{definition}[The Multidimensional Weight Function {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L60}{\lean}]}] \label{def:continuous_weight_func}
+\begin{definition}[The Multidimensional Weight Function {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L49}{\lean}]}] \label{def:continuous_weight_func}
 We define the multidimensional weight function $W_\lambda(x)$ by squaring the polynomial $P(x)$
 and strictly restricting its support to the evaluation interval $\mathcal{A}_n$:
 $$ W_\lambda(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 & \text{otherwise}
@@ -505,7 +505,7 @@ $W_\lambda(x) \ge 0$ for all $x$, avoiding the need to impose infinitely many li
 inequality constraints on $\lambda$. This formulation translates
 our sieve sums into classical quadratic forms.
 
-\begin{lemma}[Reduction to Quadratic Forms {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L131}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L154}{\lean}]}]
+\begin{lemma}[Reduction to Quadratic Forms {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L121}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L144}{\lean}]}]
 The total weight sum $S_1(n, W_\lambda)$ and the penalized weight sum $S_2(n, W_\lambda)$ map directly to
 continuous quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$. Specifically, the total weight sum
 evaluates to the squared norm of the polynomial over the interval:
@@ -537,7 +537,7 @@ $R(\lambda) = Q_2(\lambda) / Q_1(\lambda)$
 {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L95}{\lean}]}. Because this quotient is
 inherently scale-invariant, we can apply a standard compactness argument.
 
-\begin{lemma}[Compactness of the Orthogonal Unit Sphere {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L442}{\lean}]}] \label{lem:compactness}
+\begin{lemma}[Compactness of the Orthogonal Unit Sphere {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L438}{\lean}]}] \label{lem:compactness}
 Let $\ker(Q_1)$ denote the kernel of the quadratic form $Q_1$. Because the quotient is
 invariant under both uniform scaling and the additive translation of vectors from $\ker(Q_1)$, we
 restrict the parameter space strictly to the unit sphere within the orthogonal complement, denoted
@@ -564,7 +564,7 @@ defined as the absolute infimum of this attainable set.
 By leveraging the topological compactness derived above, we can assert the existence of an exact
 optimal coefficient vector.
 
-\begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L603}{\lean}]}]
+\begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L605}{\lean}]}]
 The minimum sieve quotient $\mu_{\min}(n)$ is attained by an optimal coefficient vector
 $\lambda_{opt} \in \mathcal{S}^{\perp}$, such that $Q_1(\lambda_{opt}) > 0$ and
 $R(\lambda_{opt}) = \mu_{\min}(n)$.
@@ -583,7 +583,7 @@ With the existence of the minimiser established, we obtain the main result of
 this section. We can now formally link the continuous bound $\mu_{\min}(n)$ back to
 the discrete existence of twin prime indices within our evaluation interval.
 
-\begin{theorem}[Optimal Sufficiency and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L640}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L668}{\lean}]}]
+\begin{theorem}[Optimal Sufficiency and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L642}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L670}{\lean}]}]
 The optimal multidimensional weight function $W_{opt}(x)$ constructed from $\lambda_{opt}$ satisfies
 the sufficiency condition ($S_2 < S_1$) if and only if
 $\mu_{\min}(n) < 1$. If this analytic bound holds, the framework rigorously guarantees
