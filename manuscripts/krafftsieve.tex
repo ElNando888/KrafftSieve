@@ -285,11 +285,13 @@ $W(x) = 0$ for all $x \notin \mathcal{A}_n$. Then the total spatial mass $S_1(n,
 proportional to the zero-frequency Fourier coefficient of the weight function:
 $$ S_1(n, W) = q \hat{W}(0) $$
 \end{lemma}
+
 \begin{proof}
 Since $W(x)$ is zero outside $\mathcal{A}_n$, the sum over the interval is equivalent to the sum over
 the entire cyclic group $\mathbb{Z}/q\mathbb{Z}$. Evaluating Definition \ref{def:dft} at $h = 0$
-yields $\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = \frac{1}{q} S_1(n, W)$. Multiplying by $q$
-completes the proof.
+yields
+$$\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = \frac{1}{q} S_1(n, W)$$
+Multiplying by $q$ completes the proof.
 \end{proof}
 
 \begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L187}{\lean}]}] \label{lem:plancherel_hit_expansion}
@@ -319,15 +321,20 @@ $h \in \mathbb{Z}/q\mathbb{Z}$:
 \end{enumerate}
 \end{lemma}
 \begin{proof}
-The local indicator function $g_i(x)$ is periodic with period $p_i$. When evaluating the sum
-$\sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q}$, we can write $x = y + m p_i$ for $0 \le y < p_i$ and
-$0 \le m < q/p_i$. Factoring the sum yields an inner sum over $m$ of the form
-$\sum_{m} e^{-2\pi i h m p_i / q}$. If $h$ is not a multiple of $q/p_i$, this geometric sum
-corresponds to a full set of roots of unity and vanishes identically. If $h = k(q/p_i)$, the
-exponential becomes $1$, and the inner sum over $m$ evaluates to $q/p_i$. The remaining sum over
-the two surviving residues $y \equiv \pm r^K_i \pmod{p_i}$ yields the symmetric exponential terms
-$e^{2\pi i k r^K_i / p_i} + e^{-2\pi i k r^K_i / p_i} = 2\cos(2\pi k r^K_i / p_i)$. Multiplying by
-the normalizer $1/q$ completes the proof.
+By writing $x = y + m p_i$ with $0 \le y < p_i$ and $0 \le m < q/p_i$, we can factor the Fourier transform as
+\begin{align*}
+\hat{g}_i(h) &= \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q} \\
+             &= \frac{1}{q} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i h y/q} \sum_{m=0}^{q/p_i - 1} e^{-2\pi i h m p_i / q}.
+\end{align*}
+The inner sum over $m$ vanishes identically unless $h$ is a multiple of $q/p_i$. When $h = k(q/p_i)$, the sum over $m$ evaluates to $q/p_i$, yielding
+\begin{align*}
+\hat{g}_i\left(k \frac{q}{p_i}\right) &= \frac{1}{p_i} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i k y / p_i}.
+\end{align*}
+Since $g_i(y) = 1$ only at the two residues $y \equiv \pm r^K_i \pmod{p_i}$, we obtain
+\begin{align*}
+\hat{g}_i\left(k \frac{q}{p_i}\right) &= \frac{1}{p_i} \left( e^{-2\pi i k r^K_i / p_i} + e^{2\pi i k r^K_i / p_i} \right) \\
+                                      &= \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right).
+\end{align*}
 \end{proof}
 
 This sparsity allows us to explicitly separate the principal expected density term from the targeted
@@ -418,12 +425,11 @@ character weight system is strictly less than the sieve's principal density term
 \end{equation}
 \end{lemma}
 \begin{proof}
-For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$. Within this open interval,
-the cosine function is strictly bounded by $1$. Consequently, the strict inequality $\cos(\pi/p_i) < 1$
-holds for every individual term. Multiplying by the strictly positive amplitude $2/p_i$ yields
-$\frac{2}{p_i} \cos(\pi/p_i) < \frac{2}{p_i}$. Summing these strict, term-by-term inequalities across
-the finite non-empty set $\mathcal{P}_n$ rigidly preserves the strict inequality for the aggregate
-sums.
+For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$, which strictly bounds the cosine function: $\cos(\pi/p_i) < 1$. Multiplying by the strictly positive amplitude $2/p_i$ yields
+$$ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i}. $$
+Summing these strict, term-by-term inequalities across the finite non-empty set $\mathcal{P}_n$ preserves the strict inequality:
+$$ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}, $$
+which completes the proof.
 \end{proof}
 
 While the strict inequality itself is algebraically elementary, its significance lies in the
@@ -443,6 +449,7 @@ $$ \text{Deficit} = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\fra
 Because the sum $\sum p^{-3}$ strictly converges over the primes, the absolute suppression capacity
 of the one-dimensional character evaluations falls infinitely behind the logarithmically diverging
 principal density. 
+\end{proof}
 
 This convergence-divergence disparity forces the quotient $\mu \ge 1$ for any sufficiently
 large $n$ when utilizing one-dimensional independent evaluations. This spectral deficit is precisely
@@ -450,7 +457,6 @@ the analytic manifestation of the well-known Selberg parity barrier within our a
 (A finite truncation of purely independent character sums will inevitably force the weight function
 to take negative values at dense overlapping forbidden regions before it can reduce the overall
 weight quotient below 1.) 
-\end{proof}
 
 This establishes a firm mathematical obstruction. To circumvent this continuous density deficit and
 overcome the parity barrier, the sieve weight geometry must inherently incorporate multidimensional
@@ -495,14 +501,20 @@ evaluates to the squared norm of the polynomial over the interval:
 $$ S_1(n, W_\lambda) = Q_1(\lambda) = \sum_{x \in \mathcal{A}_n} (P(x))^2 $$
 \end{lemma}
 \begin{proof}
-By definition, the total sum is $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$.
-Substituting the construction $W_\lambda(x) = (P(x))^2$ expands algebraically to
-$\sum_{x} (\sum_S \lambda_S B_S(x))^2$. Distributing the product of the finite sums and rearranging
-the summation order isolates the cross-terms of the basis functions, defining
-the matrix elements $M_1(S,T) = \sum_x B_S(x)B_T(x)$. This yields the explicit quadratic form
-$Q_1(\lambda) = \sum_{S, T} \lambda_S M_1(S,T) \lambda_T$. The derivation for
-$S_2(n, W_\lambda) = Q_2(\lambda)$ follows identically by incorporating the linear penalty function
-$c(x)$ into the inner sum over $x$.
+By definition, $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$. Substituting the construction $W_\lambda(x) = (P(x))^2$, we expand the square and exchange the order of summation:
+\begin{align*}
+S_1(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} \left( \sum_S \lambda_S B_S(x) \right)^2 \\
+                  &= \sum_{x \in \mathcal{A}_n} \sum_{S, T} \lambda_S B_S(x) B_T(x) \lambda_T \\
+                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x) \right) \lambda_T.
+\end{align*}
+Defining the matrix elements $M_1(S,T) = \sum_{x \in \mathcal{A}_n} B_S(x)B_T(x)$ yields the quadratic form $Q_1(\lambda) = \sum_{S, T} \lambda_S M_1(S,T) \lambda_T$. 
+
+The derivation for $S_2(n, W_\lambda)$ proceeds identically by incorporating the linear penalty function $c(x)$ into the inner sum:
+\begin{align*}
+S_2(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} c(x) \left( \sum_S \lambda_S B_S(x) \right)^2 \\
+                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} c(x) B_S(x) B_T(x) \right) \lambda_T,
+\end{align*}
+yielding the quadratic form $Q_2(\lambda)$.
 \end{proof}
 
 With our metrics translated into quadratic forms, the sieve weight quotient
