@@ -273,7 +273,11 @@ zero penalty ($c(x) = 0$). Under Theorem \ref{thm:additive_sieve}, the vanishing
 implies that both $6x-1$ and $6x+1$ are prime.
 \end{proof}
 
-We shift into the frequency domain by expanding our functions over the characters of the
+In the spatial domain, analyzing the pseudo-random overlaps of the forbidden residue classes
+across all primes is analytically intractable. We therefore shift into the frequency domain, where
+the strict periodicities of the local indicator functions resolve into highly sparse, orthogonal
+spectra, allowing us to separate the principal density from the oscillatory interference.
+This is accomplished by expanding our functions over the characters of the
 cyclic group $\mathbb{Z}/q\mathbb{Z}$.
 
 \begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
@@ -561,7 +565,7 @@ $\mathcal{S}^{\perp}$ under the mapping $R(\lambda)$. The minimum sieve quotient
 defined as the absolute infimum of this attainable set.
 \end{definition}
 
-By leveraging the topological compactness derived above, we can assert the existence of an exact
+By using the topological compactness derived above, we can assert the existence of an exact
 optimal coefficient vector.
 
 \begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L605}{\lean}]}]
@@ -619,7 +623,7 @@ spatial weight function $\omega(x)$, which equals $1$ when $c(x) = 0$ and $0$ el
 It is given by the pointwise product of the allowed residue indicators:
 $$ \omega(x) = \prod_{i=1}^{w(n)} \big(1 - g_i(x)\big) $$
 
-Transforming this equivalence into the frequency domain over $\mathbb{Z}/q\mathbb{Z}$
+Transforming this identity into the frequency domain over $\mathbb{Z}/q\mathbb{Z}$
 yields a spectral characterization. Let $\hat{g}_i(h)$ be the Fourier transform
 of the individual indicator functions. By the Convolution Theorem, the sequence of allowed
 residues transforms as $q\delta_{h,0} - \hat{g}_i(h)$. Consequently, the
@@ -629,12 +633,13 @@ $$ \Omega_h = \big(q\delta_{h,0} - \hat{g}_1(h)\big) \circledast \big(q\delta_{h
 where $\circledast$ denotes the circular discrete convolution over $\mathbb{Z}/q\mathbb{Z}$.
 
 When this convolution is expanded, it naturally generates higher-order cross-correlations (e.g.,
-$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums are fundamentally
+$\hat{g}_i(h_1) \circledast \hat{g}_j(h_2)$). These multidimensional exponential sums appear to be
 indispensable. Where isolated character evaluations fail by allowing negative functional overlaps, the
-cross-correlations act as structurally precise corrective phases. They constructively interfere
-at the intersections of forbidden congruences, forcing the weight function
-to vanish. This multidimensional scaling simultaneously preserves non-negativity and protects
-the principal density term from over-subtraction.
+cross-correlations intuitively act as precise corrective phases. We expect them to constructively
+interfere at the intersections of forbidden congruences, forcing the weight function to vanish. This
+multidimensional scaling is thus intended to simultaneously preserve non-negativity and protect
+the principal density term from over-subtraction, an effect which is empirically supported by
+numerical optimization of the quotient for small values of $n$.
 
 \subsection{Towards Bounding the Minimum Ratio}
 
@@ -662,14 +667,14 @@ highest-magnitude cross-correlation coefficients.
 
 While executing this final step demands careful estimation of the resulting combinatorial sums, the
 framework nevertheless provides a well-defined approach. Importantly, this continuous analytic
-framework maps a combinatorial obstacle into an explicit, resolvable optimization problem.
+framework maps a combinatorial obstacle into an explicit, seemingly resolvable optimization problem.
 
 \section{Conclusion} \label{sec:conclusion}
 
 This paper has presented a rigorous reduction that equates the existence of twin primes to
-the bounded eigenvalue optimization of a specific residue structure. By tracking localized sieve penalties
-over symmetric bounded intervals and translating them into the frequency domain, we successfully
-mapped discrete prime alignments to continuous character sum spectra. 
+the bounded eigenvalue optimization of a specific residue structure. By tracking localized sieve
+penalties over symmetric bounded intervals and translating them into the frequency domain, we
+successfully mapped discrete prime alignments to continuous character sum spectra. 
 
 This formulation allowed us to isolate the exact analytic manifestation of the
 parity barrier. We proved that one-dimensional exponential sum weights suffer from a structural deficit,
