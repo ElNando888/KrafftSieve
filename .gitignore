@@ -1,6 +1,7 @@
 /.lake
 /.agents
 /aristotle
+/manuscripts/JIS
 /Old
 GetDeps.lean
 *.aux
