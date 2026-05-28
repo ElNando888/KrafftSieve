@@ -1,6 +1,7 @@
 /.lake
 /.agents
 /aristotle
+/manuscripts/AHL
 /manuscripts/JIS
 /Old
 GetDeps.lean

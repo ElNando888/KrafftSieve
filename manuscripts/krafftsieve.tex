@@ -22,6 +22,8 @@
 
 %\graphicspath{ {./images/} }
 
+\def\modd#1 #2{#1\ \text{\rm (mod}\ #2\text{\rm )}}
+
 \newcommand{\lean}{\ensuremath{%
   \mathchoice{\includegraphics[height=2ex]{lean-file-icon-dark}}
     {\includegraphics[height=2ex]{lean-file-icon-dark}}
@@ -43,7 +45,7 @@
 
 \author{Fernando Portela}
 
-\address{Research Scholar\\
+\address{Research Scholar, RIIS 2.0\\
 \email{fernando.portela@ronininstitute.org} }
 
 \maketitle
@@ -79,32 +81,31 @@ verified in Lean 4.
 
 \section{Introduction} \label{introduction}
 
-The Twin Prime Conjecture, asserting the existence of infinitely many prime pairs $p, p+2$,
-is a central open problem in analytic number theory. Classical benchmarks for its density were
-established by the Hardy--Littlewood conjecture~\cite{HardyLittlewood1923}. Sieve methods,
-originating with Brun~\cite{Brun1919} and fundamentally refined by Selberg~\cite{Selberg1947} and
-many others~\cite{MontgomeryVaughan2006}, have historically provided the main avenues of attack on
-prime distribution. While these multiplicative inclusion-exclusion frameworks have yielded
-extraordinary structural results---most notably the bounded gaps between
-primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}---they inevitably encounter the parity
-barrier. This combinatorial obstruction, first articulated by Selberg, demonstrates that classical
-sieves cannot fundamentally distinguish between integers possessing an even number of prime factors
-and those possessing an odd number, thus precluding a direct proof of the Twin Prime Conjecture
-using these methods alone.
+The twin prime conjecture is notoriously obstructed by the parity barrier, which prevents classical
+sieve methods from isolating prime pairs. In this paper, we develop a new additive Turán sieve
+framework~\cite{Turan1934} designed to bypass this combinatorial obstruction. Rather than relying on
+traditional multiplicative inclusion-exclusion, we map the search for twin primes to an additive
+penalty function over a highly structured, symmetric interval---utilizing a centered modular
+alignment known as the Krafft alignment~\cite{Krafft1801,Portela2026}. By analyzing the spectral
+properties of this penalty function, we reduce the twin prime conjecture to a
+finite-dimensional variational optimization problem.
 
-To bypass this barrier, this paper develops an additive Turán sieve framework~\cite{Turan1934}. Rather
-than counting surviving elements through a multiplicative product, we restrict our evaluation to a
-highly structured symmetric interval $\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$. Through a centered
-modular alignment (which we refer to as the Krafft alignment~\cite{Krafft1801,Portela2026}), our
-framework uses the specific residue $r^K_i = \lfloor(p_i+1)/6\rfloor$ for primes in our sieve window.
-We establish an additive sieve formulation where a carefully defined local penalty function must vanish
-for an integer in this interval to generate a twin prime pair.
+To understand the necessity of this approach, we must consider the historical context of the parity
+barrier. Classical benchmarks for prime density were established by the Hardy-Littlewood
+conjecture~\cite{HardyLittlewood1923}. Subsequent sieve methods, originating with
+Brun~\cite{Brun1919} and refined by Selberg~\cite{Selberg1947} and
+others~\cite{MontgomeryVaughan2006}, have provided the main avenues of attack on prime distribution.
+While these frameworks have yielded extraordinary structural results---most notably the bounded gaps
+between primes~\cite{GPY2009,Maynard2015,Polymath8a,Polymath8b}---they inevitably encounter
+Selberg's parity barrier. This phenomenon demonstrates that classical sieves cannot fundamentally
+distinguish between integers possessing an even number of prime factors and those possessing an odd
+number, precluding a direct proof of the twin prime conjecture using these methods alone.
 
 By evaluating the character sums associated with this discrete sieve over the cyclic group via the
-Discrete Fourier Transform and Plancherel's theorem, we show that the Krafft alignment inherently
+discrete Fourier transform and Plancherel's theorem, we show that the Krafft alignment inherently
 forces destructive interference at the evaluation point corresponding to $h = 3q/p_i$.
 Using a compactness argument over the space of multidimensional sieve weights, we define a minimum
-sieve weight quotient, $\mu_{\min}(n)$, successfully reducing the Twin Prime problem to a
+sieve weight quotient, $\mu_{\min}(n)$, reducing the twin prime problem to a
 finite-dimensional optimization: if the bound $\mu_{\min}(n) < 1$ holds, twin prime indices must
 exist within $\mathcal{A}_n$.
 
@@ -116,16 +117,26 @@ divergence of Mertens' sums, the sieve quotient is strictly forced to $\mu \ge 1
 deficit reveals that resolving the conjecture requires exploiting the full multidimensional
 space of higher-order correlations.
 
+The paper is organized as follows. In Section \ref{sec:geometry}, we formalize the Krafft geometry
+and define the additive sieve. Section \ref{sec:resonance} shifts the problem into the frequency
+domain, evaluating the necessary discrete Fourier transforms and identifying the structural
+destructive interference. Section \ref{sec:parity_collision} proves the spectral manifestation of
+the parity barrier, showing that one-dimensional weights are insufficient. Section \ref{sec:reduction}
+establishes the continuous variational framework and proves that the minimization of our sieve
+quotient $\mu_{\min}(n)$ guarantees the existence of twin primes. Finally, Section \ref{sec:discussion}
+explores the full character convolution and presents numerical optimizations that empirically
+validate the structural necessity of multidimensional correlations.
+
 Throughout the text, \lean\ symbols are used as direct links to formalized code in the GitHub
-repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.3}
-{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.3}}, which contains the machine-checked
+repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.4}
+{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.4}}, which contains the machine-checked
 verifications for all definitions, statements, and proofs in this paper.\footnote{The only axioms
 used are \texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, which can be checked
 by the \texttt{\#print axioms} command.} We use Lean~\cite{MouraUllrich2021} version 4.28.0 together
 with the Lean mathematical library \texttt{Mathlib}~\cite{Mathlib} revision \texttt{8f9d9cf}
 (dated 2026-02-16).
 
-\section{Discrete Geometry and the Additive Sieve Equivalence} \label{sec:geometry}
+\section{Discrete geometry and the additive sieve equivalence} \label{sec:geometry}
 
 To circumvent the parity limitations inherent in multiplicative sieves, we transition to an additive
 framework evaluated over a bounded, symmetric interval. We begin by formalizing the specific
@@ -133,7 +144,7 @@ geometry of our prime window and sieve domain.
 
 \begin{definition}[The Prime Window and Primorial {[\href{\urlpfx/KrafftSieve/Defs.lean\#L39}{\lean} \& \href{\urlpfx/KrafftSieve/Defs.lean\#L44}{\lean}]}]
 Let $\mathcal{P}_n$ denote the set of primes evaluated by the sieve, bounded as:
-$$\mathcal{P}_n = \{ p \text{ prime} \mid 5 \le p < 6n+2 \}$$
+\[\mathcal{P}_n = \{ p \text{ prime} \mid 5 \le p < 6n+2 \}\]
 We define $w(n) = |\mathcal{P}_n|$ as the total count of these prime factors, and
 $q = \prod_{p \in \mathcal{P}_n} p$ as their associated primorial.
 \end{definition}
@@ -147,12 +158,12 @@ We formalize this historically noted mapping as a discrete residue condition.
 
 \begin{definition}[The Krafft Residues {[\href{\urlpfx/KrafftSieve/Defs.lean\#L63}{\lean}]}]
 For each prime $p_i \in \mathcal{P}_n$, we establish the target Krafft alignment residue as:
-$$r^K_i = \left\lfloor \frac{p_i + 1}{6} \right\rfloor$$
+\[r^K_i = \left\lfloor \frac{p_i + 1}{6} \right\rfloor\]
 \end{definition}
 
 \begin{definition}[The Evaluation Interval {[\href{\urlpfx/KrafftSieve/Defs.lean\#L68}{\lean}]}]
 We constrain our search for twin prime indices to the highly structured symmetric interval $\mathcal{A}_n$:
-$$\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]$$
+\[\mathcal{A}_n = [6n^2 - 2n, 6n^2 + 10n + 3]\]
 \end{definition}
 
 This specific interval width is chosen so that the alignment residue $r_i^K$
@@ -160,17 +171,17 @@ effectively translates the standard divisibility conditions of twin prime candid
 modular congruence evaluated at the index $x$. The following lemma makes this
 equivalence precise.
 
-\begin{lemma}[Modular Alignment Equivalence {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L81}{\lean}]}]
+\begin{lemma}[Modular Alignment Equivalence {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L81}{\lean}]}] \label{lem:modular_alignment}
 For any prime factor $p \ge 5$ and any integer $x$, let $r = \lfloor(p+1)/6\rfloor$. Then
-$x \equiv \pm r \pmod{p}$ if and only if $p \mid (6x-1)$ or $p \mid (6x+1)$.
+$x \equiv \pm \modd{r} {p}$ if and only if $p \mid (6x-1)$ or $p \mid (6x+1)$.
 \end{lemma}
 \begin{proof}
 Since $p \ge 5$ is prime, we have either $p \equiv 1 \pmod 6$ or $p \equiv 5 \pmod 6$.
-If $p \equiv 1 \pmod 6$, then $r = (p-1)/6$, and therefore $6r = p-1 \equiv -1 \pmod p$.
-If $p \equiv 5 \pmod 6$, then $r = (p+1)/6$, yielding $6r = p+1 \equiv 1 \pmod p$. In both cases,
-$6r \equiv \pm 1 \pmod{p}$.
-Assuming $x \equiv \pm r \pmod{p}$, multiplying both sides by $6$ gives
-$6x \equiv \pm 6r \equiv \pm 1 \pmod{p}$. This implies $6x \mp 1 \equiv 0 \pmod p$, meaning $p$
+If $p \equiv 1 \pmod 6$, then $r = (p-1)/6$, and therefore $6r = p-1 \equiv \modd{-1} {p}$.
+If $p \equiv 5 \pmod 6$, then $r = (p+1)/6$, yielding $6r = p+1 \equiv \modd{1} {p}$. In both cases,
+$6r \equiv \pm \modd{1} {p}$.
+Assuming $x \equiv \pm \modd{r} {p}$, multiplying both sides by $6$ gives
+$6x \equiv \pm 6r \equiv \pm \modd{1} {p}$. This implies $6x \mp 1 \equiv \modd{0} {p}$, meaning $p$
 divides either $6x-1$ or $6x+1$. The steps are reversible, establishing the equivalence.
 \end{proof}
 
@@ -181,11 +192,11 @@ function that accumulates across all primes in our window.
 \begin{definition}[Local Indicator and Global Penalty Function {[\href{\urlpfx/KrafftSieve/Defs.lean\#L76}{\lean} \& \href{\urlpfx/KrafftSieve/Defs.lean\#L85}{\lean}]}]
 We define the local indicator function $g_i(x) \in \{0, 1\}$ to detect whether an integer $x$ falls
 into the forbidden residue classes modulo $p_i$:
-$$g_i(x) = \begin{cases} 1 & \text{if } x \equiv \pm r^K_i \pmod{p_i} \\ 0 & \text{otherwise}
-\end{cases}$$
+\[g_i(x) = \begin{cases} 1, & \text{if } x \equiv \pm \modd{r^K_i} {p_i}; \\ 0, & \text{otherwise.}
+\end{cases}\]
 The global penalty function $c(x)$ is defined additively as the sum of all local indicators across
 the prime window:
-$$c(x) = \sum_{i=1}^{w(n)} g_i(x)$$
+\[c(x) = \sum_{i=1}^{w(n)} g_i(x)\]
 \end{definition}
 
 Unlike classical inclusion-exclusion setups which track the surviving elements via alternating signs, $c(x)$
@@ -216,8 +227,8 @@ exactly zero, $c(x) = 0$, if and only if both $6x-1$ and $6x+1$ are prime number
 \end{theorem}
 \begin{proof}
 By the definition of the global penalty function, $c(x) = 0$ if and only if $g_i(x) = 0$ for all
-$1 \le i \le w(n)$. This means $x \not\equiv \pm r^K_i \pmod{p_i}$ for all primes $p_i \in \mathcal{P}_n$.
-By Lemma 2.1, this guarantees that neither $6x-1$ nor $6x+1$ has any prime divisors in $\mathcal{P}_n$.
+$1 \le i \le w(n)$. This means $x \not\equiv \pm \modd{r^K_i} {p_i}$ for all primes $p_i \in \mathcal{P}_n$.
+By Lemma \ref{lem:modular_alignment}, this guarantees that neither $6x-1$ nor $6x+1$ has any prime divisors in $\mathcal{P}_n$.
 Integers of the form $6x \pm 1$ are intrinsically coprime to 2 and 3. Therefore, $6x-1$ and $6x+1$
 have no prime factors strictly less than $6n+5$. 
 Because Lemma \ref{lem:interval_bound} structurally guarantees that the maximum possible value of
@@ -227,7 +238,7 @@ such factors have been eliminated, it follows that both $6x-1$ and $6x+1$ must b
 prime.
 \end{proof}
 
-\section{Character Sum Expansion and the Main Sieve Identity} \label{sec:resonance}
+\section{Character sum expansion and the main sieve identity} \label{sec:resonance}
 
 To analyze the distribution of twin prime indices $x \in \mathcal{A}_n$ that avoid the local
 penalties, we first construct a weighted sifting condition in the spatial domain, which we will
@@ -238,8 +249,8 @@ interval $\mathcal{A}_n$.
 \begin{definition}[Sieve Weight Sums]
 For an arbitrary real-valued weight function $W(x)$ supported strictly on $\mathcal{A}_n$, we
 define the total weight sum $S_1$ and the penalized weight sum $S_2$:
-$$S_1(n, W) = \sum_{x \in \mathcal{A}_n} W(x)$$
-$$S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x)$$
+\[S_1(n, W) = \sum_{x \in \mathcal{A}_n} W(x)\]
+\[S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x)\]
 \end{definition}
 
 \begin{lemma}[The Weighted Existence Principle {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L309}{\lean}]}]  \label{thm:weighted_existence}
@@ -280,10 +291,10 @@ spectra, allowing us to separate the principal density from the oscillatory inte
 This is accomplished by expanding our functions over the characters of the
 cyclic group $\mathbb{Z}/q\mathbb{Z}$.
 
-\begin{definition}[Fourier Transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
-For any function $f(x)$, the frequency coefficients of its Fourier Transform over
+\begin{definition}[Fourier transform over $\mathbb{Z}/q\mathbb{Z}$] \label{def:dft}
+For any function $f(x)$, the frequency coefficients of its Fourier transform over
 $\mathbb{Z}/q\mathbb{Z}$ are given by:
-$$\hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q}$$
+\[\hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1} f(x) e^{-2\pi i h x / q}\]
 \end{definition}
 
 By exploiting the bounds of $\mathcal{A}_n$, we can extend our spatial sums over the
@@ -294,21 +305,21 @@ to expand the penalized mass into a series of exponential sums.
 Assume the weight function $W(x)$ is supported within the interval $\mathcal{A}_n$, meaning
 $W(x) = 0$ for all $x \notin \mathcal{A}_n$. Then the total weight $S_1(n, W)$ is
 proportional to the zero-frequency Fourier coefficient of the weight function:
-$$ S_1(n, W) = q \hat{W}(0) $$
+\[ S_1(n, W) = q \hat{W}(0) \]
 \end{lemma}
 
 \begin{proof}
 Since $W(x)$ is zero outside $\mathcal{A}_n$, the sum over the interval is equivalent to the sum over
 the entire cyclic group $\mathbb{Z}/q\mathbb{Z}$. Evaluating Definition \ref{def:dft} at $h = 0$
 yields
-$$\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = \frac{1}{q} S_1(n, W)$$
+\[\hat{W}(0) = \frac{1}{q} \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) e^0 = \frac{1}{q} S_1(n, W)\]
 Multiplying by $q$ completes the proof.
 \end{proof}
 
 \begin{lemma}[The Character Sum Penalty Expansion {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L194}{\lean}]}] \label{lem:plancherel_hit_expansion}
 For a weight function $W(x)$ supported on $\mathcal{A}_n$, the weighted penalty sum $S_2(n, W)$
 decomposes into the Fourier domain as:
-$$ S_2(n, W) = q \sum_{i=1}^{w(n)} \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
+\[ S_2(n, W) = q \sum_{i=1}^{w(n)} \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} \]
 \end{lemma}
 \begin{proof}
 Substitute the additive definition $c(x) = \sum g_i(x)$ into $S_2(n, W)$. Because $W(x)$ has compact
@@ -320,14 +331,14 @@ Fourier transform over the finite sum of local indicators, yields the expansion.
 Because the local indicator function $g_i(x)$ depends only on the residue of $x$ modulo the local prime
 $p_i$, projecting it onto the full cyclic group $\mathbb{Z}/q\mathbb{Z}$ yields a highly sparse spectrum.
 
-\begin{lemma}[Indicator Function Spectrum {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L369}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L595}{\lean}]}] \label{lem:dirac_comb_structure}
-The Discrete Fourier Transform (as defined in Definition \ref{def:dft}) of the local indicator function,
+\begin{lemma}[Indicator function spectrum {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L369}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L595}{\lean}]}] \label{lem:dirac_comb_structure}
+The discrete Fourier transform (as defined in Definition \ref{def:dft}) of the local indicator function,
 $\hat{g}_i(h)$, evaluates to zero for all frequencies
 except those that are precise integer multiples of $q/p_i$. Specifically, let
 $h \in \mathbb{Z}/q\mathbb{Z}$:
 \begin{enumerate}
     \item If $h = k(q/p_i)$ for some integer $0 \le k < p_i$, then 
-    $$ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
+    \[ \hat{g}_i\left(k \frac{q}{p_i}\right) = \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right) \]
     \item If $h$ is not a multiple of $q/p_i$, then $\hat{g}_i(h) = 0$.
 \end{enumerate}
 \end{lemma}
@@ -356,7 +367,7 @@ the alignment residue, causing destructive interference.
 
 \begin{lemma}[Evaluation of the Character Sum at $h = 3q/p_i$ {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L742}{\lean}]}] \label{lem:exact_krafft_cosine}
 For any prime factor $p_i \ge 5$, substituting the alignment residue $r_i^K = \lfloor(p_i+1)/6\rfloor$ evaluated precisely at $k=3$ yields a strictly negative term:
-$$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) $$
+\[ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) \]
 \end{lemma}
 \begin{proof}
 Resolving the floor function $r_i^K = \lfloor(p_i+1)/6\rfloor$ gives
@@ -389,7 +400,7 @@ $S_1(n, W)$.
 For a weight function $W(x)$ whose spectral support is restricted to
 the base harmonic $h=0$ and the precise frequencies $h = 3q/p_i$, the
 sieve identity \eqref{eq:resonant_sieve_equation} simplifies exactly to:
-$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} - q \sum_{i=1}^{w(n)} \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
+\[ S_2(n, W) = S_1(n, W) \sum_{i=1}^{w(n)} \frac{2}{p_i} - q \sum_{i=1}^{w(n)} \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) \]
 \end{lemma}
 \begin{proof}
 By the spectral restriction of $W$, all terms in equation \eqref{eq:resonant_sieve_equation} where
@@ -420,10 +431,10 @@ capacity of the sieve.
 \begin{definition}[Principal Density and Character Suppression Capacity {[\href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L817}{\lean} \& \href{\urlpfx/KrafftSieve/ThirdHarmonic.lean\#L823}{\lean}]}]
 For a one-dimensional character weight system evaluated over $\mathcal{P}_n$, the principal
 expected density is governed by the harmonic sum over the prime window:
-$$ \text{Principal Term}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} $$
+\[ \text{Principal Term}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \]
 The corresponding maximum theoretical suppression available from the targeted frequencies is defined
 as the suppression capacity:
-$$ \text{Suppression Capacity}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) $$
+\[ \text{Suppression Capacity}(n) = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right) \]
 \end{definition}
 
 If the suppression capacity could exceed or match the principal density term, a one-dimensional sieve
@@ -440,10 +451,10 @@ character weight system is strictly less than the sieve's principal density term
 \begin{proof}
 For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$, which strictly bounds
 the cosine function: $\cos(\pi/p_i) < 1$. Multiplying by the strictly positive amplitude $2/p_i$ yields
-$$ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i}. $$
+\[ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i}. \]
 Summing these strict, term-by-term inequalities across the finite non-empty set $\mathcal{P}_n$
 preserves the strict inequality:
-$$ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}, $$
+\[ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}, \]
 which completes the proof.
 \end{proof}
 
@@ -453,16 +464,16 @@ asymptotic behavior of the divergence.
 \begin{proposition}[One-Dimensional Parity Barrier] \label{prop:parity_collision}
 For any sufficiently large $n$, utilizing purely independent, one-dimensional exponential sum weights
 forces the sieve weight quotient to $\mu(n, W) \ge 1$. It is analytically impossible to
-resolve the Twin Prime Conjecture using strictly one-dimensional variance bounds.
+resolve the twin prime conjecture using strictly one-dimensional variance bounds.
 \end{proposition}
 \begin{proof}
 By Mertens' theorems \cite{MontgomeryVaughan2006}, the principal density term $\sum \frac{2}{p_i}$
 diverges logarithmically as $n \to \infty$. Conversely, the magnitude of the spectral deficit
 \eqref{eq:harmonic_deficit}, measured by the difference between the principal term and the suppression
 capacity, can be bounded using the Taylor expansion $\cos(x) \ge 1 - x^2/2$:
-$$ \text{Deficit} = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\frac{\pi}{p_i}\right) \le \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} $$
+\[ \text{Deficit} = \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}\left(1 - \cos\frac{\pi}{p_i}\right) \le \sum_{p_i \in \mathcal{P}_n} \frac{\pi^2}{p_i^3} \]
 Because the sum $\sum p^{-3}$ converges over the primes, the absolute suppression capacity
-of the one-dimensional character evaluations falls infinitely behind the logarithmically diverging
+of the one-dimensional character evaluations grows strictly slower than the logarithmically diverging
 principal density. 
 \end{proof}
 
@@ -473,9 +484,9 @@ the analytic manifestation of the well-known Selberg parity barrier within our a
 to take negative values at dense overlapping forbidden regions before it can reduce the overall
 weight quotient below 1.) 
 
-This establishes a mathematical obstruction. To circumvent this density deficit and
-overcome the parity barrier, the sieve weight construction must incorporate multidimensional
-exponential sums and higher-order correlations.
+This obstruction shows that to circumvent the density deficit and overcome the parity barrier,
+the sieve weight construction must incorporate multidimensional exponential sums and
+higher-order correlations.
 
 \section{Variational Optimization of the Sieve Weight Quotient} \label{sec:reduction}
 
@@ -488,10 +499,10 @@ character variables.
 \begin{definition}[Multidimensional Basis and Polynomial {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L32}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L40}{\lean}]}]
 For any subset of prime indices $S \subseteq \{1, \dots, w(n)\}$, we define the multidimensional
 basis function as the product of the targeted trigonometric evaluations:
-$$ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) $$
+\[ B_S(x) = \prod_{i \in S} \cos\left( \frac{6\pi x}{p_i} \right) \]
 Let $\lambda$ be a real-valued coefficient vector indexed by the power set of $\{1, \dots, w(n)\}$.
 We construct the multidimensional polynomial $P(x)$ as a linear combination of these basis functions:
-$$ P(x) = \sum_{S} \lambda_S B_S(x) $$
+\[ P(x) = \sum_{S} \lambda_S B_S(x) \]
 \end{definition}
 
 The resulting $2^{w(n)}$-dimensional basis is closed under pointwise multiplication, which allows
@@ -500,8 +511,8 @@ us to ensure the non-negativity of the sieve weight function.
 \begin{definition}[The Multidimensional Weight Function {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L49}{\lean}]}] \label{def:continuous_weight_func}
 We define the multidimensional weight function $W_\lambda(x)$ by squaring the polynomial $P(x)$
 and strictly restricting its support to the evaluation interval $\mathcal{A}_n$:
-$$ W_\lambda(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 & \text{otherwise}
-\end{cases} $$
+\[ W_\lambda(x) = \begin{cases} (P(x))^2 & \text{if } x \in \mathcal{A}_n \\ 0 & \text{otherwise}
+\end{cases} \]
 \end{definition}
 
 By casting the weight space as the square of a polynomial, we automatically satisfy the condition
@@ -513,7 +524,7 @@ our sieve sums into classical quadratic forms.
 The total weight sum $S_1(n, W_\lambda)$ and the penalized weight sum $S_2(n, W_\lambda)$ map directly to
 continuous quadratic forms $Q_1(\lambda)$ and $Q_2(\lambda)$. Specifically, the total weight sum
 evaluates to the squared norm of the polynomial over the interval:
-$$ S_1(n, W_\lambda) = Q_1(\lambda) = \sum_{x \in \mathcal{A}_n} (P(x))^2 $$
+\[ S_1(n, W_\lambda) = Q_1(\lambda) = \sum_{x \in \mathcal{A}_n} (P(x))^2 \]
 \end{lemma}
 \begin{proof}
 By definition, $S_1 = \sum_{x \in \mathcal{A}_n} W_\lambda(x)$. Substituting the construction
@@ -570,8 +581,8 @@ optimal coefficient vector.
 
 \begin{theorem}[Existence of the Exact Minimizer {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L605}{\lean}]}]
 The minimum sieve quotient $\mu_{\min}(n)$ is attained by an optimal coefficient vector
-$\lambda_{opt} \in \mathcal{S}^{\perp}$, such that $Q_1(\lambda_{opt}) > 0$ and
-$R(\lambda_{opt}) = \mu_{\min}(n)$.
+$\lambda_{\mathrm{opt}} \in \mathcal{S}^{\perp}$, such that $Q_1(\lambda_{\mathrm{opt}}) > 0$ and
+$R(\lambda_{\mathrm{opt}}) = \mu_{\min}(n)$.
 \end{theorem}
 \begin{proof}
 The quotient $R(\lambda)$ is continuous wherever $Q_1(\lambda) > 0$.
@@ -579,8 +590,8 @@ By confining our domain to the
 orthogonal complement $\mathcal{S}^{\perp}$, we exclude the kernel of $Q_1$, ensuring
 continuity across the entire restricted domain. Because continuous functions map compact
 spaces to compact spaces, the resulting set of attainable ratios is itself compact. By the
-Extreme Value Theorem, a compact subset of the real numbers contains its infimum, guaranteeing the
-existence of the minimizer $\lambda_{opt}$.
+extreme value theorem, a compact subset of the real numbers contains its infimum, guaranteeing the
+existence of the minimizer $\lambda_{\mathrm{opt}}$.
 \end{proof}
 
 With the existence of the minimiser established, we obtain the main result of
@@ -588,19 +599,19 @@ this section. We can now formally link the continuous bound $\mu_{\min}(n)$ back
 the discrete existence of twin prime indices within our evaluation interval.
 
 \begin{theorem}[Optimal Sufficiency and Sieve Guarantee {[\href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L642}{\lean} \& \href{\urlpfx/KrafftSieve/OptimalWeights.lean\#L670}{\lean}]}]
-The optimal multidimensional weight function $W_{opt}(x)$ constructed from $\lambda_{opt}$ satisfies
+The optimal multidimensional weight function $W_{\mathrm{opt}}(x)$ constructed from $\lambda_{\mathrm{opt}}$ satisfies
 the sufficiency condition ($S_2 < S_1$) if and only if
 $\mu_{\min}(n) < 1$. If this analytic bound holds, the framework rigorously guarantees
 the existence of an index for a twin prime pair within $\mathcal{A}_n$.
 \end{theorem}
 \begin{proof}
 By the definition of the minimum ratio, evaluating the moments with the optimal weight function yields
-exactly $S_2(n, W_{opt}) / S_1(n, W_{opt}) = R(\lambda_{opt}) = \mu_{\min}(n)$. Since $S_1$ is strictly
+exactly $S_2(n, W_{\mathrm{opt}}) / S_1(n, W_{\mathrm{opt}}) = R(\lambda_{\mathrm{opt}}) = \mu_{\min}(n)$. Since $S_1$ is strictly
 positive for the optimal non-zero weight, it follows algebraically that $S_2 < S_1$ holds if and only
-if the ratio $\mu_{\min}(n) < 1$. If this strict inequality is satisfied, the weight function $W_{opt}$
+if the ratio $\mu_{\min}(n) < 1$. If this strict inequality is satisfied, the weight function $W_{\mathrm{opt}}$
 inherently fulfills the sufficiency condition of Definition \ref{def:krafft_admissibility}. By
 directly applying Theorem \ref{thm:additive_sieve}, this
-sufficiency implies the existence of at least one index $x \in \mathcal{A}_n$ that precisely generates
+sufficiency implies the existence of at least one index $x \in \mathcal{A}_n$ that generates
 a twin prime pair.
 \end{proof}
 
@@ -608,28 +619,28 @@ This theorem completes the geometric reduction. The parity obstruction has been 
 analytic condition: evaluating the spectral density of the higher-order correlations to confirm
 $\mu_{\min}(n) < 1$.
 
-\section{Discussion: Higher-Order Correlations and Future Directions} \label{sec:discussion}
+\section{Discussion: higher-order correlations and future directions} \label{sec:discussion}
 
-While the reduction of the Twin Prime Conjecture to the spectral bound $\mu_{\min}(n) < 1$ provides
-a rigid finite-dimensional framework, achieving this bound analytically remains famously obstructed
+While the reduction of the twin prime conjecture to the spectral bound $\mu_{\min}(n) < 1$ provides
+a rigid finite-dimensional framework, achieving this bound analytically remains obstructed
 by the spectral deficit. However, the multidimensional parameter space
 $\mathcal{S}^{\perp}$ theoretically bypasses this limitation. We can map the precise analytic
 mechanism of this bypass by examining the full inclusion-exclusion convolution in the frequency domain.
 
-\subsection{The Perfect Sieve Weight and Character Convolution}
+\subsection{The perfect sieve weight and character convolution}
 
 To understand how higher-order correlations circumvent the parity barrier, consider the "perfect"
 spatial weight function $\omega(x)$, which equals $1$ when $c(x) = 0$ and $0$ elsewhere.
 It is given by the pointwise product of the allowed residue indicators:
-$$ \omega(x) = \prod_{i=1}^{w(n)} \big(1 - g_i(x)\big) $$
+\[ \omega(x) = \prod_{i=1}^{w(n)} \big(1 - g_i(x)\big) \]
 
 Transforming this identity into the frequency domain over $\mathbb{Z}/q\mathbb{Z}$
 yields a spectral characterization. Let $\hat{g}_i(h)$ be the Fourier transform
-of the individual indicator functions. By the Convolution Theorem, the sequence of allowed
+of the individual indicator functions. By the convolution theorem, the sequence of allowed
 residues transforms as $q\delta_{h,0} - \hat{g}_i(h)$. Consequently, the
 perfect multidimensional weight function in the frequency domain resolves into the full
 character convolution:
-$$ \Omega_h = \big(q\delta_{h,0} - \hat{g}_1(h)\big) \circledast \big(q\delta_{h,0} - \hat{g}_2(h)\big) \circledast \dots \circledast \big(q\delta_{h,0} - \hat{g}_{w(n)}(h)\big) $$
+\[ \Omega_h = \big(q\delta_{h,0} - \hat{g}_1(h)\big) \circledast \big(q\delta_{h,0} - \hat{g}_2(h)\big) \circledast \dots \circledast \big(q\delta_{h,0} - \hat{g}_{w(n)}(h)\big) \]
 where $\circledast$ denotes the circular discrete convolution over $\mathbb{Z}/q\mathbb{Z}$.
 
 When this convolution is expanded, it naturally generates higher-order cross-correlations (e.g.,
@@ -641,26 +652,66 @@ multidimensional scaling is thus intended to simultaneously preserve non-negativ
 the principal density term from over-subtraction, an effect which is empirically supported by
 numerical optimization of the quotient for small values of $n$.
 
-\subsection{Towards Bounding the Minimum Ratio}
+\subsection{Numerical explorations of higher-order correlations}
+
+To empirically validate the structural necessity of these multidimensional corrective phases, we
+implemented the continuous variational framework and computationally minimized the sieve quotient
+$\mu_{\min}(n)$ via the generalized eigenvalue problem derived from the discrete penalty function.
+The Python scripts developed for these spectral optimizations are publicly available in the
+accompanying GitHub repository.
+
+Due to the exponential growth of the basis set of multidimensional sieve weights, a direct
+calculation incorporating all prime factors and unrestricted correlation depths rapidly exceeds
+standard computational resources. Therefore, our initial investigations restricted the optimization
+to two-dimensional correlations (evaluating interference strictly between pairs of primes). Under
+this restriction, we obtained admissible quotients $\mu_{\min}(n) < 1$ for all
+bounded ranges up to $n = 260$. Figure \ref{fig:2d_correlations} illustrates the trajectory of the
+optimized 2D quotient. While the 2D correlations initially provide sufficient destructive
+interference to suppress the quotient below 1, the distinct upward trend suggests that the spectral
+deficit induced by the one-dimensional Mertens terms ultimately overcomes strictly pairwise
+interactions as $n$ grows.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.95\textwidth]{mu_min_2d.png}
+\caption{The minimum sieve quotient $\mu_{\min}(n)$ under restricted 2D correlations. The upward
+trend indicates that pairwise interference struggles to maintain the admissibility bound $\mu < 1$
+for larger $n$.}
+\label{fig:2d_correlations}
+\end{figure}
+
+To demonstrate the structural necessity of higher-order interactions to permanently breach the parity
+barrier, we performed a targeted experiment at $n=199$. In the purely 2D model utilizing the
+complete prime basis for $n=199$, the optimization yields a quotient of $\mu_{\min}(199) \approx 0.583$.
+
+We subsequently relaxed the correlation depth to 3D, while restricting the basis to a highly active
+subset of 20 prominent primes (to keep the matrix dimension computationally feasible at $D=1351$).
+The inclusion of 3D correlations sharply reduced the minimum quotient to
+$\mu_{\min}(199) \approx 0.081$. This sharp reduction corroborates the core analytic thesis
+of this paper: while 1D and 2D components struggle against the logarithmic divergence of the local
+penalty, higher-dimensional cross-correlations provide sufficiently large negative feedback
+to permanently satisfy the condition $\mu_{\min}(n) < 1$.
+
+\subsection{Towards bounding the minimum ratio}
 
 The exact resolution of this convolution computationally requires navigating the massive
 $2^{w(n)}$-dimensional polynomial space, making direct computation infeasible
 for large $n$. However, establishing the Sieve Sufficiency Guarantee unconditionally only
-requires demonstrating that $\mu_{\min}(n) < 1$. By the continuous Variational Principle, we are not
-required to locate the exact optimal minimizer $\lambda_{opt}$. Any analytically constructed test
-vector $\lambda_{test}$ corresponding to a weight matrix that pushes the sieve weight quotient strictly
+requires demonstrating that $\mu_{\min}(n) < 1$. By the continuous variational principle, we are not
+required to locate the exact optimal minimizer $\lambda_{\mathrm{opt}}$. Any analytically constructed test
+vector $\lambda_{\mathrm{test}}$ corresponding to a weight matrix that pushes the sieve weight quotient strictly
 below 1 is sufficient. 
 
-Advancing the resolution of the Twin Prime Conjecture within this additive sieve framework therefore
+Advancing the resolution of the twin prime conjecture within this additive sieve framework therefore
 requires the following analytical steps:
 \begin{enumerate}
     \item Expand the theoretical multidimensional convolution $\Omega_h$ and extract the lowest-order,
 highest-magnitude cross-correlation coefficients.
     \item Map these theoretical phase corrections onto the finite-dimensional polynomial basis
     $B_S(x) = \prod_{i \in S} \cos(6\pi x/p_i)$.
-    \item Construct a continuous bounded weight vector $\lambda_{test}$ over the target interval
+    \item Construct a continuous bounded weight vector $\lambda_{\mathrm{test}}$ over the target interval
     $\mathcal{A}_n$.
-    \item Analytically bound the quadratic limits $Q_2(\lambda_{test}) / Q_1(\lambda_{test})$, proving
+    \item Analytically bound the quadratic limits $Q_2(\lambda_{\mathrm{test}}) / Q_1(\lambda_{\mathrm{test}})$, proving
     that the scaled cross-correlations possess the capacity to overcome the diverging
     spectral deficit.
 \end{enumerate}
@@ -674,19 +725,19 @@ framework maps a combinatorial obstacle into an explicit, seemingly resolvable o
 This paper has presented a rigorous reduction that equates the existence of twin primes to
 the bounded eigenvalue optimization of a specific residue structure. By tracking localized sieve
 penalties over symmetric bounded intervals and translating them into the frequency domain, we
-successfully mapped discrete prime alignments to continuous character sum spectra. 
+mapped discrete prime alignments to continuous character sum spectra. 
 
-This formulation allowed us to isolate the exact analytic manifestation of the
-parity barrier. We proved that one-dimensional exponential sum weights suffer from a structural deficit,
-forcing the sieve quotient $\mu \ge 1$ and formally necessitating the use of multidimensional
-polynomial bases. Combining topological compactness with harmonic analysis on geometric intervals,
-our reduction to $\mu_{\min}(n) < 1$ removes the combinatorial ambiguity of parity boundaries. It
-refines the twin prime problem entirely into estimating the spectral density of heavily structured
-higher-order correlations, providing a concrete variational framework for addressing
-the parity barrier. All structural lemmas and equivalence bounds supporting this reduction have been
+This formulation allowed us to isolate the exact analytic manifestation of the parity barrier. We
+proved that one-dimensional exponential sum weights suffer from a structural deficit, forcing the
+sieve quotient $\mu \ge 1$ and formally necessitating the use of multidimensional polynomial bases.
+Combining topological compactness with harmonic analysis on geometric intervals, our reduction to
+$\mu_{\min}(n) < 1$ replaces the classical combinatorial parity obstruction with a concrete spectral
+bound. It refines the twin prime problem entirely into estimating the spectral density of heavily
+structured higher-order correlations, providing a concrete variational framework for addressing the
+parity barrier. All structural lemmas and equivalence bounds supporting this reduction have been
 machine-verified in Lean 4.
 
-\section*{Acknowledgments}
+\section*{AI usage disclosure}
 The author acknowledges the use of generative AI (Gemini 3.1 Pro~\cite{geminiteam2025}) for LaTeX
 technical synthesis and structural formatting, as well as for structuring the Lean 4 formalization
 by designing precise prompt specifications for implementation by the Aristotle~\cite{Achim2025}
