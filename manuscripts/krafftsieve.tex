@@ -65,14 +65,14 @@ alignment (which we term the Krafft alignment), we construct an additive sieve f
 existence of twin primes corresponds to the vanishing of a local penalty function. By evaluating the
 character sums associated with this sieve, we isolate a destructive interference term at the
 evaluation point $h = 3q/p$. We subsequently reduce the Twin Prime Conjecture to a variational
-optimization problem over a finite-dimensional parameter space: establishing that the minimum sieve
-weight quotient satisfies $\mu_{\min}(n) < 1$ guarantees the existence of twin primes in a prescribed
-interval. We further show that independent, one-dimensional sieve weights are strictly insufficient
-to overcome the logarithmic divergence of Mertens' sums, forcing the quotient to $\mu \ge 1$. This
-structural deficit constitutes a spectral manifestation of the Selberg parity barrier, demonstrating
-that any successful sieve must intrinsically rely on higher-order correlations and multidimensional
-exponential sums. All discrete definitions and structural lemmas in this paper have been formally
-verified in Lean 4.
+optimization problem over a finite-dimensional parameter space: the existence of twin primes in a
+prescribed interval is guaranteed, provided the minimum sieve weight quotient satisfies
+$\mu_{\min}(n) < 1$.  We further show that independent, one-dimensional sieve weights are strictly
+insufficient to overcome the logarithmic divergence of Mertens' sums, forcing the quotient to
+$\mu \ge 1$. This structural deficit constitutes a spectral manifestation of the Selberg parity
+barrier, demonstrating that any successful sieve must intrinsically rely on higher-order correlations
+and multidimensional exponential sums. All discrete definitions and structural lemmas in this paper
+have been formally verified in Lean 4.
 \end{abstract}
 
 \keywords{Twin Prime Conjecture, Turán sieve, Krafft geometry, Parity barrier, Discrete Fourier Transform}
@@ -86,7 +86,7 @@ sieve methods from isolating prime pairs. In this paper, we develop a new additi
 framework~\cite{Turan1934} designed to bypass this combinatorial obstruction. Rather than relying on
 traditional multiplicative inclusion-exclusion, we map the search for twin primes to an additive
 penalty function over a highly structured, symmetric interval---utilizing a centered modular
-alignment known as the Krafft alignment~\cite{Krafft1801,Portela2026}. By analyzing the spectral
+alignment (which we term the Krafft alignment)~\cite{Krafft1801,Portela2026}. By analyzing the spectral
 properties of this penalty function, we reduce the twin prime conjecture to a
 finite-dimensional variational optimization problem.
 
