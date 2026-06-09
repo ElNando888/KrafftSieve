@@ -1,26 +1,14 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Text Area: 8in (include Runningheads) x 5in
-%% ws-ijnt.tex   :   05-08-2025
-%% TeX file to use with ws-ijnt.cls written in LaTeX2E.
-%% The content, structure, format and layout of this style file is the
-%% property of World Scientific Publishing Co. Pte. Ltd.
-%% Copyright 2025 by World Scientific Publishing Co.
-%% All rights are reserved.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%
-
-%\documentclass[wsdraft]{ws-ijnt}
-\documentclass{ws-ijnt}
+\documentclass[12pt,reqno,titlepage]{amsart}
+\usepackage[foot]{amsaddr}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{cite}
 \usepackage{xcolor}
+\usepackage{graphicx}
 \usepackage[verbose,hypertexnames=false]{hyperref}
+\usepackage{microtype}
 \hypersetup{colorlinks=false,allbordercolors=blue,pdfborderstyle={/S/U/W 1}}
-% \label, \ref and \cite commands are highly recommended
-
-\def\catchline#1#2#3#4#5{}
-\def\wsdraftnote{}
-
-%\graphicspath{ {./images/} }
 
 \def\modd#1 #2{#1\ \text{\rm (mod}\ #2\text{\rm )}}
 
@@ -33,29 +21,27 @@
 
 \newcommand{\urlpfx}{https://github.com/ElNando888/KrafftSieve/blob/v1.3}
 
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+\setlength{\textwidth}{\paperwidth}
+\addtolength{\textwidth}{-2.5in}
+\addtolength{\textheight}{0.5in}
+\calclayout
+
+
 \begin{document}
 
-\markboth{Portela}{A Weighted Turán Sieve for Twin Primes}
+\title[A Weighted Turán Sieve for Twin Primes]{A Weighted Turán Sieve for Twin Primes via the Krafft Geometry}
 
-%%%%%%%%%%%%%%%%%%%%% Publisher's Area please ignore %%%%%%%%%%%%%%
-\catchline{}{}{}{}{}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\author[F. Portela]{Fernando Portela$^1$}
 
-\title{A Weighted Turán Sieve for Twin Primes\\via the Krafft Geometry}
-
-\author{Fernando Portela}
-
-\address{Research Scholar, RIIS 2.0\\
-\email{fernando.portela@ronininstitute.org} }
-
-\maketitle
-
-\begin{history}
-\received{(Day Month Year)}
-\revised{(Day Month Year)}
-\accepted{(Day Month Year)}
-\published{(Day Month Year)}
-\end{history}
+\address{$^1$Ronin Institute for Independent Scholarship 2.0, USA}
+\email{fernando.portela@ronininstitute.org}
 
 \begin{abstract}
 The Twin Prime Conjecture is notoriously obstructed by the parity barrier, which prevents classical
@@ -67,7 +53,7 @@ character sums associated with this sieve, we isolate a destructive interference
 evaluation point $h = 3q/p$. We subsequently reduce the Twin Prime Conjecture to a variational
 optimization problem over a finite-dimensional parameter space: the existence of twin primes in a
 prescribed interval is guaranteed, provided the minimum sieve weight quotient satisfies
-$\mu_{\min}(n) < 1$.  We further show that independent, one-dimensional sieve weights are strictly
+$\mu_{\min}(n) < 1$. We further show that independent, one-dimensional sieve weights are strictly
 insufficient to overcome the logarithmic divergence of Mertens' sums, forcing the quotient to
 $\mu \ge 1$. This structural deficit constitutes a spectral manifestation of the Selberg parity
 barrier, demonstrating that any successful sieve must intrinsically rely on higher-order correlations
@@ -77,7 +63,9 @@ have been formally verified in Lean 4.
 
 \keywords{Twin Prime Conjecture, Turán sieve, Krafft geometry, Parity barrier, Discrete Fourier Transform}
 
-\ccode{Mathematics Subject Classification 2020: 11N05, 11N35, 11N36}
+\subjclass[2020]{Primary 11N05; Secondary 11N35, 11N36}
+
+\maketitle
 
 \section{Introduction} \label{introduction}
 
@@ -129,7 +117,7 @@ validate the structural necessity of multidimensional correlations.
 
 Throughout the text, \lean\ symbols are used as direct links to formalized code in the GitHub
 repository \href{https://github.com/ElNando888/KrafftSieve/tree/v1.4}
-{\texttt{https://github.com/ElNando888/KrafftSieve/tree/v1.4}}, which contains the machine-checked
+{\texttt{github.com/ElNando888/KrafftSieve/tree/v1.4}}, which contains the machine-checked
 verifications for all definitions, statements, and proofs in this paper.\footnote{The only axioms
 used are \texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, which can be checked
 by the \texttt{\#print axioms} command.} We use Lean~\cite{MouraUllrich2021} version 4.28.0 together
@@ -744,12 +732,7 @@ by designing precise prompt specifications for implementation by the Aristotle~\
 automated theorem prover. The core mathematical logic, proofs, and final validation were performed
 by the author.
 
-\section*{ORCID}
-
-\noindent Fernando Portela - \url{https://orcid.org/0000-0003-0238-9251}
-
-
-\bibliographystyle{ws-ijnt}
+\bibliographystyle{amsplain}
 \bibliography{krafft}
 
 \end{document} 
