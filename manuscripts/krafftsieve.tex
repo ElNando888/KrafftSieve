@@ -1,16 +1,24 @@
-\documentclass[12pt,reqno,notitlepage]{amsart}
-\usepackage[foot]{amsaddr}
+\documentclass[reqno,notitlepage]{amsart}
+\usepackage{amsaddr}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{cite}
 \usepackage{xcolor}
 \usepackage{graphicx}
-\usepackage[verbose,hypertexnames=false]{hyperref}
 \usepackage{microtype}
+\usepackage[verbose,hypertexnames=false]{hyperref}
 \hypersetup{colorlinks=false,allbordercolors=blue,pdfborderstyle={/S/U/W 1}}
+\usepackage[pagewise]{lineno}\linenumbers
 
 \def\modd#1 #2{#1\ \text{\rm (mod}\ #2\text{\rm )}}
+
+\newcommand{\envelope}{\ensuremath{%
+  \mathchoice{\includegraphics[height=2ex]{envelope}}
+    {\includegraphics[height=2ex]{envelope}}
+    {\includegraphics[height=1.5ex]{envelope}}
+    {\includegraphics[height=1ex]{envelope}}
+}}
 
 \newcommand{\lean}{\ensuremath{%
   \mathchoice{\includegraphics[height=2ex]{lean-file-icon-dark}}
@@ -28,19 +36,13 @@
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{remark}[theorem]{Remark}
 
-\setlength{\textwidth}{\paperwidth}
-\addtolength{\textwidth}{-2.5in}
-\addtolength{\textheight}{0.4in}
-\calclayout
-
 \begin{document}
 
 \title[A Weighted Turán Sieve for Twin Primes]{A Weighted Turán Sieve for Twin Primes via the Krafft Geometry}
 
-\author[F. Portela]{Fernando Portela$^1$}
+\author[F. Portela]{Fernando Portela \href{mailto:fernando.portela@ronininstitute.org}{\envelope}}
+\address{Ronin Institute for Independent Scholarship 2.0, USA}
 
-\address{$^1$Ronin Institute for Independent Scholarship 2.0, USA}
-\email{fernando.portela@ronininstitute.org}
 
 \begin{abstract}
 The Twin Prime Conjecture is notoriously obstructed by the parity barrier, which prevents classical
@@ -257,7 +259,7 @@ strictly positive weight.
 \begin{definition}[Sieve Sufficiency Condition] \label{def:krafft_admissibility}
 We say the sieve sufficiency condition holds for a given $n$ if there exists a weight function
 $W: \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$ that is non-negative everywhere, supported on
-$\mathcal{A}_n$, and satisfies the strict inequality $S_2(n, W) < S_1(n, W)$.
+$\mathcal{A}_n$, and satisfies the strict inequality \[ S_2(n, W) < S_1(n, W) \]
 \end{definition}
 
 \begin{theorem}[Sieve Sufficiency Guarantee {[\href{\urlpfx/KrafftSieve/SelbergWeights.lean\#L343}{\lean}]}] \label{thm:krafft_sieve_guarantee}
@@ -333,7 +335,7 @@ $h \in \mathbb{Z}/q\mathbb{Z}$:
 By writing $x = y + m p_i$ with $0 \le y < p_i$ and $0 \le m < q/p_i$, we can factor the Fourier transform as
 \begin{align*}
 \hat{g}_i(h) &= \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x/q} \\
-             &= \frac{1}{q} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i h y/q} \sum_{m=0}^{q/p_i - 1} e^{-2\pi i h m p_i / q}.
+             &= \frac{1}{q} \sum_{y=0}^{p_i-1} g_i(y) e^{-2\pi i h y/q} \sum_{m=0}^{q/p_i - 1} e^{-2\pi i h m p_i / q}
 \end{align*}
 The inner sum over $m$ vanishes identically unless $h$ is a multiple of $q/p_i$. When $h = k(q/p_i)$,
 the sum over $m$ evaluates to $q/p_i$, yielding
@@ -343,7 +345,7 @@ the sum over $m$ evaluates to $q/p_i$, yielding
 Since $g_i(y) = 1$ only at the two residues $y \equiv \pm r^K_i \pmod{p_i}$, we obtain
 \begin{align*}
 \hat{g}_i\left(k \frac{q}{p_i}\right) &= \frac{1}{p_i} \left( e^{-2\pi i k r^K_i / p_i} + e^{2\pi i k r^K_i / p_i} \right) \\
-                                      &= \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right).
+                                      &= \frac{2}{p_i} \cos\left( \frac{2\pi k r^K_i}{p_i} \right)
 \end{align*}
 \end{proof}
 
@@ -359,7 +361,8 @@ For any prime factor $p_i \ge 5$, substituting the alignment residue $r_i^K = \l
 \begin{proof}
 Resolving the floor function $r_i^K = \lfloor(p_i+1)/6\rfloor$ gives
 $r_i^K = \frac{p_i \pm 1}{6}$, uniquely determined by the parity of $p_i \pmod{6}$. Evaluating the
-phase angle generates $\frac{6\pi}{p_i} \left(\frac{p_i \pm 1}{6}\right) = \pi \pm \frac{\pi}{p_i}$.
+phase angle generates
+\[ \frac{6\pi}{p_i} \left(\frac{p_i \pm 1}{6}\right) = \pi \pm \frac{\pi}{p_i} \]
 Applying the standard trigonometric identity $\cos(\pi \pm \theta) = -\cos(\theta)$ directly yields
 the result.
 \end{proof}
@@ -438,10 +441,10 @@ character weight system is strictly less than the sieve's principal density term
 \begin{proof}
 For any prime $p_i \ge 5$, the phase angle satisfies $0 < \pi/p_i < \pi/2$, which strictly bounds
 the cosine function: $\cos(\pi/p_i) < 1$. Multiplying by the strictly positive amplitude $2/p_i$ yields
-\[ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i}. \]
+\[ \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \frac{2}{p_i} \]
 Summing these strict, term-by-term inequalities across the finite non-empty set $\mathcal{P}_n$
 preserves the strict inequality:
-\[ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i}, \]
+\[ \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \cos\left(\frac{\pi}{p_i}\right) < \sum_{p_i \in \mathcal{P}_n} \frac{2}{p_i} \]
 which completes the proof.
 \end{proof}
 
@@ -519,7 +522,7 @@ $W_\lambda(x) = (P(x))^2$, we expand the square and exchange the order of summat
 \begin{align*}
 S_1(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} \left( \sum_S \lambda_S B_S(x) \right)^2 \\
                   &= \sum_{x \in \mathcal{A}_n} \sum_{S, T} \lambda_S B_S(x) B_T(x) \lambda_T \\
-                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x) \right) \lambda_T.
+                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x) \right) \lambda_T
 \end{align*}
 Defining the matrix elements $M_1(S,T) = \sum_{x \in \mathcal{A}_n} B_S(x)B_T(x)$ yields the
 quadratic form $Q_1(\lambda) = \sum_{S, T} \lambda_S M_1(S,T) \lambda_T$. 
@@ -528,7 +531,7 @@ The derivation for $S_2(n, W_\lambda)$ proceeds identically by incorporating the
 function $c(x)$ into the inner sum:
 \begin{align*}
 S_2(n, W_\lambda) &= \sum_{x \in \mathcal{A}_n} c(x) \left( \sum_S \lambda_S B_S(x) \right)^2 \\
-                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} c(x) B_S(x) B_T(x) \right) \lambda_T,
+                  &= \sum_{S, T} \lambda_S \left( \sum_{x \in \mathcal{A}_n} c(x) B_S(x) B_T(x) \right) \lambda_T
 \end{align*}
 yielding the quadratic form $Q_2(\lambda)$.
 \end{proof}
