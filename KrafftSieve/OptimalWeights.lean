@@ -302,28 +302,28 @@ lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : q1 n lambda ≥ 0 :=
 /--
 Define the standard dot product on the space of coefficients.
 -/
-def dot_product (n : ℕ) (u v : Idx n → ℝ) : ℝ :=
+def dotProduct (n : ℕ) (u v : Idx n → ℝ) : ℝ :=
   ∑ S : Idx n, u S * v S
 
 /--
 The orthogonal complement of the kernel of $q1$ with respect to the standard dot product.
 -/
 def kernelQ1Perp (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
-  { carrier := { v | ∀ u ∈ kernelQ1 n, dot_product n u v = 0 },
+  { carrier := { v | ∀ u ∈ kernelQ1 n, dotProduct n u v = 0 },
     add_mem' := by
       -- By definition of dot product, we have:
       have h_dot_product_linear : ∀ {a b : Idx n → ℝ}, ∀ u : Idx n → ℝ,
-        dot_product n u (a + b) = dot_product n u a + dot_product n u b := by
+        dotProduct n u (a + b) = dotProduct n u a + dotProduct n u b := by
         -- By definition of dot product, we can expand the left-hand side as the sum of the
         -- products of corresponding components.
-        simp [dot_product, Finset.sum_add_distrib, mul_add]
+        simp [dotProduct, Finset.sum_add_distrib, mul_add]
       aesop,
     zero_mem' := by
       -- The dot product of any vector with the zero vector is zero.
-      simp [dot_product],
+      simp [dotProduct],
     smul_mem' := by
-      -- By definition of dot product, we have dot_product n u (c • x) = c * dot_product n u x.
-      simp only [dot_product, Set.mem_setOf_eq, Pi.smul_apply, smul_eq_mul]
+      -- By definition of dot product, we have dotProduct n u (c • x) = c * dotProduct n u x.
+      simp only [dotProduct, Set.mem_setOf_eq, Pi.smul_apply, smul_eq_mul]
       exact fun c x hx u hu => by
         simpa [ mul_left_comm, Finset.mul_sum _ _ _ ] using
           mul_eq_zero_of_right c ( hx u hu )
@@ -333,7 +333,7 @@ def kernelQ1Perp (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
 The unit sphere in the orthogonal complement of the kernel of $q1$.
 -/
 def spherePerp (n : ℕ) : Set (Idx n → ℝ) :=
-  { lambda | lambda ∈ kernelQ1Perp n ∧ dot_product n lambda lambda = 1 }
+  { lambda | lambda ∈ kernelQ1Perp n ∧ dotProduct n lambda lambda = 1 }
 
 /--
 Lemma: $q1$ is strictly positive on the unit sphere of the orthogonal complement.
@@ -347,7 +347,7 @@ lemma Q_1_pos_on_sphere_perp (n : ℕ) (lambda : Idx n → ℝ) (h : lambda ∈ 
   have h_lambda_kernel : lambda ∈ kernelQ1 n :=
     le_antisymm h_lambda_norm ( Q_1_nonneg n lambda )
   have := h_lambda_perp ( lambda ) h_lambda_kernel
-  simp_all +decide [ dot_product ]
+  simp_all +decide [ dotProduct ]
 
 /--
 Lemma: $q1$ is not identically zero.
@@ -413,7 +413,7 @@ lemma Ratio_scale (n : ℕ) (lambda : Idx n → ℝ) (c : ℝ) (hc : c ≠ 0) :
 Lemma: For any vector $v$, the square of any component is bounded by the dot product.
 -/
 lemma sq_le_dot_product (n : ℕ) (v : Idx n → ℝ) (i : Idx n) :
-    (v i)^2 ≤ dot_product n v v :=
+    (v i)^2 ≤ dotProduct n v v :=
   Finset.single_le_sum ( fun a _ =>
     mul_self_nonneg ( v a ) ) ( Finset.mem_univ i ) |> le_trans ( by nlinarith )
 
@@ -497,7 +497,7 @@ lemma sphere_perp_compact (n : ℕ) : IsCompact (spherePerp n) := by
       exact (kernelQ1Perp n).complete_of_finiteDimensional.isClosed
     · -- sphere is closed
       apply isClosed_eq
-      · -- dot_product is continuous
+      · -- dotProduct is continuous
         apply continuous_finsetSum
         intro i hi
         apply Continuous.mul
@@ -508,7 +508,7 @@ lemma sphere_perp_compact (n : ℕ) : IsCompact (spherePerp n) := by
     rw [isBounded_iff_forall_norm_le]
     use 1
     intro lambda hlambda
-    have h_dot : dot_product n lambda lambda = 1 := hlambda.2
+    have h_dot : dotProduct n lambda lambda = 1 := hlambda.2
     apply pi_norm_le_iff_of_nonneg (by norm_num) |>.2
     intro i
     rw [Real.norm_eq_abs]
@@ -585,8 +585,8 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : q1 n
     decomposition n lambda
   -- Since $hu$ is in the orthogonal complement of the kernel of $q1$, we can scale it to
   -- have unit length.
-  obtain ⟨c, hc⟩ : ∃ c : ℝ, c ≠ 0 ∧ dot_product n (c • hu) (c • hu) = 1 := by
-    by_cases h : dot_product n hu hu = 0 <;> simp_all +decide only [gt_iff_lt, dot_product,
+  obtain ⟨c, hc⟩ : ∃ c : ℝ, c ≠ 0 ∧ dotProduct n (c • hu) (c • hu) = 1 := by
+    by_cases h : dotProduct n hu hu = 0 <;> simp_all +decide only [gt_iff_lt, dotProduct,
       ne_eq, Pi.smul_apply, smul_eq_mul]
     · simp_all +decide only [Finset.mem_univ, mul_self_nonneg, imp_self, implies_true,
       Finset.sum_eq_zero_iff_of_nonneg, mul_eq_zero, or_self, forall_const, mul_zero,
@@ -604,9 +604,9 @@ lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : q1 n
                 sq_nonneg _ ) <| Ne.symm <| by simpa only [ sq ] using h ] ⟩
   refine ⟨ c • hu, ⟨ ?_, hc.2 ⟩, ?_ ⟩
   · intro w hw
-    simp_all +decide only [gt_iff_lt, ne_eq, dot_product, Pi.smul_apply, smul_eq_mul]
+    simp_all +decide only [gt_iff_lt, ne_eq, dotProduct, Pi.smul_apply, smul_eq_mul]
     convert hv w hw |> fun h => congr_arg ( · * c ) h using 1 <;> ring_nf
-    simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dot_product ]
+    simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dotProduct ]
   · rw [ Ratio_add_kernel n u hu v, Ratio_scale n hu c hc.1 ]
 
 /--
