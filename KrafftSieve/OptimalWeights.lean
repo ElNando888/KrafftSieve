@@ -18,12 +18,15 @@ import KrafftSieve.SelbergWeights
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
+
 /-!
 # Optimal Weights
 
 This module constructs the truly multidimensional optimal weights $\lambda$ for the Krafft Sieve
 and explores the properties of the resulting polynomial $P(x)$ and weight $W_\lambda(x)$.
 -/
+
+namespace KrafftSieve
 
 open scoped BigOperators
 open scoped Real
@@ -132,8 +135,10 @@ lemma S_1_eq_Q_1 (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
   unfold Q_1 S_1 W_truly_multi P_multi; norm_cast
   simp only [ZMod.val_natCast, Finset.powerset_univ]
   rw [ Finset.sum_congr rfl fun x hx => if_pos ?_ ]
-  · simp +decide only [sq, Finset.mul_sum _ _ _, mul_comm, mul_left_comm, Matrix_1]
-    rw [ Finset.sum_comm, Finset.sum_congr rfl fun _ _ => Finset.sum_comm ]
+  · simp only [sq, Finset.sum_mul, Finset.mul_sum, Matrix_1]
+    rw [Finset.sum_comm, Finset.sum_congr rfl fun _ _ => Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+      Finset.sum_congr rfl fun _ _ => by ring
   · unfold A_n at *
     rcases n with ( _ | _ | n ) <;> norm_num at *
     · exact le_trans ( Nat.mod_le _ _ ) hx
@@ -231,20 +236,37 @@ def kernel_Q1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
       have h_sum : Q_1 n (a + b) = Q_1 n a + Q_1 n b + 2 * (∑ S ∈ Finset.univ.powerset,
           ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T) := by
         unfold Q_1
-        simp +decide [ Finset.sum_add_distrib, mul_add, mul_comm, mul_left_comm ]; ring_nf
-        norm_num [ mul_two, add_assoc, Finset.sum_add_distrib ]
-        rw [ Finset.sum_comm ]
-        exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by
-          rw [ show Matrix_1 n _ _ = Matrix_1 n _ _ from by unfold Matrix_1; ac_rfl ]
-      have h_sum : Q_1 n (a - b) = Q_1 n a + Q_1 n b - 2 * (∑ S ∈ Finset.univ.powerset,
+        change ∑ S ∈ _, ∑ T ∈ _, (a S + b S) * Matrix_1 n S T * (a T + b T) = _
+        simp only [add_mul, mul_add, Finset.sum_add_distrib]
+        have h_comm : ∑ x ∈ Finset.univ.powerset, ∑ x_1 ∈ Finset.univ.powerset,
+            b x * Matrix_1 n x x_1 * a x_1 =
+            ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T := by
+          rw [Finset.sum_comm]
+          exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by
+            unfold Matrix_1
+            have h_inner : ∑ x ∈ A_n n, basis_cos n S ↑x * basis_cos n T ↑x =
+                ∑ x ∈ A_n n, basis_cos n T ↑x * basis_cos n S ↑x := by
+              exact Finset.sum_congr rfl fun _ _ => by ring
+            rw [h_inner]
+            ring
+        linarith
+      have h_sum2 : Q_1 n (a - b) = Q_1 n a + Q_1 n b - 2 * (∑ S ∈ Finset.univ.powerset,
           ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T) := by
-        unfold Q_1; simp +decide [ sub_mul, mul_sub ]; ring_nf
-        rw [ show ( ∑ x : Idx n, ∑ x_1 : Idx n,
-          b x * Matrix_1 n x x_1 * a x_1 ) = ∑ x : Idx n, ∑ x_1 : Idx n,
-          a x * Matrix_1 n x x_1 * b x_1 from ?_ ]
-        · ring
-        rw [ Finset.sum_comm ]; congr; ext; congr; ext; ring_nf
-        unfold Matrix_1; simp +decide [ mul_assoc, mul_comm ]
+        unfold Q_1
+        change ∑ S ∈ _, ∑ T ∈ _, (a S - b S) * Matrix_1 n S T * (a T - b T) = _
+        simp only [sub_mul, mul_sub, Finset.sum_sub_distrib]
+        have h_comm : ∑ x ∈ Finset.univ.powerset, ∑ x_1 ∈ Finset.univ.powerset,
+            b x * Matrix_1 n x x_1 * a x_1 =
+            ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, a S * Matrix_1 n S T * b T := by
+          rw [Finset.sum_comm]
+          exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by
+            unfold Matrix_1
+            have h_inner : ∑ x ∈ A_n n, basis_cos n S ↑x * basis_cos n T ↑x =
+                ∑ x ∈ A_n n, basis_cos n T ↑x * basis_cos n S ↑x := by
+              exact Finset.sum_congr rfl fun _ _ => by ring
+            rw [h_inner]
+            ring
+        linarith
       have h_nonneg : ∀ (lambda : Idx n → ℝ), Q_1 n lambda ≥ 0 := fun lambda =>
         (Q_1_sum_sq n lambda).symm ▸ Finset.sum_nonneg fun _ _ => sq_nonneg _
       grind,
@@ -358,9 +380,33 @@ Lemma: The Rayleigh quotient is scale-invariant.
 -/
 lemma Ratio_scale (n : ℕ) (lambda : Idx n → ℝ) (c : ℝ) (hc : c ≠ 0) :
     Ratio n (c • lambda) = Ratio n lambda := by
-  unfold Ratio Q_1 Q_2
-  simp_all +decide [ mul_comm, mul_left_comm ]
-  simp_all +decide [ ← Finset.mul_sum _ _ _, div_mul_eq_div_div ]
+  have h_pull_1 : Q_1 n (c • lambda) = c^2 * Q_1 n lambda := by
+    unfold Q_1
+    change ∑ S ∈ _, ∑ T ∈ _, (c * lambda S) * Matrix_1 n S T * (c * lambda T) = _
+    have h_pull : ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset,
+        (c * lambda S) * Matrix_1 n S T * (c * lambda T) =
+        ∑ S ∈ Finset.univ.powerset, c^2 * ∑ T ∈ Finset.univ.powerset,
+        lambda S * Matrix_1 n S T * lambda T := by
+      exact Finset.sum_congr rfl fun S _ => by
+        rw [Finset.mul_sum]; congr 1; ext T; ring
+    rw [h_pull, ← Finset.mul_sum]
+  have h_pull_2 : Q_2 n (c • lambda) = c^2 * Q_2 n lambda := by
+    unfold Q_2
+    change ∑ S ∈ _, ∑ T ∈ _, (c * lambda S) * Matrix_2 n S T * (c * lambda T) = _
+    have h_pull : ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset,
+        (c * lambda S) * Matrix_2 n S T * (c * lambda T) =
+        ∑ S ∈ Finset.univ.powerset, c^2 * ∑ T ∈ Finset.univ.powerset,
+        lambda S * Matrix_2 n S T * lambda T := by
+      exact Finset.sum_congr rfl fun S _ => by
+        rw [Finset.mul_sum]; congr 1; ext T; ring
+    rw [h_pull, ← Finset.mul_sum]
+  unfold Ratio
+  rw [h_pull_1, h_pull_2]
+  have hc2 : c^2 ≠ 0 := by positivity
+  by_cases hQ : Q_1 n lambda = 0
+  · simp only [hQ, mul_zero, ite_true]
+  · simp only [hQ, hc2, ite_false, mul_eq_zero, or_false]
+    rw [mul_div_mul_left _ _ hc2]
 
 /--
 Lemma: For any vector $v$, the square of any component is bounded by the dot product.
@@ -681,3 +727,5 @@ theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : mu_min n < 1) :
   apply krafft_sieve_guarantee n hn ⟨ W, hW₁, hW₂, hW₃ ⟩
 
 end
+
+end KrafftSieve

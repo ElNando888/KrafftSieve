@@ -53,6 +53,7 @@ import Mathlib.Tactic.TypeStar
 import Mathlib.Tactic.Use
 import Mathlib.Tactic.Variable
 
+
 /-!
 # Core Definitions for the Krafft Sieve
 
@@ -63,6 +64,8 @@ This module establishes the foundational definitions for the sieve:
 - $g_i, c$: Local and global hit counters.
 - $S_1, S_2$: Weighted sums over the interval.
 -/
+
+namespace KrafftSieve
 
 open scoped BigOperators Real Nat Pointwise
 
@@ -130,3 +133,7 @@ Define the weighted hit count $S_2(n, W)$:
 $$ S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
 noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
   ∑ x ∈ A_n n, W (x : ZMod (q n)) * c n (x : ZMod (q n))
+
+end
+
+end KrafftSieve

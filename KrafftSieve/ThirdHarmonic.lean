@@ -16,6 +16,7 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
+
 /-!
 # Third Harmonic Extraction
 
@@ -23,6 +24,8 @@ This module focuses on the Fourier domain analysis of the weighted sieve sums,
 specifically expanding the hit counts into frequencies and isolating the main terms
 and the key third harmonic contribution.
 -/
+
+namespace KrafftSieve
 
 open scoped BigOperators
 open scoped Real
@@ -852,3 +855,5 @@ lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
   unfold mainTerm H_spec; norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ]
 
 end
+
+end KrafftSieve

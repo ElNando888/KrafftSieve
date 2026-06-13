@@ -16,12 +16,15 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Defs
 
+
 /-!
 # Basic definitions and properties for the Krafft Sieve
 
 This module provides basic bounds and properties for the primes and the
 primorial $q(n)$ used throughout the Krafft Sieve formalization.
 -/
+
+namespace KrafftSieve
 
 open scoped BigOperators Real Nat Pointwise
 
@@ -177,3 +180,5 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
       exact h_exp_growth n hn_large.le
 
 end
+
+end KrafftSieve
