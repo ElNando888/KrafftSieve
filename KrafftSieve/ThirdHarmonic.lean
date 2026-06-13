@@ -86,6 +86,9 @@ lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → �
   · assumption
   · assumption
 
+private lemma natCast_re_helper (x : ℕ) : (x : ℂ).re = x := rfl
+private lemma natCast_im_helper (x : ℕ) : (x : ℂ).im = 0 := rfl
+
 /-
 Plancherel's Theorem for the custom Fourier transform definition:
 $$ \sum_{x} f(x) \overline{g(x)} = q \sum_{h} \hat{f}(h) \overline{\hat{g}(h)} $$
@@ -174,11 +177,11 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
   left; ring_nf
   constructor <;> congr! 1
   · rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ]; ring_nf
-    erw [ Complex.ofReal_re, Complex.ofReal_im ]; ring_nf
+    simp only [ natCast_re_helper, natCast_im_helper ]; ring_nf
   · rw [ ZMod.cast_eq_val, ZMod.cast_eq_val ]; ring_nf
     norm_cast; ring_nf
 
-/-
+/--
 The Plancherel Hit Expansion
 Using the compact support of $W(x)$ and admitting Plancherel's theorem for the inner product
 of $W(x)$ and $g_i(x)$, expand the weighted hit count $S_2(n)$ into the Fourier domain:
