@@ -32,13 +32,11 @@ import Mathlib.Tactic.Cases
 import Mathlib.Tactic.Check
 import Mathlib.Tactic.Common
 import Mathlib.Tactic.Constructor
-import Mathlib.Tactic.ErwQuestion
 import Mathlib.Tactic.Eval
 import Mathlib.Tactic.Ext
 import Mathlib.Tactic.Generalize
 import Mathlib.Tactic.HaveI
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Linter
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.NormNum.LegendreSymbol
 import Mathlib.Tactic.NormNum.Prime
