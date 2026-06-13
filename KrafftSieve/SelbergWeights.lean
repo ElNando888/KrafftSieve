@@ -39,9 +39,8 @@ Define the global set of surviving residues $A \subseteq \mathbb{Z}/q\mathbb{Z}$
 $x \in A$ if and only if $x \pmod{p_i} \in A_i$ for all $1 \le i \le w$.
 -/
 def A (n : ℕ) (r : Fin (w n) → ℕ) : Finset (ZMod (q n)) :=
-  haveI : NeZero (q n) := ⟨by
-    exact Finset.prod_ne_zero_iff.mpr fun p hp =>
-      Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
+  haveI : NeZero (q n) := ⟨ Finset.prod_ne_zero_iff.mpr fun _ hp =>
+    Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   Finset.univ.filter (fun x => ∀ i : Fin (w n), (x.cast : ZMod (p n i)) ∈ A_i n r i)
 
 /--
@@ -57,10 +56,9 @@ As defined previously, an integer x survives the sieve (i.e., f(x) = 1) if and o
 x is not congruent to ±r^K_i mod p_i for all 1 <= i <= w.
 -/
 theorem survives_iff (n : ℕ) (x : ZMod (q n)) :
-    f n (r_K n) x = 1 ↔
-      ∀ i : Fin (w n),
-        (x.cast : ZMod (p n i)) ≠ r_K n i ∧ (x.cast : ZMod (p n i)) ≠ -r_K n i := by
-      unfold f A A_i; simp +decide [Finset.mem_filter]
+    f n (r_K n) x = 1 ↔ ∀ i : Fin (w n),
+      (x.cast : ZMod (p n i)) ≠ r_K n i ∧ (x.cast : ZMod (p n i)) ≠ -r_K n i := by
+  unfold f A A_i; simp +decide [Finset.mem_filter]
 
 /-
 Krafft Algebraic Equivalence: For any prime p >= 5
@@ -70,29 +68,29 @@ p | (6x-1) or p | (6x+1).
 lemma krafft_algebraic_equivalence (p : ℕ) (hp : p.Prime) (h_ge_5 : p ≥ 5) (x : ℤ) :
     let r := (p + 1) / 6
     (x : ZMod p) = r ∨ (x : ZMod p) = -r ↔ (p : ℤ) ∣ (6 * x - 1) ∨ (p : ℤ) ∣ (6 * x + 1) := by
-      simp_all +decide only [ge_iff_le, ← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_sub,
-        Int.cast_mul, Int.cast_ofNat, Int.cast_one, Int.cast_add]
-      haveI := Fact.mk hp; norm_num [eq_comm, sub_eq_zero, add_eq_zero_iff_eq_neg]
-      have h_6r : (6 * ((p + 1) / 6 : ℕ) : ZMod p) = 1 ∨ (6 * ((p + 1) / 6 : ℕ) : ZMod p) = -1 := by
-        have h_mod_equiv : (6 * ((p + 1) / 6 : ℕ) : ℕ) ≡ 1 [ZMOD p] ∨
-            (6 * ((p + 1) / 6 : ℕ) : ℕ) ≡ -1 [ZMOD p] := by
-          have h_mod : p % 6 = 1 ∨ p % 6 = 5 := by
-            by_contra h_contra
-            have h_prime := Nat.Prime.eq_two_or_odd hp
-            have h_div_3 : p % 3 = 0 := by omega
-            have := Nat.dvd_of_mod_eq_zero h_div_3
-            rw [hp.dvd_iff_eq] at this <;> linarith
-          cases h_mod <;> simp_all +decide only [Int.ModEq, Nat.cast_mul, Nat.cast_ofNat,
-            Int.natCast_ediv, Nat.cast_add, Nat.cast_one, Int.reduceNeg]
-          · exact Or.inr (Int.modEq_iff_dvd.mpr ⟨-1, by
-              linarith [Nat.mod_add_div (p + 1) 6,
-                        show (p + 1) % 6 = 2 from by norm_num [*, Nat.add_mod]]⟩)
-          · exact Or.inl (Int.modEq_iff_dvd.mpr ⟨-1, by
-              linarith [Nat.mod_add_div (p + 1) 6,
-                        show (p + 1) % 6 = 0 from by norm_num [*, Nat.add_mod]]⟩)
-        simp_all +decide [← ZMod.intCast_eq_intCast_iff]
-        norm_cast at *; aesop
-      grind
+  simp_all +decide only [ge_iff_le, ← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_sub,
+    Int.cast_mul, Int.cast_ofNat, Int.cast_one, Int.cast_add]
+  haveI := Fact.mk hp; norm_num [eq_comm, sub_eq_zero, add_eq_zero_iff_eq_neg]
+  have h_6r : (6 * ((p + 1) / 6 : ℕ) : ZMod p) = 1 ∨ (6 * ((p + 1) / 6 : ℕ) : ZMod p) = -1 := by
+    have h_mod_equiv : (6 * ((p + 1) / 6 : ℕ) : ℕ) ≡ 1 [ZMOD p] ∨
+        (6 * ((p + 1) / 6 : ℕ) : ℕ) ≡ -1 [ZMOD p] := by
+      have h_mod : p % 6 = 1 ∨ p % 6 = 5 := by
+        by_contra h_contra
+        have h_prime := Nat.Prime.eq_two_or_odd hp
+        have h_div_3 : p % 3 = 0 := by omega
+        have := Nat.dvd_of_mod_eq_zero h_div_3
+        rw [hp.dvd_iff_eq] at this <;> linarith
+      cases h_mod <;> simp_all +decide only [Int.ModEq, Nat.cast_mul, Nat.cast_ofNat,
+        Int.natCast_ediv, Nat.cast_add, Nat.cast_one, Int.reduceNeg]
+      · exact Or.inr (Int.modEq_iff_dvd.mpr ⟨-1, by
+          linarith [Nat.mod_add_div (p + 1) 6,
+                    show (p + 1) % 6 = 2 from by norm_num [*, Nat.add_mod]]⟩)
+      · exact Or.inl (Int.modEq_iff_dvd.mpr ⟨-1, by
+          linarith [Nat.mod_add_div (p + 1) 6,
+                    show (p + 1) % 6 = 0 from by norm_num [*, Nat.add_mod]]⟩)
+    simp_all +decide [← ZMod.intCast_eq_intCast_iff]
+    norm_cast at *; aesop
+  grind
 
 /-
 Interval Projection Bound: For any x in A_n, the
@@ -101,11 +99,11 @@ value 6x+1 is strictly bounded by the square of the next possible prime after P_
 -/
 lemma interval_projection_bound (n : ℕ) (x : ℕ) (hx : x ∈ A_n n) :
     6 * x + 1 < (6 * n + 5) ^ 2 := by
-      unfold A_n at hx
-      rcases n with (_ | _ | n) <;> norm_num at *
-      · linarith [Nat.sub_add_cancel (by nlinarith : 2 * (‹_› : ℕ) ≤ 6 * ‹_› ^ 2)]
-      · grind
-      · linarith [ sq n ]
+  unfold A_n at hx
+  rcases n with (_ | _ | n) <;> norm_num at *
+  · linarith [Nat.sub_add_cancel (by nlinarith : 2 * (‹_› : ℕ) ≤ 6 * ‹_› ^ 2)]
+  · grind
+  · linarith [ sq n ]
 
 /-
 Any prime p such that 5 <= p < 6n+5 must be in P_n. This is because the integers 6n+2, 6n+3,
@@ -114,19 +112,19 @@ Any prime p such that 5 <= p < 6n+5 must be in P_n. This is because the integers
 lemma primes_in_range_eq_P_n (n : ℕ) (p : ℕ) (hp : p.Prime)
     (h_ge_5 : 5 ≤ p) (h_lt : p < 6 * n + 5) :
     p ∈ P_n n := by
-      by_cases h_cases : p = 6 * n + 4 ∨ p = 6 * n + 3 ∨ p = 6 * n + 2
-      · rcases h_cases with (rfl | rfl | rfl) <;> simp_all +arith only [Nat.reduceLeDiff,
-        add_lt_add_iff_left, Nat.lt_add_one]
-        · exact absurd hp (by
-            rw [show 6 * n + 4 = 2 * (3 * n + 2) by ring]
-            exact Nat.not_prime_mul (by norm_num) (by linarith))
-        · exact absurd hp (by
-            rw [show 6 * n + 3 = 3 * (2 * n + 1) by ring]
-            exact Nat.not_prime_mul (by norm_num) (by linarith))
-        · exact absurd hp (by
-            rw [show 6 * n + 2 = 2 * (3 * n + 1) by ring]
-            exact Nat.not_prime_mul (by norm_num) (by linarith))
-      · exact Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by omega), h_ge_5, hp⟩
+  by_cases h_cases : p = 6 * n + 4 ∨ p = 6 * n + 3 ∨ p = 6 * n + 2
+  · rcases h_cases with (rfl | rfl | rfl) <;> simp_all +arith only [Nat.reduceLeDiff,
+    add_lt_add_iff_left, Nat.lt_add_one]
+    · exact absurd hp (by
+        rw [show 6 * n + 4 = 2 * (3 * n + 2) by ring]
+        exact Nat.not_prime_mul (by norm_num) (by linarith))
+    · exact absurd hp (by
+        rw [show 6 * n + 3 = 3 * (2 * n + 1) by ring]
+        exact Nat.not_prime_mul (by norm_num) (by linarith))
+    · exact absurd hp (by
+        rw [show 6 * n + 2 = 2 * (3 * n + 1) by ring]
+        exact Nat.not_prime_mul (by norm_num) (by linarith))
+  · exact Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by omega), h_ge_5, hp⟩
 
 /-
 If k >= 2 and k < m^2, and k has no prime factors less than m, then k is prime.
@@ -138,42 +136,38 @@ lemma prime_of_no_prime_factors_lt {k m : ℕ} (hk : 2 ≤ k) (h_sq : k < m ^ 2)
   obtain ⟨p, hp_prime, hp_div⟩ : ∃ p, Nat.Prime p ∧ p ∣ k ∧ p ≤ Nat.sqrt k := by
     obtain ⟨p, hp₁, hp₂⟩ := Nat.exists_prime_and_dvd (by linarith)
     obtain ⟨q, rfl⟩ := hp₂
-    exact ⟨Nat.minFac (p * q), Nat.minFac_prime (by linarith), Nat.minFac_dvd _,
-      by
-        rw [Nat.le_sqrt]
-        nlinarith [Nat.minFac_le_of_dvd
-          (Nat.one_lt_iff_ne_zero_and_ne_one.mpr ⟨by aesop_cat, by aesop_cat⟩)
-          (dvd_mul_right p q),
-          Nat.minFac_le_of_dvd
-          (Nat.one_lt_iff_ne_zero_and_ne_one.mpr ⟨by aesop_cat, by aesop_cat⟩)
-          (dvd_mul_left q p)]⟩
+    exact ⟨Nat.minFac (p * q), Nat.minFac_prime (by linarith), Nat.minFac_dvd _, by
+      rw [Nat.le_sqrt]
+      nlinarith [Nat.minFac_le_of_dvd
+        (Nat.one_lt_iff_ne_zero_and_ne_one.mpr ⟨by aesop_cat, by aesop_cat⟩) (dvd_mul_right p q),
+        Nat.minFac_le_of_dvd
+        (Nat.one_lt_iff_ne_zero_and_ne_one.mpr ⟨by aesop_cat, by aesop_cat⟩) (dvd_mul_left q p)]⟩
   exact h_no_factors p hp_prime (by nlinarith [Nat.sqrt_le k]) hp_div.1
 
 /-
 If x survives, then for any p in P_n, p does not divide 6x-1 and p does not divide 6x+1.
 -/
-lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1)
-    (p_val : ℕ) (hp : p_val ∈ P_n n) :
-    ¬(p_val : ℤ) ∣ (6 * x - 1) ∧ ¬(p_val : ℤ) ∣ (6 * x + 1) := by
-      obtain ⟨i, hi⟩ := mem_P_n_iff_exists_index n p_val |>.1 hp
-      have h_cong : (x.cast : ZMod p_val) ≠ r_K n i ∧ (x.cast : ZMod p_val) ≠ -r_K n i := by
-        convert survives_iff n x |>.1 h_survives i
-        · aesop
-        all_goals subst hi; norm_cast
-        · rw [ZMod.cast_eq_val]
-          norm_num [ZMod.natCast_zmod_val]
-          rw [← ZMod.natCast_mod]
-          rw [← Nat.mod_mod_of_dvd x (show p n i ∣ q n from p_dvd_q n i)]
-          exact ZMod.natCast_mod (x % q n) (p n i)
-        · rw [ZMod.cast_eq_val]
-          norm_num [ZMod.natCast_zmod_val]
-          rw [ZMod.natCast_eq_natCast_iff]
-          rw [Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i)]
-      have h_prime := Finset.mem_filter.mp hp |>.2.2
-      have h_ge_5 := Finset.mem_filter.mp hp |>.2.1
-      have := krafft_algebraic_equivalence p_val h_prime h_ge_5 x
-      simp_all +decide [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-      simp_all +decide [r_K]
+lemma not_dvd_of_survives (n : ℕ) (x : ℕ) (h_survives : f n (r_K n) x = 1) (p_val : ℕ)
+    (hp : p_val ∈ P_n n) : ¬(p_val : ℤ) ∣ (6 * x - 1) ∧ ¬(p_val : ℤ) ∣ (6 * x + 1) := by
+  obtain ⟨i, hi⟩ := mem_P_n_iff_exists_index n p_val |>.1 hp
+  have h_cong : (x.cast : ZMod p_val) ≠ r_K n i ∧ (x.cast : ZMod p_val) ≠ -r_K n i := by
+    convert survives_iff n x |>.1 h_survives i
+    · aesop
+    all_goals subst hi; norm_cast
+    · rw [ZMod.cast_eq_val]
+      norm_num [ZMod.natCast_zmod_val]
+      rw [← ZMod.natCast_mod]
+      rw [← Nat.mod_mod_of_dvd x (show p n i ∣ q n from p_dvd_q n i)]
+      exact ZMod.natCast_mod (x % q n) (p n i)
+    · rw [ZMod.cast_eq_val]
+      norm_num [ZMod.natCast_zmod_val]
+      rw [ZMod.natCast_eq_natCast_iff]
+      rw [Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i)]
+  have h_prime := Finset.mem_filter.mp hp |>.2.2
+  have h_ge_5 := Finset.mem_filter.mp hp |>.2.1
+  have := krafft_algebraic_equivalence p_val h_prime h_ge_5 x
+  simp_all +decide [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+  simp_all +decide [r_K]
 
 /-
 The Sieve Isomorphism: Assume x in A_n. By the Fundamental
@@ -182,99 +176,98 @@ sieve if and only if both 6x-1 and 6x+1 are prime numbers.
 -/
 lemma sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     f n (r_K n) x = 1 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      rw [survives_iff]
-      constructor <;> intro h
-      · have h_prime_factors : ∀ p : ℕ, p.Prime → p < 6 * n + 5 →
-            ¬(p : ℤ) ∣ (6 * x - 1) ∧ ¬(p : ℤ) ∣ (6 * x + 1) := by
-          intro p hp hp_lt
-          by_cases hp_ge_5 : 5 ≤ p
-          · apply not_dvd_of_survives n x (by
-              exact (survives_iff n ↑x).mpr h) p (by
-            exact primes_in_range_eq_P_n n p hp hp_ge_5 hp_lt)
-          · interval_cases p <;> norm_num at * <;> omega
-        apply And.intro
-        · apply prime_of_no_prime_factors_lt
-          any_goals exact 6 * n + 5
-          · have h_pos : x ≥ 1 := Nat.pos_of_ne_zero (by
-              rintro rfl
-              have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
-              have h_not : ¬ 0 ∈ A_n n := by
-                unfold A_n; norm_num
-                nlinarith [Nat.sub_add_cancel h_range]
-              exact absurd hx h_not)
-            exact le_tsub_of_add_le_left (by linarith)
-          · have h_pos : 1 ≤ 6 * x := by
-              have h_x_pos : x ≥ 1 := Nat.pos_of_ne_zero (by
-                rintro rfl
-                have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
-                have h_not : ¬ 0 ∈ A_n n := by
-                  unfold A_n; norm_num
-                  nlinarith [Nat.sub_add_cancel h_range]
-                exact absurd hx h_not)
-              linarith
-            rw [tsub_lt_iff_left h_pos]
-            have h_bound : 2 * n ≤ 6 * n ^ 2 := by nlinarith [hn, Finset.mem_Icc.mp hx]
-            nlinarith only [hn, Finset.mem_Icc.mp hx, Nat.sub_add_cancel h_bound]
-          · intro p pp p5; specialize h_prime_factors p pp p5
-            rcases x with (_ | x) <;> simp_all +decide only [ge_iff_le, Nat.cast_add, Nat.cast_one,
-              ne_eq, ← Int.natCast_dvd_natCast, Nat.ofNat_pos, mul_pos_iff_of_pos_left,
-              Order.lt_add_one_iff, zero_le, Nat.cast_pred, Nat.cast_mul, Nat.cast_ofNat,
-              not_false_eq_true]
+  rw [survives_iff]
+  constructor <;> intro h
+  · have h_prime_factors : ∀ p : ℕ, p.Prime → p < 6 * n + 5 →
+        ¬(p : ℤ) ∣ (6 * x - 1) ∧ ¬(p : ℤ) ∣ (6 * x + 1) := by
+      intro p hp hp_lt
+      by_cases hp_ge_5 : 5 ≤ p
+      · apply not_dvd_of_survives n x ( (survives_iff n ↑x).mpr h) p
+          (primes_in_range_eq_P_n n p hp hp_ge_5 hp_lt)
+      · interval_cases p <;> norm_num at * <;> omega
+    apply And.intro
+    · apply prime_of_no_prime_factors_lt
+      any_goals exact 6 * n + 5
+      · have h_pos : x ≥ 1 := Nat.pos_of_ne_zero (by
+          rintro rfl
+          have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
+          have h_not : ¬ 0 ∈ A_n n := by
+            unfold A_n; norm_num
+            nlinarith [Nat.sub_add_cancel h_range]
+          exact absurd hx h_not)
+        exact le_tsub_of_add_le_left (by linarith)
+      · have h_pos : 1 ≤ 6 * x := by
+          have h_x_pos : x ≥ 1 := Nat.pos_of_ne_zero (by
+            rintro rfl
             have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
             have h_not : ¬ 0 ∈ A_n n := by
               unfold A_n; norm_num
               nlinarith [Nat.sub_add_cancel h_range]
-            exact absurd hx h_not
-        · apply prime_of_no_prime_factors_lt
-          any_goals exact 6 * n + 5
-          · have h_pos : x > 0 := Nat.pos_of_ne_zero (by
-              rintro rfl
-              have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
-              have h_not : ¬ 0 ∈ A_n n := by
-                unfold A_n; norm_num
-                nlinarith [Nat.sub_add_cancel h_range]
-              exact absurd hx h_not)
-            linarith
-          · exact interval_projection_bound n x hx
-          · exact fun p pp p5 => mod_cast h_prime_factors p pp p5 |>.2
-      · intro i
-        have h_not_div : ¬(p n i : ℤ) ∣ (6 * x - 1) ∧ ¬(p n i : ℤ) ∣ (6 * x + 1) := by
-          constructor <;> intro H <;> norm_cast at *
-          · rw [ Int.subNatNat_of_le ( by
-              linarith [ show x > 0 from
-                Nat.pos_of_ne_zero ( by rintro rfl; contradiction ) ] ) ] at H
-            norm_cast at H ; simp_all only [ge_iff_le]
-            rw [ Nat.dvd_prime h.1 ] at H
-            have h_pi_lt : p n i < 6 * n + 2 := p_lt_range n i
-            rcases x with ( _ | _ | x ) <;> simp_all +arith +decide only
-            · unfold A_n at hx; norm_num at hx; nlinarith
-            · cases H <;> simp_all +arith +decide only [le_add_iff_nonneg_left, zero_le, A_n,
-              Finset.mem_Icc, tsub_le_iff_right, add_le_add_iff_right, Nat.add_one_sub_one]
-              · exact absurd (p_ge_5 n i) (by aesop)
-              · nlinarith only [ hx, h_pi_lt ]
-          · rw [ Nat.dvd_prime h.2 ] at H
-            have h_contra : p n i ≤ 6 * n + 1 := Nat.le_of_lt_succ (p_lt_range n i)
-            cases H <;> simp_all +arith +decide only [ge_iff_le, A_n, Finset.mem_Icc,
-              tsub_le_iff_right, le_add_iff_nonneg_left, zero_le]
-            · exact absurd (p_ge_5 n i) (by aesop)
-            · nlinarith only [ hn, hx, h_contra ]
-        have := krafft_algebraic_equivalence ( p n i ) (p_prime n i) (p_ge_5 n i) x
-        generalize_proofs at *
-        simp_all +decide only [ge_iff_le, Int.cast_natCast, or_self, iff_false, not_or, r_K, ne_eq]
-        convert this using 1
-        · norm_num [ ZMod.natCast_eq_natCast_iff' ]
-          rw [ ZMod.cast_eq_val ]
-          rw [ ZMod.val_natCast ]
-          rw [ ZMod.natCast_eq_natCast_iff ]
-          rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i) ]
-        · norm_num [ ZMod.cast, ZMod.val ]
-          cases h_qn : q n <;> simp_all +decide only [ZMod, Int.cast_natCast, Fin.val_natCast,
-            not_false_eq_true, iff_true]
-          convert this.2 using 1
-          rw [ ← ZMod.natCast_mod ]
-          rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ _ from _ ) ]
-          · simp
-          · exact h_qn ▸ p_dvd_q n i
+            exact absurd hx h_not)
+          linarith
+        rw [tsub_lt_iff_left h_pos]
+        have h_bound : 2 * n ≤ 6 * n ^ 2 := by nlinarith [hn, Finset.mem_Icc.mp hx]
+        nlinarith only [hn, Finset.mem_Icc.mp hx, Nat.sub_add_cancel h_bound]
+      · intro p pp p5; specialize h_prime_factors p pp p5
+        rcases x with (_ | x) <;> simp_all +decide only [ge_iff_le, Nat.cast_add, Nat.cast_one,
+          ne_eq, ← Int.natCast_dvd_natCast, Nat.ofNat_pos, mul_pos_iff_of_pos_left,
+          Order.lt_add_one_iff, zero_le, Nat.cast_pred, Nat.cast_mul, Nat.cast_ofNat,
+          not_false_eq_true]
+        have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
+        have h_not : ¬ 0 ∈ A_n n := by
+          unfold A_n; norm_num
+          nlinarith [Nat.sub_add_cancel h_range]
+        exact absurd hx h_not
+    · apply prime_of_no_prime_factors_lt
+      any_goals exact 6 * n + 5
+      · have h_pos : x > 0 := Nat.pos_of_ne_zero (by
+          rintro rfl
+          have h_range : 2 * n ≤ 6 * n ^ 2 := by nlinarith
+          have h_not : ¬ 0 ∈ A_n n := by
+            unfold A_n; norm_num
+            nlinarith [Nat.sub_add_cancel h_range]
+          exact absurd hx h_not)
+        linarith
+      · exact interval_projection_bound n x hx
+      · exact fun p pp p5 => mod_cast h_prime_factors p pp p5 |>.2
+  · intro i
+    have h_not_div : ¬(p n i : ℤ) ∣ (6 * x - 1) ∧ ¬(p n i : ℤ) ∣ (6 * x + 1) := by
+      constructor <;> intro H <;> norm_cast at *
+      · rw [ Int.subNatNat_of_le ( by
+          linarith [ show x > 0 from
+            Nat.pos_of_ne_zero ( by rintro rfl; contradiction ) ] ) ] at H
+        norm_cast at H ; simp_all only [ge_iff_le]
+        rw [ Nat.dvd_prime h.1 ] at H
+        have h_pi_lt : p n i < 6 * n + 2 := p_lt_range n i
+        rcases x with ( _ | _ | x ) <;> simp_all +arith +decide only
+        · unfold A_n at hx; norm_num at hx; nlinarith
+        · cases H <;> simp_all +arith +decide only [le_add_iff_nonneg_left, zero_le, A_n,
+          Finset.mem_Icc, tsub_le_iff_right, add_le_add_iff_right, Nat.add_one_sub_one]
+          · exact absurd (p_ge_5 n i) (by aesop)
+          · nlinarith only [ hx, h_pi_lt ]
+      · rw [ Nat.dvd_prime h.2 ] at H
+        have h_contra : p n i ≤ 6 * n + 1 := Nat.le_of_lt_succ (p_lt_range n i)
+        cases H <;> simp_all +arith +decide only [ge_iff_le, A_n, Finset.mem_Icc,
+          tsub_le_iff_right, le_add_iff_nonneg_left, zero_le]
+        · exact absurd (p_ge_5 n i) (by aesop)
+        · nlinarith only [ hn, hx, h_contra ]
+    have := krafft_algebraic_equivalence ( p n i ) (p_prime n i) (p_ge_5 n i) x
+    generalize_proofs at *
+    simp_all +decide only [ge_iff_le, Int.cast_natCast, or_self, iff_false, not_or, r_K, ne_eq]
+    convert this using 1
+    · norm_num [ ZMod.natCast_eq_natCast_iff' ]
+      rw [ ZMod.cast_eq_val ]
+      rw [ ZMod.val_natCast ]
+      rw [ ZMod.natCast_eq_natCast_iff ]
+      rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i) ]
+    · norm_num [ ZMod.cast, ZMod.val ]
+      cases h_qn : q n <;> simp_all +decide only [ZMod, Int.cast_natCast, Fin.val_natCast,
+        not_false_eq_true, iff_true]
+      convert this.2 using 1
+      rw [ ← ZMod.natCast_mod ]
+      rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ _ from _ ) ]
+      · simp
+      · exact h_qn ▸ p_dvd_q n i
 
 /--
 Additive Sieve Equivalence:
@@ -284,11 +277,11 @@ $$ c(x) = 0 \iff x \text{ survives the Krafft sieve} $$
 -/
 lemma additive_sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
     c n x = 0 ↔ Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      have := @sieve_equivalence n hn x; simp_all only [ge_iff_le, forall_const]; (
-      unfold c f at *; simp_all only [ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
-      unfold A at this; simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
-      unfold g; simp_all
-      unfold A_i at this; simp_all only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and])
+  have := @sieve_equivalence n hn x; simp_all only [ge_iff_le, forall_const]; (
+  unfold c f at *; simp_all only [ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
+  unfold A at this; simp_all only [Finset.mem_filter, Finset.mem_univ, true_and]
+  unfold g; simp_all
+  unfold A_i at this; simp_all only [ne_eq, Finset.mem_filter, Finset.mem_univ, true_and])
 
 /--
 Non-negative Hits:
@@ -297,9 +290,7 @@ non-negative: $c(x) \ge 0$. Furthermore, note that because $c(x)$ is a sum of in
 functions, if $c(x) < 1$, then $c(x) = 0$.
 -/
 lemma non_negative_hits (n : ℕ) (x : ZMod (q n)) :
-    c n x ≥ 0 ∧ (c n x < 1 → c n x = 0) := by
-      unfold c; unfold g
-      aesop
+    c n x ≥ 0 ∧ (c n x < 1 → c n x = 0) := by unfold c; unfold g; aesop
 
 /--
 The Weighted Existence Principle:
@@ -309,18 +300,18 @@ there must exist at least one integer $x \in \mathcal{A}_n$ such that $W(x) > 0$
 theorem weighted_existence_principle (n : ℕ) (W : ZMod (q n) → ℝ) (hW : ∀ x, W x ≥ 0)
     (h_ineq : S_2 n W < S_1 n W) :
     ∃ x ∈ A_n n, W (x : ZMod (q n)) > 0 ∧ c n (x : ZMod (q n)) = 0 := by
-      contrapose! h_ineq
-      -- For each $x \in A_n$, if $W(x) > 0$ then $c(x) \ge 1$.
-      have h_c_ge_one : ∀ x ∈ A_n n, W x > 0 → c n x ≥ 1 := by
-        -- Since $c(x)$ is the sum of non-negative terms, if $c(x) \neq 0$, then $c(x) \geq 1$.
-        intros x hx hWx_pos
-        have h_c_nonneg : 0 ≤ c n x :=
-          Finset.sum_nonneg fun _ _ => by unfold g; split_ifs <;> norm_num
-        contrapose! h_ineq
-        exact ⟨ x, hx, hWx_pos, (non_negative_hits n x).2 (by linarith) ⟩
-      exact Finset.sum_le_sum fun x hx =>
-        if hx' : W x = 0 then by simp +decide [ hx' ]
-        else by nlinarith [ hW x, h_c_ge_one x hx ( lt_of_le_of_ne ( hW x ) ( Ne.symm hx' ) ) ]
+  contrapose! h_ineq
+  -- For each $x \in A_n$, if $W(x) > 0$ then $c(x) \ge 1$.
+  have h_c_ge_one : ∀ x ∈ A_n n, W x > 0 → c n x ≥ 1 := by
+    -- Since $c(x)$ is the sum of non-negative terms, if $c(x) \neq 0$, then $c(x) \geq 1$.
+    intros x hx hWx_pos
+    have h_c_nonneg : 0 ≤ c n x :=
+      Finset.sum_nonneg fun _ _ => by unfold g; split_ifs <;> norm_num
+    contrapose! h_ineq
+    exact ⟨ x, hx, hWx_pos, (non_negative_hits n x).2 (by linarith) ⟩
+  exact Finset.sum_le_sum fun x hx =>
+    if hx' : W x = 0 then by simp +decide [ hx' ]
+    else by nlinarith [ hW x, h_c_ge_one x hx ( lt_of_le_of_ne ( hW x ) ( Ne.symm hx' ) ) ]
 
 /--
 Definition of the Krafft Sufficiency condition
@@ -342,8 +333,8 @@ index is unconditionally guaranteed in $\mathcal{A}_n$.
 -/
 theorem krafft_sieve_guarantee (n : ℕ) (hn : n ≥ 1) (h_admit : Krafft_Sufficiency n) :
     ∃ x ∈ A_n n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
-      obtain ⟨ W, hW_nonneg, _, hW_ineq ⟩ := h_admit
-      obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq
-      exact ⟨ x, hx.1, additive_sieve_equivalence n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
+  obtain ⟨ W, hW_nonneg, _, hW_ineq ⟩ := h_admit
+  obtain ⟨ x, hx ⟩ := weighted_existence_principle n W hW_nonneg hW_ineq
+  exact ⟨ x, hx.1, additive_sieve_equivalence n hn x ( hx.1 ) |>.1 hx.2.2 ⟩
 
 end
