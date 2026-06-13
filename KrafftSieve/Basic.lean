@@ -34,9 +34,9 @@ noncomputable section
 instance q_ne_zero (n : ℕ) : NeZero (q n) := ⟨by
   exact Finset.prod_ne_zero_iff.mpr fun p hp => (Finset.mem_filter.mp hp).2.2.ne_zero⟩
 
-/-- A number p is in P_n if and only if it equals p_i for some index i. -/
+/-- A number p is in primeWindow if and only if it equals p_i for some index i. -/
 lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
-  p_val ∈ P_n n ↔ ∃ i : Fin (w n), p n i = p_val := by
+  p_val ∈ primeWindow n ↔ ∃ i : Fin (w n), p n i = p_val := by
   constructor
   · intro h
     obtain ⟨i, hi⟩ := List.mem_iff_get.mp ((Finset.mem_sort (α := ℕ) (· ≤ ·)).mpr h)
@@ -44,8 +44,8 @@ lemma mem_P_n_iff_exists_index (n : ℕ) (p_val : ℕ) :
   · rintro ⟨i, rfl⟩
     exact (Finset.mem_sort (α := ℕ) (· ≤ ·)).mp (List.get_mem _ _)
 
-/-- P_n is a subset of P_{n+1}. -/
-lemma P_n_mono (n : ℕ) : P_n n ⊆ P_n (n + 1) := by
+/-- primeWindow is a subset of P_{n+1}. -/
+lemma P_n_mono (n : ℕ) : primeWindow n ⊆ primeWindow (n + 1) := by
   intro x hx
   have := Finset.mem_filter.mp hx
   exact Finset.mem_filter.mpr ⟨Finset.mem_range.mpr (by
@@ -55,8 +55,8 @@ lemma P_n_mono (n : ℕ) : P_n n ⊆ P_n (n + 1) := by
 lemma q_mono (n : ℕ) : q n ∣ q (n + 1) := by
   apply Finset.prod_dvd_prod_of_subset; exact P_n_mono n
 
-/-- Every `p n i` is in `P_n n`. -/
-lemma p_mem_P_n (n : ℕ) (i : Fin (w n)) : p n i ∈ P_n n :=
+/-- Every `p n i` is in `primeWindow n`. -/
+lemma p_mem_P_n (n : ℕ) (i : Fin (w n)) : p n i ∈ primeWindow n :=
   (Finset.mem_sort (α := ℕ) (· ≤ ·)).mp (List.get_mem _ _)
 
 /-- Every `p n i` is prime. -/

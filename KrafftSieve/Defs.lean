@@ -62,7 +62,7 @@ This module establishes the foundational definitions for the sieve:
 - $q$: The primorial $q = \prod_{p \in \mathcal{P}_n} p$.
 - $\mathcal{A}_n$: The target interval.
 - $g_i, c$: Local and global hit counters.
-- $S_1, S_2$: Weighted sums over the interval.
+- $sum1, sum2$: Weighted sums over the interval.
 -/
 
 namespace KrafftSieve
@@ -71,38 +71,38 @@ open scoped BigOperators Real Nat Pointwise
 
 noncomputable section
 
-/-- Definition of the set of primes P_n.
+/-- Definition of the set of primes primeWindow.
 Let $\mathcal{P}_n$ denote the set of primes $p$ such that $5 \le p < 6n+2$. -/
-def P_n (n : ℕ) : Finset ℕ :=
+def primeWindow (n : ℕ) : Finset ℕ :=
   (Finset.range (6 * n + 2)).filter (fun p => 5 ≤ p ∧ p.Prime)
 
 /-- Definition of the primorial q.
 Define the primorial $q = \prod_{p \in \mathcal{P}_n} p$. -/
-def q (n : ℕ) : ℕ := (P_n n).prod (fun p => p)
+def q (n : ℕ) : ℕ := (primeWindow n).prod (fun p => p)
 
-/-- Definition of w as the cardinality of P_n.
+/-- Definition of w as the cardinality of primeWindow.
 Let $w = |\mathcal{P}_n|$ be the number of distinct prime factors of $q$. -/
-def w (n : ℕ) : ℕ := (P_n n).card
+def w (n : ℕ) : ℕ := (primeWindow n).card
 
 /-- Definition of the sorted list of primes and the accessor function p_i.
 Index the primes in $\mathcal{P}_n$ as $p_1, p_2, \dots, p_w$. -/
-def primes_list (n : ℕ) : List ℕ := (P_n n).sort (· ≤ ·)
+def primesList (n : ℕ) : List ℕ := (primeWindow n).sort (· ≤ ·)
 
 /-- Access the $i$-th prime $p_i$. Note that we use 0-based indexing for the implementation,
 so $p_0$ corresponds to the user's $p_1$. -/
-def p (n : ℕ) (i : Fin (w n)) : ℕ := (primes_list n).get (i.cast (by
-  unfold w primes_list
+def p (n : ℕ) (i : Fin (w n)) : ℕ := (primesList n).get (i.cast (by
+  unfold w primesList
   simp_all only [Finset.length_sort]))
 
 /-- Define r^K
 Define the Krafft tuple r^K such that for each 1 <= i <= w,
 r^K_i = floor((p_i+1)/6). -/
-def r_K (n : ℕ) (i : Fin (w n)) : ℕ := (p n i + 1) / 6
+def krafftResidue (n : ℕ) (i : Fin (w n)) : ℕ := (p n i + 1) / 6
 
-/-- Define A_n
+/-- Define evalInterval
 Define the target interval of indices:
-A_n = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}. -/
-def A_n (n : ℕ) : Finset ℕ :=
+evalInterval = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}. -/
+def evalInterval (n : ℕ) : Finset ℕ :=
   Finset.Icc (6 * n ^ 2 - 2 * n) (6 * n ^ 2 + 10 * n + 3)
 
 /-- Define the local hit function g_i(x)
@@ -111,8 +111,8 @@ for each prime index $i \in \{1, \dots, w\}$.
 - $g_i(x) = 1$ if $x \equiv r^K_i \pmod{p_i}$ or $x \equiv -r^K_i \pmod{p_i}$.
 - Otherwise, $g_i(x) = 0$. -/
 noncomputable def g (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : ℝ :=
-  if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i))
-    ∨ (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i))
+  if (x.cast : ZMod (p n i)) = (krafftResidue n i : ZMod (p n i))
+    ∨ (x.cast : ZMod (p n i)) = -(krafftResidue n i : ZMod (p n i))
   then 1 else 0
 
 /-- Define the global additive hit counter c(x)
@@ -122,17 +122,17 @@ $$ c(x) = \sum_{i=1}^w g_i(x) $$ -/
 noncomputable def c (n : ℕ) (x : ZMod (q n)) : ℝ :=
   ∑ i : Fin (w n), g n i x
 
-/-- Define the total weighted mass of the interval S_1(n, W)
-Define the total weighted mass of the interval $S_1(n, W)$:
-$$ S_1(n, W) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
-noncomputable def S_1 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
-  ∑ x ∈ A_n n, W (x : ZMod (q n))
+/-- Define the total weighted mass of the interval sum1(n, W)
+Define the total weighted mass of the interval $sum1(n, W)$:
+$$ sum1(n, W) = \sum_{x \in \mathcal{A}_n} W(x) $$ -/
+noncomputable def sum1 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
+  ∑ x ∈ evalInterval n, W (x : ZMod (q n))
 
-/-- Define the weighted hit count S_2(n, W)
-Define the weighted hit count $S_2(n, W)$:
-$$ S_2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
-noncomputable def S_2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
-  ∑ x ∈ A_n n, W (x : ZMod (q n)) * c n (x : ZMod (q n))
+/-- Define the weighted hit count sum2(n, W)
+Define the weighted hit count $sum2(n, W)$:
+$$ sum2(n, W) = \sum_{x \in \mathcal{A}_n} W(x) c(x) $$ -/
+noncomputable def sum2 (n : ℕ) (W : ZMod (q n) → ℝ) : ℝ :=
+  ∑ x ∈ evalInterval n, W (x : ZMod (q n)) * c n (x : ZMod (q n))
 
 end
 

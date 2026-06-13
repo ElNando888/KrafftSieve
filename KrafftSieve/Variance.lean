@@ -44,13 +44,13 @@ noncomputable def μ (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
   (N n r : ℝ) / (q n : ℝ)
 
 /--
-Definition of the Discrete Fourier Transform f_hat.
+Definition of the Discrete Fourier Transform fHat.
 Define the Discrete Fourier Transform of $f$ at frequency
 $h \in \mathbb{Z}/q\mathbb{Z}$ as:
   $$ \hat{f}(h) = \frac{1}{q} \sum_{x=0}^{q-1}
        f(x) e^{-2\pi i h x / q} $$
 -/
-noncomputable def f_hat (n : ℕ) (r : Fin (w n) → ℕ)
+noncomputable def fHat (n : ℕ) (r : Fin (w n) → ℕ)
     (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨Finset.prod_ne_zero_iff.mpr fun _ hp =>
     Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
@@ -58,12 +58,12 @@ noncomputable def f_hat (n : ℕ) (r : Fin (w n) → ℕ)
     (f n r x) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
 /--
-Definition of the physical variance σ_sq.
+Definition of the physical variance sigmaSq.
 Define the physical variance of the survivor distribution as:
   $$ \sigma^2 = \frac{1}{q}
        \sum_{x=0}^{q-1} (f(x) - \mu)^2 $$
 -/
-noncomputable def σ_sq (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
+noncomputable def sigmaSq (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
   haveI : NeZero (q n) := ⟨Finset.prod_ne_zero_iff.mpr fun _ hp =>
     Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℝ)) * ∑ x : ZMod (q n), (f n r x - μ n r) ^ 2
@@ -72,8 +72,8 @@ noncomputable def σ_sq (n : ℕ) (r : Fin (w n) → ℕ) : ℝ :=
 The Fourier coefficient at 0 is equal to the mean density μ.
 -/
 theorem f_hat_zero_eq_mu (n : ℕ) (r : Fin (w n) → ℕ) :
-    f_hat n r 0 = μ n r := by
-  simp only [f_hat, one_div, neg_mul, ZMod.val_zero, zero_mul, CharP.cast_eq_zero, mul_zero,
+    fHat n r 0 = μ n r := by
+  simp only [fHat, one_div, neg_mul, ZMod.val_zero, zero_mul, CharP.cast_eq_zero, mul_zero,
     zero_div, Complex.exp_zero, mul_one, μ, Complex.ofReal_div, Complex.ofReal_natCast]
   rw [ inv_mul_eq_div, div_eq_div_iff ] <;>
     norm_cast <;> norm_num [ q_ne_zero ]
@@ -168,18 +168,18 @@ lemma sum_orthogonality_application (n : ℕ) (r : Fin (w n) → ℕ) :
 Expansion of the squared magnitude of a single Fourier coefficient.
 -/
 lemma f_hat_normSq_expansion (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
-    Complex.normSq (f_hat n r h) =
+    Complex.normSq (fHat n r h) =
     (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n), (f n r x : ℂ) * (f n r y : ℂ) *
       Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) := by
-  -- By definition of $f_hat$, we have:
-  have h_def : f_hat n r h =
+  -- By definition of $fHat$, we have:
+  have h_def : fHat n r h =
       (1 / (q n : ℂ)) * ∑ x : ZMod (q n), (f n r x : ℂ) *
         Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)) := by
     exact rfl
-  -- By definition of $f_hat$, we have
+  -- By definition of $fHat$, we have
   -- $\overline{\hat{f}(h)} =
   --   \frac{1}{q} \sum_y f(y) e^{2\pi i h y / q}$.
-  have h_conj : starRingEnd ℂ (f_hat n r h) =
+  have h_conj : starRingEnd ℂ (fHat n r h) =
       (1 / (q n : ℂ)) * ∑ y : ZMod (q n), (f n r y : ℂ) *
         Complex.exp (2 * Real.pi * Complex.I * (h.val * y.val : ℕ) / (q n : ℂ)) := by
     simp_all +decide only [one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val, Complex.ext_iff,
@@ -231,18 +231,18 @@ Standard Parseval's Identity: The sum of the squared magnitudes of the Fourier c
 the average of the squared function values.
 -/
 lemma parseval_standard (n : ℕ) (r : Fin (w n) → ℕ) :
-    ∑ h : ZMod (q n), Complex.normSq (f_hat n r h) = (1 / (q n : ℝ)) *
+    ∑ h : ZMod (q n), Complex.normSq (fHat n r h) = (1 / (q n : ℝ)) *
       ∑ x : ZMod (q n), (f n r x)^2 := by
   -- Applying the expansion for each term:
   have h_sum :
-      ∑ h : ZMod (q n), Complex.normSq (f_hat n r h) =
+      ∑ h : ZMod (q n), Complex.normSq (fHat n r h) =
       (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n),
       (f n r x : ℂ) * (f n r y : ℂ) * ∑ h : ZMod (q n),
         Complex.exp (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) := by
     -- Apply the norm squared expansion to each
     -- term in the sum.
     have h_expand : ∀ h : ZMod (q n),
-        Complex.normSq (f_hat n r h) = (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n),
+        Complex.normSq (fHat n r h) = (1 / (q n : ℂ)^2) * ∑ x : ZMod (q n), ∑ y : ZMod (q n),
           (f n r x : ℂ) * (f n r y : ℂ) * Complex.exp
             (2 * Real.pi * Complex.I * h.val * (y - x).val / (q n : ℂ)) :=
       fun h ↦ f_hat_normSq_expansion n r h
@@ -253,7 +253,7 @@ lemma parseval_standard (n : ℕ) (r : Fin (w n) → ℕ) :
       ( Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring ) )
   -- Substitute the result from h_double_sum
   -- into h_sum.
-  have h_final : ∑ h : ZMod (q n), Complex.normSq (f_hat n r h) =
+  have h_final : ∑ h : ZMod (q n), Complex.normSq (fHat n r h) =
       (1 / (q n : ℂ)^2) * (q n : ℂ) * ∑ x : ZMod (q n), (f n r x : ℂ)^2 := by
     rw [ h_sum, sum_orthogonality_application ]
     ring
@@ -265,8 +265,8 @@ lemma parseval_standard (n : ℕ) (r : Fin (w n) → ℕ) :
 Expansion of the variance formula.
 -/
 lemma variance_expansion (n : ℕ) (r : Fin (w n) → ℕ) :
-    σ_sq n r = (1 / (q n : ℝ)) * ∑ x : ZMod (q n), (f n r x)^2 - (μ n r)^2 := by
-  unfold σ_sq μ
+    sigmaSq n r = (1 / (q n : ℝ)) * ∑ x : ZMod (q n), (f n r x)^2 - (μ n r)^2 := by
+  unfold sigmaSq μ
   rw [ show f n r = fun x => if x ∈ A n r then 1 else 0 from funext fun x => rfl ]
   norm_num [ Finset.sum_ite, Finset.filter_mem_eq_inter, Finset.filter_not ]
   ring_nf
@@ -281,7 +281,7 @@ indicator function f is strictly equal to the sum of the
 squared magnitudes of its non-zero Fourier coefficients.
 -/
 theorem parseval_identity (n : ℕ) (r : Fin (w n) → ℕ) :
-    σ_sq n r = ∑ h : ZMod (q n), if h = 0 then 0 else Complex.normSq (f_hat n r h) := by
+    sigmaSq n r = ∑ h : ZMod (q n), if h = 0 then 0 else Complex.normSq (fHat n r h) := by
   rw [ Finset.sum_ite, Finset.filter_ne' ]
   have := parseval_standard n r
   have := variance_expansion n r
@@ -296,7 +296,7 @@ The primorial $q$ is odd.
 lemma q_odd (n : ℕ) : Odd (q n) := by
   -- Each prime $p$ in $\mathcal{P}_n$ is odd, and
   -- the product of odd numbers is odd.
-  have h_odd_primes : ∀ p ∈ P_n n, Odd p :=
+  have h_odd_primes : ∀ p ∈ primeWindow n, Odd p :=
     fun p hp => Nat.Prime.odd_of_ne_two ( Finset.mem_filter.mp hp |>.2.2 )
       ( by linarith [ Finset.mem_filter.mp hp |>.2.1 ] )
   exact Nat.odd_iff.mpr ( Finset.prod_nat_mod _ _ _ ▸ by
@@ -308,8 +308,8 @@ Conjugate symmetry of the Fourier transform for
 real-valued functions.
 -/
 lemma f_hat_conj_symm (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n)) :
-    f_hat n r (-h) = starRingEnd ℂ (f_hat n r h) := by
-  unfold f_hat
+    fHat n r (-h) = starRingEnd ℂ (fHat n r h) := by
+  unfold fHat
   -- Since $(-h).val \equiv -h.val \pmod{q}$,
   -- we can replace $(-h).val$ with $-h.val$
   -- in the exponent.
@@ -347,7 +347,7 @@ frequency $h$, the variance is at least twice the squared
 magnitude of the Fourier coefficient at $h$.
 -/
 lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod (q n))
-    (h_ne_zero : h ≠ 0) : σ_sq n r ≥ 2 * Complex.normSq (f_hat n r h) := by
+    (h_ne_zero : h ≠ 0) : sigmaSq n r ≥ 2 * Complex.normSq (fHat n r h) := by
   have := f_hat_conj_symm n r h
   rw [ parseval_identity ]
   rw [ ← Finset.add_sum_erase _ _ ( Finset.mem_univ h ) ]
@@ -355,7 +355,7 @@ lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod 
     ( Finset.mem_erase.mpr ⟨ ?_, Finset.mem_univ ( -h ) ⟩ ) ] <;>
     norm_num [ h_ne_zero, this ]
   · linarith [ show 0 ≤ ∑ x ∈ (Finset.univ.erase h).erase (-h),
-        if x = 0 then 0 else Complex.normSq ( f_hat n r x ) from
+        if x = 0 then 0 else Complex.normSq ( fHat n r x ) from
       Finset.sum_nonneg fun x hx => by
         split_ifs <;> norm_num [ Complex.normSq_nonneg ] ]
   · intro h_eq; have := q_odd n

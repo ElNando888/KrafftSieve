@@ -41,7 +41,7 @@ Define $\hat{W}(h)$ as the Discrete Fourier Transform of the weight function $W(
 $\mathbb{Z}/q\mathbb{Z}$:
 $$ \hat{W}(h) = \frac{1}{q} \sum_{x=0}^{q-1} W(x) e^{-2\pi i h x / q} $$
 -/
-noncomputable def W_hat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : ℂ :=
+noncomputable def wHat (n : ℕ) (W : ZMod (q n) → ℝ) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨Finset.prod_ne_zero_iff.mpr fun _ hp =>
     Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
@@ -52,7 +52,7 @@ Define $\hat{g}_i(h)$ (Fourier Transform of the Local Hit):
 Define $\hat{g}_i(h)$ as the Discrete Fourier Transform of the local hit function $g_i(x)$:
 $$ \hat{g}_i(h) = \frac{1}{q} \sum_{x=0}^{q-1} g_i(x) e^{-2\pi i h x / q} $$
 -/
-noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
+noncomputable def gHat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   haveI : NeZero (q n) := ⟨Finset.prod_ne_zero_iff.mpr fun _ hp =>
     Nat.Prime.ne_zero <| Finset.mem_filter.mp hp |>.2.2⟩
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
@@ -60,12 +60,12 @@ noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
 
 /--
 Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
-$\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n, W)$.
+$\mathbb{Z}/q\mathbb{Z}$ is equal to $sum1(n, W)$.
 -/
 lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
-    (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
-    ∑ x : ZMod (q n), W x = S_1 n W := by
-  rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (A_n n) ⊆
+    (h_supp : ∀ x : ZMod (q n), x.val ∉ evalInterval n → W x = 0) :
+    ∑ x : ZMod (q n), W x = sum1 n W := by
+  rw [← Finset.sum_subset (show Finset.image (fun x ↦ x : ℕ → ZMod (q n)) (evalInterval n) ⊆
     Finset.univ from Finset.subset_univ _)]
   · refine Finset.sum_bij ( fun x hx => x.val ) ?_ ?_ ?_ ?_ <;> simp only [Finset.mem_image,
       forall_exists_index, and_imp, forall_apply_eq_imp_iff₂, ZMod.val_natCast, exists_prop,
@@ -86,15 +86,15 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
 Compact Support Equivalence
 
 Assume the weight function is strictly supported inside the interval:
-$\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n, W)$ is equivalent
+$\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $sum1(n, W)$ is equivalent
 to the full space sum, which yields the zero-frequency Fourier coefficient:
-$$ S_1(n, W) = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) = q \hat{W}(0) $$
+$$ sum1(n, W) = \sum_{x \in \mathbb{Z}/q\mathbb{Z}} W(x) = q \hat{W}(0) $$
 -/
 lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
-    (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
-    S_1 n W = (q n : ℝ) * (W_hat n W 0).re := by
+    (h_supp : ∀ x : ZMod (q n), x.val ∉ evalInterval n → W x = 0) :
+    sum1 n W = (q n : ℝ) * (wHat n W 0).re := by
   rw [ ← sum_W_eq_S1 ]
-  · unfold W_hat; norm_num; ring_nf; aesop
+  · unfold wHat; norm_num; ring_nf; aesop
   · assumption
   · assumption
 
@@ -199,23 +199,23 @@ lemma plancherel_theorem_custom (n : ℕ) (f g : ZMod (q n) → ℂ) :
 /--
 The Plancherel Hit Expansion
 Using the compact support of $W(x)$ and admitting Plancherel's theorem for the inner product
-of $W(x)$ and $g_i(x)$, expand the weighted hit count $S_2(n)$ into the Fourier domain:
-$$ S_2(n) = q \sum_{i=1}^w \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
+of $W(x)$ and $g_i(x)$, expand the weighted hit count $sum2(n)$ into the Fourier domain:
+$$ sum2(n) = q \sum_{i=1}^w \sum_{h=0}^{q-1} \hat{W}(h) \overline{\hat{g}_i(h)} $$
 -/
 lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
-    (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
-    (S_2 n W : ℂ) = (q n : ℂ) * ∑ i : Fin (w n), ∑ h : ZMod (q n),
-      W_hat n W h * starRingEnd ℂ (g_hat n i h) := by
+    (h_supp : ∀ x : ZMod (q n), x.val ∉ evalInterval n → W x = 0) :
+    (sum2 n W : ℂ) = (q n : ℂ) * ∑ i : Fin (w n), ∑ h : ZMod (q n),
+      wHat n W h * starRingEnd ℂ (gHat n i h) := by
   convert plancherel_theorem_custom n (fun x => W x) (fun x => ∑ i : Fin (w n), g n i x)
     using 1
   · convert rfl using 2
-    unfold S_2; norm_num [Finset.sum_mul _ _ _]; ring_nf
+    unfold sum2; norm_num [Finset.sum_mul _ _ _]; ring_nf
     convert sum_W_eq_S1 n hn (fun x => W x * ∑ i, g n i x) _ using 1
     · norm_cast
     · intro x a
       simp_all only [ge_iff_le, not_false_eq_true, zero_mul]
-  · simp +decide only [W_hat, one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val,
-    Finset.mul_sum _ _ _, g_hat, map_sum, map_mul, map_inv₀, map_natCast, Complex.conj_ofReal,
+  · simp +decide only [wHat, one_div, neg_mul, Nat.cast_mul, ZMod.natCast_val,
+    Finset.mul_sum _ _ _, gHat, map_sum, map_mul, map_inv₀, map_natCast, Complex.conj_ofReal,
     Finset.sum_mul]
     exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ =>
       Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => by ac_rfl))
@@ -231,19 +231,23 @@ $$
 -/
 private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
     ∑ x ∈ Finset.range (q n),
-    (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+    (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
     Complex.exp (-2 * Real.pi * Complex.I *
       (k.val * (q n / p n i) * x) / (q n : ℂ)) =
     ∑ x ∈ Finset.range (p n i),
-      (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+      (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
       Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) *
       (q n / p n i) := by
   have h_sum_simplified : ∀ m : ℕ, ∑ x ∈ Finset.range (m * p n i),
-    (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+    (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
     Complex.exp (-2 * Real.pi * Complex.I *
       (k.val * (q n / p n i) * x) / (q n : ℂ)) =
     ∑ x ∈ Finset.range (p n i),
-      (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+      (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
       Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) * m := by
     intro m
     refine Nat.recAux ?_ (fun m ih => ?_) m
@@ -267,7 +271,7 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
         have h_range := p_lt_range n i
         aesop),
       by
-        have h_prime : p n i ∈ P_n n := by
+        have h_prime : p n i ∈ primeWindow n := by
           exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
         exact ⟨Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2⟩⟩)
   · rw [ Nat.cast_div ]
@@ -284,35 +288,39 @@ private lemma dirac_comb_nonzero_sum_simplified (n : ℕ) (i : Fin (w n)) (k : F
 
 private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
 ∑ x ∈ Finset.range (p n i),
-    (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+    (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
     Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) =
-    Complex.exp (-2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) +
-    Complex.exp (2 * Real.pi * Complex.I * (k.val * r_K n i) / (p n i : ℂ)) := by
+    Complex.exp (-2 * Real.pi * Complex.I * (k.val * krafftResidue n i) / (p n i : ℂ)) +
+    Complex.exp (2 * Real.pi * Complex.I * (k.val * krafftResidue n i) / (p n i : ℂ)) := by
     have h_sum_final : ∑ x ∈ Finset.range (p n i),
-      (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+      (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
       Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) =
-      ∑ x ∈ ({r_K n i, (p n i - r_K n i) % (p n i)} : Finset ℕ),
+      ∑ x ∈ ({krafftResidue n i, (p n i - krafftResidue n i) % (p n i)} : Finset ℕ),
         Complex.exp (-2 * Real.pi * Complex.I * (k.val * x) / (p n i : ℂ)) := by
       have h_sum_final : ∀ x ∈ Finset.range (p n i),
-        (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔
-        x = r_K n i ∨ x = (p n i - r_K n i) % (p n i) := by
+        (x : ZMod (p n i)) = krafftResidue n i ∨ (x : ZMod (p n i)) = -(krafftResidue n i) ↔
+        x = krafftResidue n i ∨ x = (p n i - krafftResidue n i) % (p n i) := by
         intro x hx
-        have h_cong : (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) ↔
-          x ≡ r_K n i [MOD p n i] ∨ x ≡ p n i - r_K n i [MOD p n i] := by
+        have h_cong : (x : ZMod (p n i)) = krafftResidue n i ∨
+            (x : ZMod (p n i)) = -(krafftResidue n i) ↔
+          x ≡ krafftResidue n i [MOD p n i] ∨ x ≡ p n i - krafftResidue n i [MOD p n i] := by
           simp +decide [← ZMod.natCast_eq_natCast_iff, Nat.cast_sub
-            (show r_K n i ≤ p n i from Nat.div_le_of_le_mul <| by
+            (show krafftResidue n i ≤ p n i from Nat.div_le_of_le_mul <| by
               linarith [show p n i ≥ 5 from by
-                have h_prime : p n i ∈ P_n n := by
+                have h_prime : p n i ∈ primeWindow n := by
                   exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
                 exact (Finset.mem_filter.mp h_prime).right.left ] ) ]
         simp_all +decide only [Finset.mem_range, Nat.ModEq, Nat.mod_eq_of_lt]
         rw [ Nat.mod_eq_of_lt ]
         exact Nat.div_lt_of_lt_mul <| by
           linarith [ show p n i ≥ 5 from by
-            have h_prime : p n i ∈ P_n n :=
+            have h_prime : p n i ∈ primeWindow n :=
               Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
             exact Finset.mem_filter.mp h_prime |>.2.1 ]
-      have h_sub : {r_K n i, (p n i - r_K n i) % p n i} ⊆ Finset.range (p n i) := ?_
+      have h_sub : {krafftResidue n i, (p n i - krafftResidue n i) % p n i} ⊆
+          Finset.range (p n i) := ?_
       · rw [← Finset.sum_subset h_sub]
         · refine Finset.sum_congr rfl fun x hx => ?_
           simp +zetaDelta only [Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, neg_mul,
@@ -337,7 +345,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
             exact h_prime.2.2⟩
     rw [ h_sum_final, Finset.sum_pair ]
     · rw [ Nat.mod_eq_of_lt ]
-      · rw [ Nat.cast_sub ( show r_K n i ≤ p n i from _ ) ]
+      · rw [ Nat.cast_sub ( show krafftResidue n i ≤ p n i from _ ) ]
         · ring_nf
           have hp : p n i ≠ 0 := by
             have h_in_P := p_mem_P_n n i
@@ -358,7 +366,7 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
             exact p_ge_5 n i
           exact Nat.div_pos (by linarith [h_ge_5]) (by norm_num)
     · rw [ Nat.mod_eq_of_lt ]
-      · unfold r_K
+      · unfold krafftResidue
         have h_pi_ge_5 : 5 ≤ p n i := by
           have h_prime_ge_5 : ∀ i : Fin (w n), 5 ≤ p n i := by
             intro i
@@ -376,16 +384,17 @@ private lemma dirac_comb_nonzero_sum_final (n : ℕ) (i : Fin (w n)) (k : Fin (p
           · norm_num
 
 lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
-    g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
+    gHat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
     ((2 : ℝ) / (p n i : ℝ) * Real.cos
-      (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ)) : ℂ) := by
+      (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ)) : ℂ) := by
   -- By definition of $g_i$, we know that
   -- $\hat{g}_i(h) = \frac{2}{p_i} \cos(2\pi k r^K_i / p_i)$ for $h = k(q/p_i)$.
   have h_g_hat_i : ∀ h : ZMod (q n), h.val = k.val * (q n / p n i) →
-    g_hat n i h = (1 / (q n : ℂ)) * ∑ x ∈ Finset.range (q n),
-      (if (x : ZMod (p n i)) = r_K n i ∨ (x : ZMod (p n i)) = -(r_K n i) then 1 else 0) *
+    gHat n i h = (1 / (q n : ℂ)) * ∑ x ∈ Finset.range (q n),
+      (if (x : ZMod (p n i)) = krafftResidue n i ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i) then 1 else 0) *
       Complex.exp (-2 * Real.pi * Complex.I * (h.val * x : ℕ) / (q n : ℂ)) := by
-    intro h hh; unfold g_hat; norm_num [ ZMod.cast_id, ZMod.natCast_zmod_val, hh ]
+    intro h hh; unfold gHat; norm_num [ ZMod.cast_id, ZMod.natCast_zmod_val, hh ]
     refine Or.inl ( Finset.sum_bij ( fun x _ => x.val ) ?_ ?_ ?_ ?_ ) <;> norm_num
     · intro a; exact ZMod.val_lt a
     · intro a₁ a₂ h
@@ -463,8 +472,8 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
       obtain ⟨k, hk⟩ : ∃ k : ℕ, h.val = k * (q n / p n i) := by
         refine exists_eq_mul_left_of_dvd ?_
         have h_pi_pos : p n i > 0 := by
-          have h_prime : p n i ∈ P_n n := by
-            have h_perm : ∀ x ∈ primes_list n, x ∈ P_n n :=
+          have h_prime : p n i ∈ primeWindow n := by
+            have h_perm : ∀ x ∈ primesList n, x ∈ primeWindow n :=
               fun x hx => Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 hx
             exact h_perm _ (List.get_mem _ _)
           exact Nat.Prime.pos (Finset.mem_filter.mp h_prime |>.2.2)
@@ -522,7 +531,7 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
           · apply Finset.mem_range.mpr
             linarith [Finset.mem_range.mp h_prime.1]
           · exact h_prime.2
-        · have h_in_P : p n i ∈ P_n n := by
+        · have h_in_P : p n i ∈ primeWindow n := by
             exact mem_P_n_iff_exists_index n _ |>.2 ⟨i, rfl⟩
           exact p_ne_zero n i
     · simpa [ neg_div, mul_assoc, mul_comm, mul_left_comm ] using h_zeta_ne_one
@@ -531,24 +540,24 @@ private lemma dirac_comb_zero_geo_series (n : ℕ) (i : Fin (w n)) (h : ZMod (q 
 
 private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) :
     ∑ x : ZMod (q n),
-      (if (x.cast : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨
-          (x.cast : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then
+      (if (x.cast : ZMod (p n i)) = (krafftResidue n i : ZMod (p n i)) ∨
+          (x.cast : ZMod (p n i)) = -(krafftResidue n i : ZMod (p n i)) then
         (Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ)))
       else 0) =
     ∑ r ∈ Finset.range (p n i),
       (∑ m ∈ Finset.range (q n / (p n i)),
         Complex.exp (-2 * Real.pi * Complex.I * (h.val * (r + m * (p n i)) : ℕ) / (q n : ℂ))) *
-      (if (r : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨
-          (r : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then 1 else 0) := by
+      (if (r : ZMod (p n i)) = (krafftResidue n i : ZMod (p n i)) ∨
+          (r : ZMod (p n i)) = -(krafftResidue n i : ZMod (p n i)) then 1 else 0) := by
   -- We can split the sum into residue classes modulo $p_i$.
   have h_split_sum : Finset.sum (Finset.range (q n))
-      (fun x => if (x : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨
-          (x : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then
+      (fun x => if (x : ZMod (p n i)) = (krafftResidue n i : ZMod (p n i)) ∨
+          (x : ZMod (p n i)) = -(krafftResidue n i : ZMod (p n i)) then
         (Complex.exp (-2 * Real.pi * Complex.I * (h.val * x : ℕ) / (q n : ℂ))) else 0) =
     Finset.sum (Finset.range (p n i)) (fun r =>
       Finset.sum (Finset.range (q n / (p n i))) (fun m =>
-        if (r + m * (p n i) : ZMod (p n i)) = (r_K n i : ZMod (p n i)) ∨
-            (r + m * (p n i) : ZMod (p n i)) = -(r_K n i : ZMod (p n i)) then
+        if (r + m * (p n i) : ZMod (p n i)) = (krafftResidue n i : ZMod (p n i)) ∨
+            (r + m * (p n i) : ZMod (p n i)) = -(krafftResidue n i : ZMod (p n i)) then
           (Complex.exp (-2 * Real.pi * Complex.I * (h.val * (r + m * (p n i)) : ℕ) / (q n : ℂ)))
         else 0)) := by
     have h_split_sum : Finset.range (q n) = Finset.biUnion (Finset.range (p n i))
@@ -558,7 +567,7 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
       constructor
       · intro hx
         use x % (p n i), Nat.mod_lt _ (Nat.Prime.pos (by
-        have h_prime : p n i ∈ P_n n := by
+        have h_prime : p n i ∈ primeWindow n := by
           exact Finset.mem_sort ( α := ℕ ) ( · ≤ · ) |>.1 ( List.get_mem _ _ )
         exact Finset.mem_filter.mp h_prime |>.2.2)), x / (p n i), Nat.div_lt_of_lt_mul <| by
           rw [ Nat.mul_div_cancel' ]
@@ -600,7 +609,7 @@ private lemma dirac_comb_zero_split_sum (n : ℕ) (i : Fin (w n)) (h : ZMod (q n
 
 lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
     (h_not_multiple : ∀ k : Fin (p n i), h ≠ (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) :
-    g_hat n i h = 0 := by
+    gHat n i h = 0 := by
   -- The inner sum is a geometric series where $\zeta = e^{-2\pi i p_i / q}$
   -- is a primitive $M$-th root of unity, with $M = q/p_i$.
   have h_geo_series := dirac_comb_zero_geo_series n i h h_not_multiple
@@ -618,7 +627,7 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
   simp_all +decide only [Nat.cast_mul, ne_eq, neg_mul, ZMod.natCast_val, Finset.sum_ite, not_or,
     Finset.sum_const_zero, add_zero, Nat.cast_add, mul_ite, mul_one, mul_zero, Finset.mem_range]
   convert congr_arg (fun (x : ℂ) => (1 / (q n : ℂ)) * x) h_split_sum using 1
-  · unfold g_hat; norm_num [ Finset.sum_ite ]
+  · unfold gHat; norm_num [ Finset.sum_ite ]
     unfold g
     exact Or.inl ( by rw [ Finset.sum_filter ]; congr; ext; aesop )
   · rw [Finset.sum_eq_zero]
@@ -631,19 +640,19 @@ The Resonant Sieve Equation
 
 By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$,
 and applying the Dirac Comb lemmas, establish the exact equation for the weighted
-hit mass $S_2(n)$:
-$$ S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} +
+hit mass $sum2(n)$:
+$$ sum2(n, W) = sum1(n, W) \sum_{i=1}^w \frac{2}{p_i} +
   q \sum_{i=1}^w \sum_{k=1}^{p_i-1} \hat{W}\left(k \frac{q}{p_i}\right) \frac{2}{p_i}
     \cos\left( \frac{2\pi k r^K_i}{p_i} \right) $$
 -/
 private lemma resonant_sieve_split (n : ℕ) (W : ZMod (q n) → ℝ) :
     ∀ i : Fin (w n),
-      ∑ h : ZMod (q n), W_hat n W h * starRingEnd ℂ (g_hat n i h) =
+      ∑ h : ZMod (q n), wHat n W h * starRingEnd ℂ (gHat n i h) =
       ∑ k ∈ Finset.range (p n i),
-        W_hat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
-        starRingEnd ℂ (g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) := by
+        wHat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
+        starRingEnd ℂ (gHat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) := by
   intro i
-  have h_split : ∀ h : ZMod (q n), g_hat n i h ≠ 0 →
+  have h_split : ∀ h : ZMod (q n), gHat n i h ≠ 0 →
       ∃ k ∈ Finset.range (p n i),
         h = (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) := by
     intro h hh; contrapose! hh; simp_all only [Finset.mem_range, Nat.cast_mul, ne_eq]
@@ -664,11 +673,11 @@ private lemma resonant_sieve_split (n : ℕ) (W : ZMod (q n) → ℝ) :
       exact ⟨k, by nlinarith [Nat.div_mul_cancel (show p n i ∣ q n from
         Finset.dvd_prod_of_mem _ <| Finset.mem_filter.mpr ⟨
           Finset.mem_range.mpr <| show p n i < 6 * n + 2 from by
-            have h_pi_lt : p n i ∈ P_n n := by
+            have h_pi_lt : p n i ∈ primeWindow n := by
               exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
             exact Finset.mem_range.mp (Finset.mem_filter.mp h_pi_lt |>.1),
           by
-            have h_prime : p n i ∈ P_n n := by
+            have h_prime : p n i ∈ primeWindow n := by
               exact Finset.mem_sort (α := ℕ) (· ≤ ·) |>.1 (List.get_mem _ _)
             exact ⟨Finset.mem_filter.mp h_prime |>.2.1, Finset.mem_filter.mp h_prime |>.2.2⟩⟩),
         show (q n : ℤ) > 0 from Nat.cast_pos.mpr <|
@@ -685,24 +694,24 @@ private lemma resonant_sieve_split (n : ℕ) (W : ZMod (q n) → ℝ) :
 private lemma resonant_sieve_simplify (n : ℕ) (W : ZMod (q n) → ℝ) :
     ∀ i : Fin (w n),
       ∑ k ∈ Finset.range (p n i),
-        W_hat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
-        starRingEnd ℂ (g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) =
-      (W_hat n W 0) * (2 / (p n i : ℝ)) +
+        wHat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
+        starRingEnd ℂ (gHat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) =
+      (wHat n W 0) * (2 / (p n i : ℝ)) +
       ∑ k ∈ Finset.erase (Finset.range (p n i)) 0,
-        W_hat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
+        wHat n W (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) *
         (2 / (p n i : ℝ) *
-         Real.cos (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ))) := by
+         Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ))) := by
   intro i
   have h_simplify : ∀ k ∈ Finset.range (p n i),
-      starRingEnd ℂ (g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) =
+      starRingEnd ℂ (gHat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n))) =
       if k = 0 then (2 / (p n i : ℝ))
       else (2 / (p n i : ℝ) *
-            Real.cos (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ))) := by
+            Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ))) := by
     intro k hk
-    have h_g_hat : g_hat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
+    have h_g_hat : gHat n i (((k : ℕ) * (q n / p n i) : ℕ) : ZMod (q n)) =
         if k = 0 then (2 / (p n i : ℝ))
         else (2 / (p n i : ℝ) *
-              Real.cos (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ))) := by
+              Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ))) := by
       convert dirac_comb_nonzero n i ⟨ k, Finset.mem_range.mp hk ⟩ using 1
       split_ifs <;> norm_num [ ‹_› ]
     rw [ h_g_hat, Complex.conj_ofReal ]
@@ -717,21 +726,21 @@ private lemma resonant_sieve_simplify (n : ℕ) (W : ZMod (q n) → ℝ) :
   split_ifs <;> simp +decide [ *, mul_assoc ]
 
 theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
-    (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0) :
-    (S_2 n W : ℂ) = (S_1 n W : ℂ) * ∑ i : Fin (w n), ((2 : ℝ) / (p n i : ℝ) : ℂ) +
+    (h_supp : ∀ x : ZMod (q n), x.val ∉ evalInterval n → W x = 0) :
+    (sum2 n W : ℂ) = (sum1 n W : ℂ) * ∑ i : Fin (w n), ((2 : ℝ) / (p n i : ℝ) : ℂ) +
     (q n : ℂ) * ∑ i : Fin (w n), ∑ k ∈ (Finset.range (p n i)).erase 0,
-      W_hat n W (((k * (q n / p n i)) : ℕ) : ZMod (q n)) *
+      wHat n W (((k * (q n / p n i)) : ℕ) : ZMod (q n)) *
       ((2 : ℝ) / (p n i : ℝ) *
-       Real.cos (2 * Real.pi * (k : ℝ) * (r_K n i : ℝ) / (p n i : ℝ)) : ℂ) := by
+       Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ)) : ℂ) := by
   have := @plancherel_hit_expansion n hn W h_supp
   -- Split the sum over $h \in \mathbb{Z}/q\mathbb{Z}$ into $h$ where $\hat{g}_i(h) \neq 0$
   -- and $h$ where $\hat{g}_i(h) = 0$.
   have h_split := resonant_sieve_split n W
   -- Apply the results from Lemma 6.1 to simplify the expression.
   have h_simplify := resonant_sieve_simplify n W
-  have h_zero_frequency : (S_1 n W : ℂ) = (q n : ℂ) * W_hat n W 0 := by
+  have h_zero_frequency : (sum1 n W : ℂ) = (q n : ℂ) * wHat n W 0 := by
     convert compact_support_equivalence n hn W h_supp using 1
-    unfold W_hat; norm_num [ Complex.ext_iff ]
+    unfold wHat; norm_num [ Complex.ext_iff ]
   rw [this, Finset.mul_sum]
   simp +decide only [h_split, h_simplify, Finset.mul_sum _ _ _]
   simp +decide [Finset.mul_sum _ _ _, mul_add, mul_assoc, mul_left_comm,
@@ -746,13 +755,14 @@ angle:
 $$ \cos\left( \frac{2\pi \cdot 3 \cdot r^K_i}{p_i} \right) = -\cos\left( \frac{\pi}{p_i} \right) $$
 -/
 lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
-    Real.cos (2 * Real.pi * 3 * (r_K n i : ℝ) / (p n i : ℝ)) =
+    Real.cos (2 * Real.pi * 3 * (krafftResidue n i : ℝ) / (p n i : ℝ)) =
       -Real.cos (Real.pi / (p n i : ℝ)) := by
-  -- By definition of $r_K$, we know that $p_i = 6r_K - 1$ or $p_i = 6r_K + 1$ for each $i$.
+  -- By definition of $krafftResidue$, we know that $p_i = 6r_K - 1$
+  -- or $p_i = 6r_K + 1$ for each $i$.
   have h_prime_cases : ∀ i : Fin (w n),
-      p n i = 6 * r_K n i - 1 ∨ p n i = 6 * r_K n i + 1 := by
+      p n i = 6 * krafftResidue n i - 1 ∨ p n i = 6 * krafftResidue n i + 1 := by
     intro i
-    unfold r_K
+    unfold krafftResidue
     have h_prime : p n i ≥ 5 ∧ p n i % 6 = 1 ∨ p n i ≥ 5 ∧ p n i % 6 = 5 := by
       have h_prime : p n i ≥ 5 ∧ p n i % 2 = 1 ∧ p n i % 3 ≠ 0 := by
         have h_prime : p n i ≥ 5 ∧ Nat.Prime (p n i) := ⟨p_ge_5 n i, p_prime n i⟩
@@ -765,7 +775,7 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
     generalize_proofs at *
     omega
   obtain h | h := h_prime_cases i <;> rw [h] <;> ring_nf <;> norm_num [sub_eq_add_neg]
-  · rcases k : r_K n i with (_ | k) <;> push_cast [k] <;> ring_nf <;> norm_num at *
+  · rcases k : krafftResidue n i with (_ | k) <;> push_cast [k] <;> ring_nf <;> norm_num at *
     · have h_in_P := p_mem_P_n n i
       have := Finset.mem_filter.mp h_in_P
       aesop
@@ -773,7 +783,8 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
       convert Real.cos_periodic _ using 2
       nlinarith [Real.pi_pos, mul_inv_cancel₀ (by linarith : (5 : ℝ) + ↑‹ℕ› * 6 ≠ 0)]
   · rw [← Real.cos_pi_sub]; congr
-    have h_nz : (1 + r_K n i * 6 : ℝ) ≠ 0 := by linarith [show (r_K n i : ℝ) ≥ 0 by positivity]
+    have h_nz : (1 + krafftResidue n i * 6 : ℝ) ≠ 0 := by
+      linarith [show (krafftResidue n i : ℝ) ≥ 0 by positivity]
     nlinarith [Real.pi_pos, mul_inv_cancel₀ h_nz]
 
 /--
@@ -783,23 +794,23 @@ Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ 
 strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies
 to:
 $$
-S_2(n, W) = S_1(n, W) \sum_{i=1}^w \frac{2}{p_i} -
+sum2(n, W) = sum1(n, W) \sum_{i=1}^w \frac{2}{p_i} -
 q \sum_{i=1}^w \hat{W}\left(3 \frac{q}{p_i}\right) \frac{2}{p_i} \cos\left( \frac{\pi}{p_i} \right)
 $$
 -/
 lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
-    (h_supp : ∀ x : ZMod (q n), x.val ∉ A_n n → W x = 0)
+    (h_supp : ∀ x : ZMod (q n), x.val ∉ evalInterval n → W x = 0)
     (h_spectral : ∀ i : Fin (w n), ∀ k ∈ (Finset.range (p n i)).erase 0, k ≠ 3 →
-      W_hat n W (((k * (q n / p n i)) : ℕ) : ZMod (q n)) = 0) :
-    (S_2 n W : ℂ) = (S_1 n W : ℂ) * ∑ i : Fin (w n), ((2 : ℝ) / (p n i : ℝ) : ℂ) -
-    (q n : ℂ) * ∑ i : Fin (w n), W_hat n W (((3 * (q n / p n i)) : ℕ) : ZMod (q n)) *
+      wHat n W (((k * (q n / p n i)) : ℕ) : ZMod (q n)) = 0) :
+    (sum2 n W : ℂ) = (sum1 n W : ℂ) * ∑ i : Fin (w n), ((2 : ℝ) / (p n i : ℝ) : ℂ) -
+    (q n : ℂ) * ∑ i : Fin (w n), wHat n W (((3 * (q n / p n i)) : ℕ) : ZMod (q n)) *
     ((2 : ℝ) / (p n i : ℝ) * Real.cos (Real.pi / (p n i : ℝ)) : ℂ) := by
   rw [ resonant_sieve_equation n hn W h_supp ]
   rw [ Finset.sum_congr rfl fun i hi => Finset.sum_eq_single 3 ?_ ?_ ]
   · -- Apply the trigonometric identity $\cos(2\pi \cdot 3 \cdot r / p) = -\cos(\pi / p)$
     -- to each term in the sum.
     have h_cos_identity : ∀ i : Fin (w n),
-        Complex.cos (2 * Real.pi * 3 * (r_K n i : ℝ) / (p n i : ℝ)) =
+        Complex.cos (2 * Real.pi * 3 * (krafftResidue n i : ℝ) / (p n i : ℝ)) =
           -Complex.cos (Real.pi / (p n i : ℝ)) := by
       intro i
       have := exact_krafft_cosine n i
@@ -815,17 +826,17 @@ lemma third_harmonic_extraction (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
 
 
 /-- Sum of reciprocals of primes in the sieve window -/
-def H_spec (n : ℕ) : ℝ := ∑ p ∈ P_n n, (1 : ℝ) / p
+def hSpec (n : ℕ) : ℝ := ∑ p ∈ primeWindow n, (1 : ℝ) / p
 
 /-- The main term of the sieve: 2H(n) -/
-def mainTerm (n : ℕ) : ℝ := 2 * H_spec n
+def mainTerm (n : ℕ) : ℝ := 2 * hSpec n
 
 /-- The resonance strength for a single prime p: cos(π/p) -/
 def resonanceStrength (p : ℕ) : ℝ := Real.cos (Real.pi / p)
 
 /-- The total resonance capacity: Σ (2/p)·cos(π/p) -/
 def resonanceCapacity (n : ℕ) : ℝ :=
-  ∑ p ∈ P_n n, (2 : ℝ) / p * resonanceStrength p
+  ∑ p ∈ primeWindow n, (2 : ℝ) / p * resonanceStrength p
 
 /--
 The Harmonic Deficit (Parity Barrier Collision)
@@ -833,11 +844,11 @@ The resonance capacity of any purely one-dimensional 3rd harmonic weight system 
 overpowered by the sieve aggregate main density. This formalizes the collision with the
 Sieve Parity limit.
 -/
-lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
+lemma resonance_lt_mainTerm (n : ℕ) (hn : primeWindow n ≠ ∅) :
     resonanceCapacity n < mainTerm n := by
   -- By definition of $resonanceCapacity$, we know that each term in the sum is strictly less
   -- than the corresponding term in the sum for $mainTerm$.
-  have h_lt : ∀ p ∈ P_n n, (2 : ℝ) / p * Real.cos (Real.pi / p) < (2 : ℝ) / p := by
+  have h_lt : ∀ p ∈ primeWindow n, (2 : ℝ) / p * Real.cos (Real.pi / p) < (2 : ℝ) / p := by
     intros p hp
     have h_cos_lt_one : Real.cos (Real.pi / p) < 1 := by
       nlinarith [ Real.sin_sq_add_cos_sq ( Real.pi / p ),
@@ -846,13 +857,14 @@ lemma resonance_lt_mainTerm (n : ℕ) (hn : P_n n ≠ ∅) :
         div_lt_self Real.pi_pos <| Nat.one_lt_cast.2 <| Nat.Prime.one_lt <|
         Finset.mem_filter.1 hp |>.2.2 ]
     exact mul_lt_of_lt_one_right ( div_pos zero_lt_two ( Nat.cast_pos.mpr ( Nat.Prime.pos (by
-      unfold P_n at hp; aesop) ) )) h_cos_lt_one
+      unfold primeWindow at hp; aesop) ) )) h_cos_lt_one
   -- Since the sum of strictly less terms is strictly less than the sum of the corresponding terms,
   --we can apply this to conclude the proof.
-  have h_sum_lt : ∑ p ∈ P_n n, (2 : ℝ) / p * Real.cos (Real.pi / p) < ∑ p ∈ P_n n, (2 : ℝ) / p :=
+  have h_sum_lt : ∑ p ∈ primeWindow n, (2 : ℝ) / p * Real.cos (Real.pi / p) <
+      ∑ p ∈ primeWindow n, (2 : ℝ) / p :=
     Finset.sum_lt_sum_of_nonempty ( Finset.nonempty_of_ne_empty hn ) h_lt
   convert h_sum_lt using 1; norm_num [ div_eq_mul_inv, Finset.mul_sum _ _ _ ]; ring_nf!
-  unfold mainTerm H_spec; norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ]
+  unfold mainTerm hSpec; norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ]
 
 end
 
