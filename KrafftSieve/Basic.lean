@@ -16,6 +16,13 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Defs
 
+/-!
+# Basic definitions and properties for the Krafft Sieve
+
+This module provides basic bounds and properties for the primes and the
+primorial $q(n)$ used throughout the Krafft Sieve formalization.
+-/
+
 open scoped BigOperators Real Nat Pointwise
 
 noncomputable section
@@ -73,7 +80,7 @@ lemma p_lt_range (n : ℕ) (i : Fin (w n)) : p n i < 6 * n + 2 :=
 lemma p_dvd_q (n : ℕ) (i : Fin (w n)) : p n i ∣ q n :=
   Finset.dvd_prod_of_mem _ (p_mem_P_n n i)
 
-/- q(n) is at least 10^20 for n >= 10. -/
+/-- $q(n)$ is at least $10^{20}$ for $n \ge 10$. -/
 lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
   induction hn with
   | refl => decide
@@ -82,7 +89,7 @@ lemma q_ge_q10_very_large (n : ℕ) (hn : n ≥ 10) : q n ≥ 10^20 := by
     exact Nat.le_of_dvd (Finset.prod_pos fun p hp =>
       (Finset.mem_filter.mp hp).2.2.pos) (q_mono n)
 
-/- For n >= 1, 6n^2 + 10n + 3 < q(n). -/
+/-- For $n \ge 1$, $6n^2 + 10n + 3 < q(n)$. -/
 theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
   by_cases hn10 : n < 10
   · interval_cases n <;> decide

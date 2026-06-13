@@ -30,6 +30,17 @@ import Mathlib.NumberTheory.Bertrand
 import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Tactic
 
+/-!
+# Core Definitions for the Krafft Sieve
+
+This module establishes the foundational definitions for the sieve:
+- $\mathcal{P}_n$: The target set of primes.
+- $q$: The primorial $q = \prod_{p \in \mathcal{P}_n} p$.
+- $\mathcal{A}_n$: The target interval.
+- $g_i, c$: Local and global hit counters.
+- $S_1, S_2$: Weighted sums over the interval.
+-/
+
 open scoped BigOperators Real Nat Pointwise
 
 noncomputable section

@@ -16,6 +16,13 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
+/-!
+# Selberg Weights
+
+This module defines the permitted residue classes $A_i$ and the global surviving set $A$,
+as well as the indicator function $f(x)$ for survivors in the Krafft Sieve.
+-/
+
 open scoped BigOperators
 open scoped Real
 open scoped Nat

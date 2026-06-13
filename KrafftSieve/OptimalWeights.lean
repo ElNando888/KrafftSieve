@@ -16,6 +16,13 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.SelbergWeights
 
+/-!
+# Optimal Weights
+
+This module constructs the truly multidimensional optimal weights $\lambda$ for the Krafft Sieve
+and explores the properties of the resulting polynomial $P(x)$ and weight $W_\lambda(x)$.
+-/
+
 open scoped BigOperators
 open scoped Real
 open scoped Nat

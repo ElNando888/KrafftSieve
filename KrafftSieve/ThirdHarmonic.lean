@@ -16,6 +16,14 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Basic
 
+/-!
+# Third Harmonic Extraction
+
+This module focuses on the Fourier domain analysis of the weighted sieve sums,
+specifically expanding the hit counts into frequencies and isolating the main terms
+and the key third harmonic contribution.
+-/
+
 open scoped BigOperators
 open scoped Real
 open scoped Nat
@@ -47,8 +55,8 @@ noncomputable def g_hat (n : ℕ) (i : Fin (w n)) (h : ZMod (q n)) : ℂ :=
   (1 / (q n : ℂ)) * ∑ x : ZMod (q n),
     (g n i x : ℂ) * Complex.exp (-2 * Real.pi * Complex.I * (h.val * x.val : ℕ) / (q n : ℂ))
 
-/-
-Lemma: Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
+/--
+Given the compact support of $W$ in $\mathcal{A}_n$, the sum of $W(x)$ over
 $\mathbb{Z}/q\mathbb{Z}$ is equal to $S_1(n, W)$.
 -/
 lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
@@ -71,8 +79,9 @@ lemma sum_W_eq_S1 (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
       exact lt_of_le_of_lt ( Finset.mem_Icc.mp hb |>.2 ) ( q_bound n hn )
   · intro x hx; contrapose! h_supp; aesop
 
-/-
+/--
 Compact Support Equivalence
+
 Assume the weight function is strictly supported inside the interval:
 $\forall x \notin \mathcal{A}_n, W(x) = 0$. Prove that the interval sum $S_1(n, W)$ is equivalent
 to the full space sum, which yields the zero-frequency Fourier coefficient:
@@ -86,10 +95,13 @@ lemma compact_support_equivalence (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → �
   · assumption
   · assumption
 
+/-- Helper lemma for definitional equality of the real part of a natural cast to ℂ. -/
 private lemma natCast_re_helper (x : ℕ) : (x : ℂ).re = x := rfl
+
+/-- Helper lemma for definitional equality of the imaginary part of a natural cast to ℂ. -/
 private lemma natCast_im_helper (x : ℕ) : (x : ℂ).im = 0 := rfl
 
-/-
+/--
 Plancherel's Theorem for the custom Fourier transform definition:
 $$ \sum_{x} f(x) \overline{g(x)} = q \sum_{h} \hat{f}(h) \overline{\hat{g}(h)} $$
 -/
@@ -205,8 +217,9 @@ lemma plancherel_hit_expansion (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)
     exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ =>
       Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ => by ac_rfl))
 
-/-
+/--
 Dirac Comb Non-Zero Values
+
 For a frequency $h$ that is a multiple of $q/p_i$, specifically $h = k(q/p_i)$, the Fourier
 transform evaluates to:
 $$
@@ -425,8 +438,9 @@ lemma dirac_comb_nonzero (n : ℕ) (i : Fin (w n)) (k : Fin (p n i)) :
       exact (p_prime n i).pos
     · exact Nat.mul_div_le _ _
 
-/-
+/--
 Dirac Comb Zero Values
+
 For any frequency $h$ that is NOT a multiple of $q/p_i$, the Fourier transform of the local
 hit function is zero:
 $$ \hat{g}_i(h) = 0 $$
@@ -609,8 +623,9 @@ lemma dirac_comb_zero (n : ℕ) (i : Fin (w n)) (h : ZMod (q n))
     · intro x hx
       exact h_factor x <| Finset.mem_range.mp <| Finset.mem_filter.mp hx |>.1
 
-/-
+/--
 The Resonant Sieve Equation
+
 By splitting the sum in the Plancherel Hit Expansion into $h=0$ and $h \ne 0$,
 and applying the Dirac Comb lemmas, establish the exact equation for the weighted
 hit mass $S_2(n)$:
@@ -719,8 +734,9 @@ theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ
   simp +decide [Finset.mul_sum _ _ _, mul_add, mul_assoc, mul_left_comm,
     Finset.sum_add_distrib, h_zero_frequency]
 
-/-
+/--
 The Exact Krafft Cosine
+
 Using the definition $r^K_i = \lfloor(p_i+1)/6\rfloor$, admit that for all primes $p_i \ge 5$,
 the cosine at the third harmonic evaluates exactly to the negative cosine of a microscopic
 angle:
@@ -757,8 +773,9 @@ lemma exact_krafft_cosine (n : ℕ) (i : Fin (w n)) :
     have h_nz : (1 + r_K n i * 6 : ℝ) ≠ 0 := by linarith [show (r_K n i : ℝ) ≥ 0 by positivity]
     nlinarith [Real.pi_pos, mul_inv_cancel₀ h_nz]
 
-/-
+/--
 The Third Harmonic Extraction
+
 Admit that for a strategically chosen weight function $W(x)$ where $\hat{W}(h)$ is concentrated
 strictly at $h=0$ and the third harmonics $h = 3q/p_i$, the Resonant Sieve Equation simplifies
 to:
