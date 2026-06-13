@@ -122,7 +122,8 @@ lemma sum_exp_orthogonality (n : ℕ) (k : ZMod (q n)) :
         simp +decide [ mul_assoc, mul_comm, mul_left_comm ]
     · exact fun x hx y hy hxy =>
         Nat.mod_eq_of_lt hx.out ▸ Nat.mod_eq_of_lt hy.out ▸ by
-          simpa [ ZMod.natCast_eq_natCast_iff ] using hxy
+          rw [ ZMod.natCast_eq_natCast_iff ] at hxy
+          exact hxy
   · simp +zetaDelta only [Finset.mem_univ, Finset.mem_image, Finset.mem_range, not_exists,
     not_and, ZMod.natCast_val, Complex.exp_ne_zero, imp_false, not_forall,
     Decidable.not_not, forall_const] at *
@@ -346,11 +347,11 @@ lemma harmonic_variance_lower_bound (n : ℕ) (r : Fin (w n) → ℕ) (h : ZMod 
     (h_ne_zero : h ≠ 0) : σ_sq n r ≥ 2 * Complex.normSq (f_hat n r h) := by
   have := f_hat_conj_symm n r h
   rw [ parseval_identity ]
-  rw [ Finset.sum_eq_add_sum_diff_singleton ( Finset.mem_univ h ) ]
-  rw [ Finset.sum_eq_add_sum_diff_singleton
-    ( Finset.mem_sdiff.mpr ⟨ Finset.mem_univ ( -h ), ?_ ⟩ ) ] <;>
+  rw [ ← Finset.add_sum_erase _ _ ( Finset.mem_univ h ) ]
+  rw [ ← Finset.add_sum_erase _ _
+    ( Finset.mem_erase.mpr ⟨ ?_, Finset.mem_univ ( -h ) ⟩ ) ] <;>
     norm_num [ h_ne_zero, this ]
-  · linarith [ show 0 ≤ ∑ x ∈ (Finset.univ \ {h}) \ {-h},
+  · linarith [ show 0 ≤ ∑ x ∈ (Finset.univ.erase h).erase (-h),
         if x = 0 then 0 else Complex.normSq ( f_hat n r x ) from
       Finset.sum_nonneg fun x hx => by
         split_ifs <;> norm_num [ Complex.normSq_nonneg ] ]

@@ -707,10 +707,10 @@ private lemma resonant_sieve_simplify (n : ℕ) (W : ZMod (q n) → ℝ) :
   norm_num [Finset.sum_ite, Finset.filter_ne']
   ring_nf
   have hp_ne_zero : p n i ≠ 0 := p_ne_zero n i
-  rw [Finset.sum_eq_add_sum_diff_singleton (Finset.mem_range.mpr (Nat.pos_of_ne_zero hp_ne_zero))]
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.pos_of_ne_zero hp_ne_zero))]
   norm_num; ring_nf
   generalize_proofs at *
-  rw [ Finset.sdiff_singleton_eq_erase ]; congr; ext; ring_nf
+  congr; ext; ring_nf
   split_ifs <;> simp +decide [ *, mul_assoc ]
 
 theorem resonant_sieve_equation (n : ℕ) (hn : n ≥ 1) (W : ZMod (q n) → ℝ)

@@ -243,7 +243,7 @@ lemma sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
       · rw [ Int.subNatNat_of_le ( by
           linarith [ show x > 0 from
             Nat.pos_of_ne_zero ( by rintro rfl; contradiction ) ] ) ] at H
-        norm_cast at H ; simp_all only [ge_iff_le]
+        norm_cast at H; simp_all only [ge_iff_le]
         rw [ Nat.dvd_prime h.1 ] at H
         have h_pi_lt : p n i < 6 * n + 2 := p_lt_range n i
         rcases x with ( _ | _ | x ) <;> simp_all +arith +decide only
@@ -267,14 +267,10 @@ lemma sieve_equivalence (n : ℕ) (hn : n ≥ 1) (x : ℕ) (hx : x ∈ A_n n) :
       rw [ ZMod.val_natCast ]
       rw [ ZMod.natCast_eq_natCast_iff ]
       rw [ Nat.ModEq, Nat.mod_mod_of_dvd _ (p_dvd_q n i) ]
-    · norm_num [ ZMod.cast, ZMod.val ]
-      cases h_qn : q n <;> simp_all +decide only [ZMod, Int.cast_natCast, Fin.val_natCast,
-        not_false_eq_true, iff_true]
-      convert this.2 using 1
-      rw [ ← ZMod.natCast_mod ]
-      rw [ Nat.mod_mod_of_dvd _ ( show p n i ∣ _ from _ ) ]
-      · simp
-      · exact h_qn ▸ p_dvd_q n i
+    · rw [ ZMod.cast_eq_val, ZMod.val_natCast ]
+      have h_cast : (↑(x % q n) : ZMod (p n i)) = ↑x := by
+        rw [ ← ZMod.natCast_mod, Nat.mod_mod_of_dvd _ (p_dvd_q n i), ZMod.natCast_mod ]
+      rw [ h_cast ]
 
 /--
 Additive Sieve Equivalence:

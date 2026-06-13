@@ -136,7 +136,7 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
             refine lt_of_le_of_lt h_prime_bound ?_
             exact lt_of_le_of_lt ( pow_le_pow_right₀ ( by decide ) ( show k + 1 ≤ Nat.log 2 n + 2 by
               linarith [ Finset.mem_Ico.mp hk ] ) )
-              ( by rw [ pow_add ] ; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] )
+              ( by rw [ pow_add ]; nlinarith [ Nat.pow_log_le_self 2 ( by linarith : n ≠ 0 ) ] )
           simp +zetaDelta only [ge_iff_le, not_lt, Nat.reducePow, not_le, gt_iff_lt, Finset.mem_Ico,
             and_imp, Finset.le_eq_subset] at *
           exact Finset.image_subset_iff.mpr fun k hk => Finset.mem_filter.mpr
@@ -167,12 +167,12 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
                 exact lt_of_lt_of_le ( by
                   nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos ] )
                   ( Nat.pow_le_pow_right ( by decide ) h_exp_growth )
-            rw [ pow_succ' ] ; linarith
+            rw [ pow_succ' ]; linarith
           nlinarith only [ hn_large, Nat.div_add_mod n 2, Nat.mod_lt n two_pos, h_exp_growth,
             ‹5 ^ Nat.log 2 n ≥ 5 ^ ( Nat.log 2 ( n / 2 ) + 1 ) › ]
         · have : Nat.log 2 n ≥ 29 := Nat.le_log_of_pow_le ( by decide ) ( by linarith )
           ( have : Nat.log 2 n ≤ 29 := Nat.le_of_lt_succ ( Nat.log_lt_of_lt_pow ( by linarith )
-            ( by linarith ) ) ; interval_cases Nat.log 2 n ; norm_num at *; )
+            ( by linarith ) ); interval_cases Nat.log 2 n; norm_num at *; )
           nlinarith only [ hn, hn_large ]
       exact h_exp_growth n hn_large.le
 

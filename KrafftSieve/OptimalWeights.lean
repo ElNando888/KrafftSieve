@@ -15,6 +15,8 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
 import KrafftSieve.SelbergWeights
+import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Optimal Weights
@@ -414,12 +416,12 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
             simp_all only [WithLp.equiv_symm_apply, Set.mem_setOf_eq]
             exact h_2
           · exact show Q_1 n ( fun _ => 0 ) = 0 from by unfold Q_1; norm_num
-          · exact fun x y hx hy hx' hy' => by simpa [ hx', hy' ] using Submodule.add_mem _ hx' hy'
+          · exact fun x y hx hy hx' hy' => Submodule.add_mem _ hx' hy'
           · simp +decide [ kernel_Q1, Q_1 ]
             simp +contextual [ mul_assoc, mul_comm, mul_left_comm ]
             simp +contextual [ ← Finset.mul_sum _ _ _ ]
         · intro u hu; specialize hz ( WithLp.equiv 2 ( Idx n → ℝ ) |>.symm u )
-          simp_all +decide only [inner, RCLike.inner_apply, conj_trivial, WithLp.equiv_symm_apply]
+          simp_all +decide only [inner, WithLp.equiv_symm_apply]
           convert hz _ using 1
           · exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
           · exact Submodule.subset_span hu
@@ -445,11 +447,11 @@ lemma sphere_perp_compact (n : ℕ) : IsCompact (sphere_perp n) := by
     apply IsClosed.inter
     · -- kernel_Q1_perp is closed
       haveI : FiniteDimensional ℝ (Idx n → ℝ) := by infer_instance
-      exact Submodule.closed_of_finiteDimensional (kernel_Q1_perp n)
+      exact (kernel_Q1_perp n).complete_of_finiteDimensional.isClosed
     · -- sphere is closed
       apply isClosed_eq
       · -- dot_product is continuous
-        apply continuous_finset_sum
+        apply continuous_finsetSum
         intro i hi
         apply Continuous.mul
         · apply continuous_apply
@@ -592,10 +594,10 @@ lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainable_ratios n) := b
       (sphere_perp n) := by
     refine ContinuousOn.div ?_ ?_ ?_
     · refine Continuous.continuousOn ?_
-      refine continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => ?_
+      refine continuous_finsetSum _ fun S _ => continuous_finsetSum _ fun T _ => ?_
       fun_prop
     · refine Continuous.continuousOn ?_
-      refine continuous_finset_sum _ fun S _ => continuous_finset_sum _ fun T _ => ?_
+      refine continuous_finsetSum _ fun S _ => continuous_finsetSum _ fun T _ => ?_
       fun_prop
     · exact fun x hx => ne_of_gt <| Q_1_pos_on_sphere_perp n x hx
   refine h_cont.congr fun x hx => ?_

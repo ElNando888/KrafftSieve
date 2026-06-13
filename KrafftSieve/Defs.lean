@@ -28,7 +28,32 @@ import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.NumberTheory.ArithmeticFunction.Defs
 import Mathlib.NumberTheory.Bertrand
 import Mathlib.NumberTheory.PrimeCounting
-import Mathlib.Tactic
+import Mathlib.Tactic.Cases
+import Mathlib.Tactic.Check
+import Mathlib.Tactic.Common
+import Mathlib.Tactic.Constructor
+import Mathlib.Tactic.ErwQuestion
+import Mathlib.Tactic.Eval
+import Mathlib.Tactic.Ext
+import Mathlib.Tactic.Generalize
+import Mathlib.Tactic.HaveI
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Linter
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.NormNum.LegendreSymbol
+import Mathlib.Tactic.NormNum.Prime
+import Mathlib.Tactic.NormNum.RealSqrt
+import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Push
+import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Ring.RingNF
+import Mathlib.Tactic.SimpRw
+import Mathlib.Tactic.SplitIfs
+import Mathlib.Tactic.Tauto
+import Mathlib.Tactic.Trace
+import Mathlib.Tactic.TypeStar
+import Mathlib.Tactic.Use
+import Mathlib.Tactic.Variable
 
 /-!
 # Core Definitions for the Krafft Sieve
