@@ -1,0 +1,36 @@
+version: "v0.3"
+
+project:
+  name: "KrafftSieve"
+  authors: 
+    - "Fernando Portela"
+  license: "Apache-2.0"
+
+sources:
+  - title: "A Weighted Turán Sieve for Twin Primes via the Krafft Geometry"
+    authors: 
+      - "Fernando Portela"
+    id: "https://doi.org/10.5281/zenodo.18758252"
+    type: "preprint"
+
+status:
+  scope: "Formal verification of the Krafft sieve architecture for the Twin Prime Conjecture."
+  sorry_count: 0
+  sorry_in_definitions: 0
+  axioms: 
+    - "propext"
+    - "Quot.sound"
+    - "Classical.choice"
+  main_results:
+    - declaration: "KrafftSieve.resonance_lt_mainTerm"
+      file: "KrafftSieve/ThirdHarmonic.lean"
+      sorry_count: 0
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "KrafftSieve.krafft_sieve_guarantee"
+      file: "KrafftSieve/SelbergWeights.lean"
+      sorry_count: 0
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "KrafftSieve.krafft_sieve_guarantee_with_mu_min"
+      file: "KrafftSieve/OptimalWeights.lean"
+      sorry_count: 0
+      axioms: ["propext", "Quot.sound", "Classical.choice"]

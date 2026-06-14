@@ -18,4 +18,10 @@ rev = "v4.31.0-rc1"
 name = "KrafftSieve"
 
 [[lean_lib]]
+name = "Challenge"
+
+[[lean_lib]]
+name = "Conformance"
+
+[[lean_lib]]
 name = "Legendre"
