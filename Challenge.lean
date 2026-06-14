@@ -58,4 +58,13 @@ theorem krafft_sieve_guarantee_with_mu_min (n : ℕ) (h : muMin n < 1) :
     ∃ x ∈ evalInterval n, Nat.Prime (6 * x - 1) ∧ Nat.Prime (6 * x + 1) := by
   sorry
 
+/--
+Theorem: If there are infinitely many intervals where the optimal multidimensional
+weight achieves a ratio strictly less than 1, then there are infinitely many twin primes.
+-/
+theorem mu_min_lt_one_implies_tpc :
+    {n : ℕ | muMin n < 1}.Infinite
+    → {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
+  sorry
+
 end KrafftSieve

@@ -10,6 +10,7 @@ import KrafftSieve.ThirdHarmonic
 import KrafftSieve.Variance
 import KrafftSieve.SelbergWeights
 import KrafftSieve.OptimalWeights
+import KrafftSieve.MainTheorem
 
 /-!
 # Krafft Sieve for Twin Primes
