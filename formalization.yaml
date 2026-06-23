@@ -34,3 +34,7 @@ status:
       file: "KrafftSieve/OptimalWeights.lean"
       sorry_count: 0
       axioms: ["propext", "Quot.sound", "Classical.choice"]
+    - declaration: "KrafftSieve.mu_min_lt_one_implies_tpc"
+      file: "KrafftSieve/MainTheorem.lean"
+      sorry_count: 0
+      axioms: ["propext", "Quot.sound", "Classical.choice"]
