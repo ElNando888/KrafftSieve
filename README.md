@@ -17,3 +17,26 @@ I know I have to take entire responsibility for the whole output, but for what i
 - Second draft completed on 04/20/2026.
 - New "extended" draft completed on 06/22/2026.
 
+## Comparator output
+
+Note: No landrun available on MacOS, so running the "fake" comparator.
+
+```
+$ lake env $COMPARATOR_BIN comparator_config.json
+Building ComparatorChallenge
+WARNING: THIS IS NOT REAL LANDRUN! UNSAFELY RUNNING exec lake build ComparatorChallenge
+⚠ [2235/2236] Built ComparatorChallenge
+warning: ComparatorChallenge.lean:133:8: declaration uses `sorry`
+Build completed successfully (2236 jobs).
+Exporting #[KrafftSieve.mu_min_lt_one_implies_tpc, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList] from ComparatorChallenge
+WARNING: THIS IS NOT REAL LANDRUN! UNSAFELY RUNNING exec /Users/nando/comparator/.lake/packages/lean4export/.lake/build/bin/lean4export ComparatorChallenge -- KrafftSieve.mu_min_lt_one_implies_tpc propext Quot.sound Classical.choice Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Nat.land Nat.lor Nat.xor Nat.shiftLeft Nat.shiftRight String.ofList
+Building ComparatorSolution
+WARNING: THIS IS NOT REAL LANDRUN! UNSAFELY RUNNING exec lake build ComparatorSolution
+Build completed successfully (2988 jobs).
+Exporting #[KrafftSieve.mu_min_lt_one_implies_tpc, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList] from ComparatorSolution
+WARNING: THIS IS NOT REAL LANDRUN! UNSAFELY RUNNING exec /Users/nando/comparator/.lake/packages/lean4export/.lake/build/bin/lean4export ComparatorSolution -- KrafftSieve.mu_min_lt_one_implies_tpc propext Quot.sound Classical.choice Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Nat.land Nat.lor Nat.xor Nat.shiftLeft Nat.shiftRight String.ofList
+Running Lean default kernel on solution.
+Lean default kernel accepts the solution
+Your solution is okay!
+```
+
