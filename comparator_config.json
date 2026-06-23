@@ -1,0 +1,13 @@
+{
+    "challenge_module": "ComparatorChallenge",
+    "solution_module": "ComparatorSolution",
+    "theorem_names": [
+        "KrafftSieve.mu_min_lt_one_implies_tpc"
+    ],
+    "permitted_axioms": [
+        "propext",
+        "Quot.sound",
+        "Classical.choice"
+    ],
+    "enable_nanoda": false
+}

@@ -24,4 +24,10 @@ name = "Challenge"
 name = "Conformance"
 
 [[lean_lib]]
+name = "ComparatorChallenge"
+
+[[lean_lib]]
+name = "ComparatorSolution"
+
+[[lean_lib]]
 name = "Legendre"
