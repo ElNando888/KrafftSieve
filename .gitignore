@@ -3,6 +3,7 @@
 /aristotle
 /manuscripts/AHL
 /manuscripts/JIS
+/manuscripts/ENT/cover
 /Old
 GetDeps.lean
 *.aux
