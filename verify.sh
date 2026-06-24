@@ -2,7 +2,7 @@
 # Independently verify the solution with leanprover/comparator.
 #
 # Trust required: the Lean kernel, Mathlib, Challenge.lean (the statement),
-# and comparator itself.  The proof in the ErdosUnitDistance library does
+# and comparator itself.  The proof in the KrafftSieve library does
 # NOT need to be trusted — comparator checks it independently.
 set -euo pipefail
 
