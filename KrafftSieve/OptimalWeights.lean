@@ -219,7 +219,7 @@ theorem mu_min_lt_one_implies_sufficiency (n : ℕ) (h : muMin n < 1) :
     have h_ratio_def : r = q2 n lambda / q1 n lambda := by
       exact hlambda_ratio.trans ( if_neg hlambda_pos.ne' ) |> Eq.trans <| rfl
     generalize_proofs at *; (
-    rw [ eq_div_iff ] at h_ratio_def <;> nlinarith [ hr.2 ];)
+    rw [ eq_div_iff ] at h_ratio_def <;> nlinarith [ hr.2 ])
   exact sufficiency_of_Q n lambda h_ratio_lt_one
 
 /--

@@ -26,14 +26,11 @@ theorem mu_min_lt_one_implies_tpc :
   intro B
   obtain ⟨n, hn_set, hn_gt⟩ := h_inf B
   have h_mu : muMin n < 1 := hn_set
-  have hn_pos : n ≥ 1 := by omega
   obtain ⟨x, hx_int, hx_prime1, hx_prime2⟩ := krafft_sieve_guarantee_with_mu_min n h_mu
   have hx_lower : x ≥ 6 * n^2 - 2 * n := by
     rw [evalInterval] at hx_int
     exact Finset.mem_Icc.mp hx_int |>.1
   have hn_sq : n^2 ≥ n := by nlinarith
-  have h1 : 6 * n^2 ≥ 6 * n := by omega
-  have h2 : x ≥ 4 * n := by omega
   have hp_gt : 6 * x - 1 > B := by omega
   have h_plus_two : 6 * x - 1 + 2 = 6 * x + 1 := by omega
   have hp_goal : Prime (6 * x - 1) ∧ Prime (6 * x - 1 + 2) := by

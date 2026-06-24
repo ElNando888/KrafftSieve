@@ -175,7 +175,7 @@ theorem q_bound (n : ℕ) (hn : n ≥ 1) : 6 * n^2 + 10 * n + 3 < q n := by
             ‹5 ^ Nat.log 2 n ≥ 5 ^ ( Nat.log 2 ( n / 2 ) + 1 ) › ]
         · have : Nat.log 2 n ≥ 29 := Nat.le_log_of_pow_le ( by decide ) ( by linarith )
           ( have : Nat.log 2 n ≤ 29 := Nat.le_of_lt_succ ( Nat.log_lt_of_lt_pow ( by linarith )
-            ( by linarith ) ); interval_cases Nat.log 2 n; norm_num at *; )
+            ( by linarith ) ); interval_cases Nat.log 2 n; norm_num at * )
           nlinarith only [ hn, hn_large ]
       exact h_exp_growth n hn_large.le
 
