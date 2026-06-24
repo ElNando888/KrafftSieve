@@ -40,3 +40,12 @@ Lean default kernel accepts the solution
 Your solution is okay!
 ```
 
+Update: I managed to setup a GitHub Actions workflow to run the comparator.
+```
+[landrun] 2026/06/24 06:17:55 Landlock restrictions applied successfully
+[landrun] 2026/06/24 06:17:55 Executing: [lean4export ComparatorSolution -- KrafftSieve.mu_min_lt_one_implies_tpc propext Quot.sound Classical.choice Nat.add Nat.sub Nat.mul Nat.pow Nat.gcd Nat.div Nat.mod Nat.beq Nat.ble Nat.land Nat.lor Nat.xor Nat.shiftLeft Nat.shiftRight String.ofList]
+Exporting #[KrafftSieve.mu_min_lt_one_implies_tpc, propext, Quot.sound, Classical.choice, Nat.add, Nat.sub, Nat.mul, Nat.pow, Nat.gcd, Nat.div, Nat.mod, Nat.beq, Nat.ble, Nat.land, Nat.lor, Nat.xor, Nat.shiftLeft, Nat.shiftRight, String.ofList] from ComparatorSolution
+Running Lean default kernel on solution.
+Lean default kernel accepts the solution
+Your solution is okay!
+```
