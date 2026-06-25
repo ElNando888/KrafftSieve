@@ -473,6 +473,8 @@ lemma decomposition (n : ℕ) (x : Idx n → ℝ) :
           · exact Finset.sum_congr rfl fun _ _ => mul_comm _ _
           · exact Submodule.subset_span hu
         · convert congr_arg ( fun f => ( WithLp.equiv 2 ( Idx n → ℝ ) ) f ) h using 1
+          · ext; simp [Pi.add_apply]
+          · simp
   simpa [ eq_comm ] using Submodule.mem_sup.mp ( h_compl.symm ▸ Submodule.mem_top :
     x ∈ kernelQ1 n ⊔ kernelQ1Perp n )
 

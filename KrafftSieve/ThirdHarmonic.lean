@@ -863,8 +863,14 @@ lemma resonance_lt_mainTerm (n : ℕ) (hn : primeWindow n ≠ ∅) :
   have h_sum_lt : ∑ p ∈ primeWindow n, (2 : ℝ) / p * Real.cos (Real.pi / p) <
       ∑ p ∈ primeWindow n, (2 : ℝ) / p :=
     Finset.sum_lt_sum_of_nonempty ( Finset.nonempty_of_ne_empty hn ) h_lt
-  convert h_sum_lt using 1; norm_num [ div_eq_mul_inv, Finset.mul_sum _ _ _ ]; ring_nf!
-  unfold mainTerm hSpec; norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ]
+  convert h_sum_lt using 1
+  · norm_num [ div_eq_mul_inv, Finset.mul_sum _ _ _ ]
+    ring_nf!
+    unfold resonanceCapacity resonanceStrength
+    norm_num [ div_eq_mul_inv, mul_comm, mul_left_comm ]
+    congr 1; ext; ring
+  · unfold mainTerm hSpec
+    norm_num [ div_eq_mul_inv, mul_comm, Finset.mul_sum _ _ _ ]
 
 end
 
