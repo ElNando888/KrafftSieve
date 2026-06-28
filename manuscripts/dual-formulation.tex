@@ -1,0 +1,197 @@
+\documentclass[10pt,twoside]{article}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{algpseudocode}
+
+\geometry{
+  paperwidth  = 174mm,
+  paperheight = 247mm,
+  textwidth   = 140mm,
+  textheight  = 600.75pt,
+  top         = 40.1pt,
+  inner       = 43.2pt,
+  includeheadfoot
+}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\mathcalA}{\mathcal{A}}
+\newcommand{\mathcalP}{\mathcal{P}}
+\newcommand{\mathbbR}{\mathbb{R}}
+\newcommand{\mathbbN}{\mathbb{N}}
+
+\title{Dual Spatial Formulation and Reproducing Kernel Hilbert Space Theory for the Krafft Sieve}
+\author{Fernando Portela}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This working note details a reformulation of the variational optimization of spectral sieve quotients. By projecting the generalized eigenvalue problem from the $2^{w(n)}$-dimensional character coefficient space down to the spatial evaluation interval $\mathcalA_n$ of size $12n+4$, we establish a dual formulation. Under this duality, the optimization is shown to be equivalent to the minimization of a diagonal penalty matrix restricted to the range of an evaluation operator. We derive a closed-form product kernel for the full power-set basis, as well as a Newton-identity-based dynamic programming recurrence for restricted correlation depths. Finally, we frame this dual system within the theory of Reproducing Kernel Hilbert Spaces (RKHS), laying out potential avenues for analytical operator-theoretic bounds.
+\end{abstract}
+
+\section{Introduction and the Primal Formulation} \label{sec:intro}
+
+The primal formulation of the Krafft sieve optimization (outlined in Section 5 of the manuscript) seeks a weight function $W(x) \ge 0$ supported on the interval $\mathcalA_n = [6n^2 - 2n, 6n^2 + 10n + 3]$ to minimize the sieve quotient:
+\begin{equation}
+\mu(n, W) = \frac{\sum_{x \in \mathcalA_n} c(x) W(x)}{\sum_{x \in \mathcalA_n} W(x)}
+\end{equation}
+where $c(x)$ is the global additive penalty function counting the modular alignment hits. To ensure non-negativity without imposing infinitely many linear constraints, we restrict $W(x)$ to be the square of a polynomial $P(x)$ over a basis of cosine products:
+\begin{equation}
+P(x) = \sum_{S \subseteq \{1, \dots, w(n)\}} \lambda_S B_S(x), \quad B_S(x) = \prod_{i \in S} \cos\left(\frac{6\pi x}{p_i}\right)
+\end{equation}
+Here, $w(n) = |\mathcalP_n|$ is the number of primes in the sieve window, and the basis dimension is $D = 2^{w(n)}$. Squaring $P(x)$ yields the weight function $W(x) = P(x)^2$ on $\mathcalA_n$. The total mass $S_1$ and the penalized mass $S_2$ are then quadratic forms:
+\begin{equation}
+S_1(n, W) = \lambda^T B \lambda, \quad S_2(n, W) = \lambda^T A \lambda
+\end{equation}
+where $A$ and $B$ are $D \times D$ matrices defined by:
+\begin{equation}
+B_{S, T} = \sum_{x \in \mathcalA_n} B_S(x) B_T(x), \quad A_{S, T} = \sum_{x \in \mathcalA_n} c(x) B_S(x) B_T(x)
+\end{equation}
+Minimizing the sieve quotient corresponds to finding the minimum generalized eigenvalue of the system:
+\begin{equation} \label{eq:primal_gev}
+A \lambda = \mu B \lambda
+\end{equation}
+Solving \eqref{eq:primal_gev} directly is computationally impossible for large $n$ because the matrix dimension $D = 2^{w(n)}$ grows exponentially. For example, when $n=199$, $w(n) = 194$, and the matrix dimension is $2^{194} \approx 2.4 \times 10^{58}$.
+
+\section{The Dual Spatial Reformulation} \label{sec:dual}
+
+Let $N = |\mathcalA_n| = 12n + 4$ be the cardinality of the evaluation interval. Let $M$ be the $N \times D$ evaluation matrix whose entries are:
+\begin{equation}
+M_{x, S} = B_S(x) \quad \text{for } x \in \mathcalA_n, \ S \subseteq \{1, \dots, w(n)\}
+\end{equation}
+We can express the mass matrix $B$ and the penalty matrix $A$ in terms of $M$ as:
+\begin{equation}
+B = M^T M, \quad A = M^T C M
+\end{equation}
+where $C$ is the $N \times N$ diagonal matrix with diagonal entries $C_{x, x} = c(x)$.
+
+The rank of $M$ is at most $\min(N, D)$. Since $N \ll D$ for large $n$, the matrices $A$ and $B$ are extremely rank-deficient, with a null space of dimension at least $D - N$. Any vector in the kernel of $M$ (so $M\lambda = 0$) lies in the kernel of both $A$ and $B$, yielding trivial $0/0$ quotients. The non-trivial spectrum resides in the orthogonal complement of the kernel of $M$, which is the range of $M^T$.
+
+Let $P = M \lambda \in \mathbb{R}^N$ be the vector of polynomial values evaluated over the interval $\mathcalA_n$. The Rayleigh quotient transitions directly to the spatial domain:
+\begin{equation}
+R(\lambda) = \frac{\lambda^T M^T C M \lambda}{\lambda^T M^T M \lambda} = \frac{P^T C P}{P^T P}
+\end{equation}
+Let $V = \text{range}(M) \subseteq \mathbb{R}^N$ be the subspace spanned by the evaluated basis functions. Minimizing $R(\lambda)$ over $\lambda \in \mathbb{R}^D \setminus \ker(B)$ is equivalent to minimizing the spatial quotient over the subspace $V$:
+\begin{equation} \label{eq:dual_min}
+\mu_{\min}(n) = \min_{P \in V \setminus \{0\}} \frac{P^T C P}{P^T P}
+\end{equation}
+This is a standard Rayleigh quotient minimization of a diagonal matrix $C$ restricted to a subspace $V$.
+
+To solve \eqref{eq:dual_min}, we construct an orthonormal basis for $V$. Consider the $N \times N$ symmetric, positive semidefinite kernel matrix:
+\begin{equation}
+K = M M^T
+\end{equation}
+Let $K = U \Sigma U^T$ be the spectral decomposition of $K$. Let $r = \text{rank}(K) \le N$ be the number of positive eigenvalues of $K$. Let $U_r$ be the $N \times r$ matrix whose columns are the eigenvectors corresponding to these positive eigenvalues. Because $\text{range}(K) = \text{range}(M) = V$, the columns of $U_r$ form an orthonormal basis for $V$.
+
+\begin{theorem}[Dual Sieve Theorem]
+The non-trivial generalized eigenvalues of the primal system $A \lambda = \mu B \lambda$ are exactly the eigenvalues of the $r \times r$ projected matrix:
+\begin{equation}
+\tilde{C} = U_r^T C U_r
+\end{equation}
+In particular, the minimum sieve quotient is the smallest eigenvalue of $\tilde{C}$:
+\begin{equation}
+\mu_{\min}(n) = \lambda_{\min}(\tilde{C})
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $M^T C M \lambda = \mu M^T M \lambda$ with $\mu \neq 0$ and $M\lambda \neq 0$. Let $P = M \lambda$. Multiplying the equation by $M$ on the left gives:
+\begin{equation}
+M M^T C P = \mu M M^T P \implies K C P = \mu K P
+\end{equation}
+Since $P \in \text{range}(M) = \text{range}(K)$, we can write $P = U_r \gamma$ for a unique non-zero vector $\gamma \in \mathbb{R}^r$. Substituting this yields:
+\begin{equation}
+K C U_r \gamma = \mu K U_r \gamma
+\end{equation}
+Expressing $K = U_r \Sigma_r U_r^T$, where $\Sigma_r$ is the $r \times r$ diagonal matrix of positive eigenvalues:
+\begin{equation}
+U_r \Sigma_r U_r^T C U_r \gamma = \mu U_r \Sigma_r U_r^T U_r \gamma
+\end{equation}
+Since $U_r^T U_r = I_r$, this simplifies to:
+\begin{equation}
+U_r \Sigma_r (U_r^T C U_r) \gamma = \mu U_r \Sigma_r \gamma
+\end{equation}
+Multiplying by $U_r^T$ on the left and using $U_r^T U_r = I_r$:
+\begin{equation}
+\Sigma_r (U_r^T C U_r) \gamma = \mu \Sigma_r \gamma
+\end{equation}
+Since $\Sigma_r$ is invertible (containing only positive eigenvalues), multiplying by $\Sigma_r^{-1}$ gives:
+\begin{equation}
+(U_r^T C U_r) \gamma = \mu \gamma
+\end{equation}
+This is a standard eigenvalue problem of dimension $r \le N$. The steps are fully reversible for any non-zero spatial vector, establishing the result.
+\end{proof}
+
+\section{The Closed-Form Kernel and Symmetric Polynomials} \label{sec:kernel}
+
+The dual formulation reduces the problem to diagonalizing the $N \times N$ matrix $K = M M^T$. The entries of $K$ are:
+\begin{equation}
+K_{x, y} = \sum_{S} B_S(x) B_S(y) = \sum_{S} \prod_{i \in S} \cos\left(\frac{6\pi x}{p_i}\right) \cos\left(\frac{6\pi y}{p_i}\right)
+\end{equation}
+The complexity of this construction depends on the choice of the basis family.
+
+\subsection{The Unrestricted Power-Set Basis}
+If the polynomial basis contains all subsets $S \subseteq \{1, \dots, w(n)\}$, the sum over the power set factors into a product:
+\begin{equation} \label{eq:full_kernel}
+K_{x, y} = \prod_{p \in \mathcal{P}_n} \left( 1 + \cos\left(\frac{6\pi x}{p}\right) \cos\left(\frac{6\pi y}{p}\right) \right)
+\end{equation}
+Equation \eqref{eq:full_kernel} is a closed-form expression. It can be computed for all $x, y \in \mathcalA_n$ in $O(N^2 \cdot w(n))$ operations. Diagonalizing $K$ takes $O(N^3)$ operations. This makes solving the exact, unrestricted $2^{w(n)}$-dimensional optimization problem computationally cheap.
+
+\subsection{Restricted Correlation Depths}
+If the basis is restricted to subsets $S$ of size at most $k$, the kernel becomes:
+\begin{equation}
+K^{(k)}_{x, y} = \sum_{j=0}^k e_j(\mathbf{a})
+\end{equation}
+where $\mathbf{a} \in \mathbb{R}^{w(n)}$ has components $a_i = \cos(6\pi x / p_i) \cos(6\pi y / p_i)$, and $e_j(\mathbf{a})$ is the $j$-th elementary symmetric polynomial.
+
+We can compute the sum of these symmetric polynomials efficiently using a dynamic programming recurrence. Let $dp[i][j]$ be the $j$-th elementary symmetric polynomial of the first $i$ components of $\mathbf{a}$. The recurrence relation is:
+\begin{equation}
+dp[i][j] = dp[i-1][j] + a_i \, dp[i-1][j-1]
+\end{equation}
+with boundary conditions $dp[i][0] = 1$ and $dp[i][j] = 0$ for $j > i$.
+
+To compute this on a computer, we can maintain a single vector of size $k+1$ and update it in-place for each prime:
+\begin{algorithmic}
+\State Initialize $dp = [1, 0, \dots, 0]$ of length $k+1$
+\For{each prime $p_i \in \mathcal{P}_n$}
+    \State $a_i = \cos(6\pi x / p_i) \cos(6\pi y / p_i)$
+    \For{$j = k$ down to $1$}
+        \State $dp[j] \gets dp[j] + a_i \cdot dp[j-1]$
+    \EndFor
+\EndFor
+\State \Return $\sum_{j=0}^k dp[j]$
+\end{algorithmic}
+This algorithm computes the restricted kernel entry $K^{(k)}_{x, y}$ in $O(w(n) \cdot k)$ operations, yielding an overall kernel assembly time of $O(N^2 \cdot w(n) \cdot k)$.
+
+\section{Connection to Reproducing Kernel Hilbert Spaces} \label{sec:rkhs}
+
+The kernel matrix $K_{x, y}$ is the discrete evaluation of a symmetric, positive semidefinite kernel function. This kernel defines a Reproducing Kernel Hilbert Space (RKHS), denoted by $\mathcal{H}_K$, of functions on the interval $\mathcalA_n$.
+
+Every function $P \in \mathcal{H}_K$ can be written as $P(x) = \sum_S \lambda_S B_S(x)$ for some coefficients $\lambda$. The RKHS norm of $P$ corresponds to the $L^2$ norm of its coefficients:
+\begin{equation}
+\|P\|_{\mathcal{H}_K}^2 = \sum_S \lambda_S^2
+\end{equation}
+The evaluation matrix $M$ acts as an evaluation operator mapping the coefficient space $\ell^2$ to the spatial space $L^2(\mathcalA_n)$. The adjoint operator $M^*$ maps spatial functions back to the coefficient space. The kernel matrix $K = M M^T$ is the spatial representation of the operator $M M^*$.
+
+Within this Hilbert space structure:
+\begin{enumerate}
+    \item The subspace $V = \text{range}(M)$ is the closed subspace of $L^2(\mathcalA_n)$ containing all functions that can be represented as "smooth" character combinations.
+    \item The sieve quotient is the Rayleigh quotient of the multiplication operator $C$ (where $C P(x) = c(x) P(x)$) restricted to the subspace $V \subseteq L^2(\mathcalA_n)$.
+\end{enumerate}
+
+This RKHS perspective opens up several theoretical paths:
+\begin{itemize}
+    \item \textbf{Analytical Bounds}: By modeling the continuous limit of the kernel function as $n \to \infty$, we can apply Mercer's theorem to decompose $K(x, y)$ into continuous eigenfunctions. This could allow us to analytically bound the spectrum of the projected multiplication operator without relying on discrete numerical computation.
+    \item \textbf{Optimal Sieve Weights}: The optimal spatial weight function is $P_{\text{opt}}(x)^2$, where $P_{\text{opt}}$ is the eigenfunction corresponding to the smallest eigenvalue of the projected operator $\tilde{C}$. The shape of this eigenfunction represents the optimal compromise between localized support on $\mathcalA_n$ and destructive interference at the hit frequencies.
+\end{itemize}
+
+\end{document}
