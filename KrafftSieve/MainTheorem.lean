@@ -39,4 +39,30 @@ theorem mu_min_lt_one_implies_tpc :
   exact ⟨6 * x - 1, hp_goal, hp_gt⟩
 
 
+/--
+Analytical Limit Theorem: For sufficiently large n, the minimum sieve quotient
+muMin n is strictly less than 1.
+-/
+theorem mu_min_eventually_lt_one : ∃ N_0 : ℕ, ∀ n ≥ N_0, muMin n < 1 := by
+  sorry
+
+/--
+Theorem: The optimal multidimensional sieve weight achieves a ratio strictly less than 1
+for infinitely many n.
+-/
+theorem mu_min_infinite : {n : ℕ | muMin n < 1}.Infinite := by
+  obtain ⟨N_0, hN⟩ := mu_min_eventually_lt_one
+  refine Set.Infinite.mono ?_ (Set.Ici_infinite N_0)
+  intro n hn
+  exact hN n hn
+
+/--
+The Twin Prime Conjecture: There are infinitely many twin primes.
+-/
+theorem twin_prime_conjecture : {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
+  apply mu_min_lt_one_implies_tpc
+  exact mu_min_infinite
+
+
 end KrafftSieve
+

@@ -62,6 +62,40 @@ noncomputable def wTrulyMulti (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x
   if x.val ∈ evalInterval n then (pMulti n lambda x) ^ 2 else 0
 
 /--
+Define the dual spatial kernel matrix $K_{x, y}$.
+$K_{x, y} = \sum_{S \subseteq \{1, \dots, w\}} B_S(x) B_S(y)$
+-/
+noncomputable def spatialKernel (n : ℕ) (x y : ZMod (q n)) : ℝ :=
+  ∑ S ∈ Finset.univ.powerset, basisCos n S x * basisCos n S y
+
+/--
+Theorem: The dual spatial kernel has a closed-form product representation.
+$$ K_{x, y} = \prod_{p \in \mathcal{P}_n} ( 1 + \cos(6\pi x / p) \cos(6\pi y / p) ) $$
+-/
+theorem spatialKernel_eq_prod (n : ℕ) (x y : ZMod (q n)) :
+    spatialKernel n x y = ∏ i : Fin (w n),
+      (1 + Real.cos (6 * Real.pi * (x.val : ℝ) / (p n i : ℝ)) *
+            Real.cos (6 * Real.pi * (y.val : ℝ) / (p n i : ℝ))) := by
+  unfold spatialKernel
+  have h_basis : ∀ S : Finset (Fin (w n)),
+      basisCos n S x * basisCos n S y =
+        ∏ i ∈ S, (Real.cos (6 * Real.pi * (x.val : ℝ) / (p n i : ℝ)) *
+                  Real.cos (6 * Real.pi * (y.val : ℝ) / (p n i : ℝ))) := by
+    intro S
+    unfold basisCos
+    have h_angle : ∀ (z : ZMod (q n)) (i : Fin (w n)),
+        2 * Real.pi * 3 * (z.val : ℝ) / (p n i : ℝ) = 6 * Real.pi * (z.val : ℝ) / (p n i : ℝ) := by
+      intro z i
+      ring
+    simp_rw [h_angle]
+    rw [← Finset.prod_mul_distrib]
+  simp_rw [h_basis]
+  exact (@Finset.prod_one_add (Fin (w n)) ℝ _
+    (fun i ↦ Real.cos (6 * Real.pi * (x.val : ℝ) / (p n i : ℝ)) *
+              Real.cos (6 * Real.pi * (y.val : ℝ) / (p n i : ℝ)))
+    Finset.univ).symm
+
+/--
 Define the matrix $M_1$ corresponding to the first moment $sum1$.
 $M_1(S, T) = \sum_{x \in \mathcal{A}_n} B_S(x) B_T(x)$
 -/
@@ -182,6 +216,63 @@ lemma sufficiency_of_Q (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (h : q2 n
   exact ⟨ fun x => W_truly_multi_nonneg n lambda x,
           fun x hx => W_truly_multi_support n lambda x hx,
           by linarith [ S_1_eq_Q_1 n lambda, S_2_eq_Q_2 n lambda ] ⟩
+
+/--
+The spatial representation of the polynomial $P(x)$ as a function from $\mathbb{N}$ to $\mathbb{R}$.
+-/
+def spatialVector (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ℕ) : ℝ :=
+  pMulti n lambda (x : ZMod (q n))
+
+/--
+Theorem: Primal quadratic form q1 is the spatial L2 norm of the spatial vector.
+-/
+lemma q1_eq_spatialVector_norm (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    q1 n lambda = ∑ x ∈ evalInterval n, (spatialVector n lambda x)^2 := by
+  unfold spatialVector
+  exact Q_1_sum_sq n lambda
+
+/--
+Helper: q2 equals the weighted sum of squares of pMulti over evalInterval.
+-/
+lemma q2_sum_sq (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    q2 n lambda =
+      ∑ x ∈ evalInterval n,
+        c n (x : ZMod (q n)) * (pMulti n lambda (x : ZMod (q n))) ^ 2 := by
+  unfold q2 pMulti matrix2
+  simp +decide only [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
+  exact Eq.symm (by
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ =>
+      Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ =>
+        Finset.sum_congr rfl fun _ _ => by ring))
+
+/--
+Theorem: Primal quadratic form q2 is the spatial weighted L2 norm of the spatial vector.
+-/
+lemma q2_eq_spatialVector_weighted_norm (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    q2 n lambda = ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (spatialVector n lambda x)^2 := by
+  unfold spatialVector
+  exact q2_sum_sq n lambda
+
+/--
+The spatial Rayleigh quotient of a spatial vector.
+-/
+noncomputable def spatialRatio (n : ℕ) (v : ℕ → ℝ) : ℝ :=
+  let q1_v := ∑ x ∈ evalInterval n, (v x)^2
+  let q2_v := ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (v x)^2
+  if q1_v = 0 then 0 else q2_v / q1_v
+
+/--
+Theorem: The primal Rayleigh quotient equals the spatial Rayleigh quotient.
+-/
+lemma Ratio_eq_spatialRatio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
+    Ratio n lambda = spatialRatio n (spatialVector n lambda) := by
+  unfold Ratio spatialRatio
+  rw [q1_eq_spatialVector_norm, q2_eq_spatialVector_weighted_norm]
+
+
+
+
 
 /--
 Define the set of attainable ratios.
@@ -717,6 +808,89 @@ theorem W_opt_is_sufficient_iff (n : ℕ) :
     rw [ S_2_eq_Q_2, S_1_eq_Q_1 ]
     rw [ div_lt_iff₀ this.1 ] at h
     linarith
+
+/--
+Helper lemma: The hit count function c is non-negative everywhere.
+-/
+lemma c_nonneg (n : ℕ) (x : ZMod (q n)) : c n x ≥ 0 := by
+  unfold c g
+  refine Finset.sum_nonneg fun i _ ↦ ?_
+  split_ifs <;> norm_num
+
+/--
+Definition: The sieve projection is full rank if the mapping from
+coefficients to spatial vectors on A_n is surjective.
+-/
+def IsFullRank (n : ℕ) : Prop :=
+  ∀ v : ℕ → ℝ, ∃ lambda : Finset (Fin (w n)) → ℝ,
+    ∀ x ∈ evalInterval n, spatialVector n lambda x = v x
+
+/--
+Theorem: If the sieve is full rank and there exists a twin prime in A_n,
+then the minimum sieve quotient muMin n is exactly 0.
+-/
+theorem muMin_eq_zero_of_fullRank_and_twinPrime (n : ℕ)
+    (h_rank : IsFullRank n)
+    (h_tp : ∃ x_0 ∈ evalInterval n, c n (x_0 : ZMod (q n)) = 0) :
+    muMin n = 0 := by
+  obtain ⟨x_0, hx_0, hc_x_0⟩ := h_tp
+  let v : ℕ → ℝ := fun x ↦ if x = x_0 then 1 else 0
+  obtain ⟨lambda, h_lambda⟩ := h_rank v
+  have h_q1 : q1 n lambda = 1 := by
+    rw [q1_eq_spatialVector_norm]
+    have h_eq : ∀ x ∈ evalInterval n,
+        (spatialVector n lambda x)^2 = (if x = x_0 then (1 : ℝ) else 0)^2 := by
+      intro x hx
+      rw [h_lambda x hx]
+    have h_sum := Finset.sum_congr rfl h_eq
+    rw [h_sum]
+    have h_term : (if x_0 = x_0 then (1 : ℝ) else 0)^2 = 1 := by
+      rw [if_pos rfl]
+      ring
+    refine Eq.trans (@Finset.sum_eq_single ℕ ℝ _ _ _ x_0 ?_ ?_) h_term
+    · intro b _ hb_ne
+      rw [if_neg hb_ne]
+      ring
+    · intro h_not_mem
+      exact False.elim (h_not_mem hx_0)
+  have h_q2 : q2 n lambda = 0 := by
+    rw [q2_eq_spatialVector_weighted_norm]
+    have h_eq : ∀ x ∈ evalInterval n,
+        c n (x : ZMod (q n)) * (spatialVector n lambda x)^2 =
+          c n (x : ZMod (q n)) * (if x = x_0 then (1 : ℝ) else 0)^2 := by
+      intro x hx
+      rw [h_lambda x hx]
+    have h_sum := Finset.sum_congr rfl h_eq
+    rw [h_sum]
+    have h_term : c n (x_0 : ZMod (q n)) * (if x_0 = x_0 then (1 : ℝ) else 0)^2 = 0 := by
+      rw [if_pos rfl, hc_x_0]
+      ring
+    refine Eq.trans (@Finset.sum_eq_single ℕ ℝ _ _ _ x_0 ?_ ?_) h_term
+    · intro b _ hb_ne
+      rw [if_neg hb_ne]
+      ring
+    · intro h_not_mem
+      exact False.elim (h_not_mem hx_0)
+  have h_ratio : Ratio n lambda = 0 := by
+    unfold Ratio
+    rw [h_q1, h_q2]
+    norm_num
+  have h_attainable : 0 ∈ attainableRatios n := by
+    use lambda
+    refine ⟨by linarith, ?_⟩
+    exact h_ratio.symm
+  have h_lower_bound : ∀ r ∈ attainableRatios n, r ≥ 0 := by
+    rintro r ⟨l, hl_q1, rfl⟩
+    unfold Ratio
+    rw [if_neg hl_q1.ne']
+    refine div_nonneg ?_ (by linarith)
+    rw [q2_eq_spatialVector_weighted_norm]
+    refine Finset.sum_nonneg fun x _ ↦ ?_
+    refine mul_nonneg (c_nonneg n (x : ZMod (q n))) (sq_nonneg _)
+  have h_bdd : BddBelow (attainableRatios n) := ⟨0, h_lower_bound⟩
+  have h_sInf_le : muMin n ≤ 0 := csInf_le h_bdd h_attainable
+  have h_le_sInf : muMin n ≥ 0 := le_csInf (Set.nonempty_of_mem h_attainable) h_lower_bound
+  linarith
 
 /--
 Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
