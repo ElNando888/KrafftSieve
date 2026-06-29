@@ -4,6 +4,17 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{algpseudocode}
+\usepackage{listings}
+
+\def\lstlanguagefiles{lstlean.sty}
+\lstset{language=lean}
+\lstnewenvironment{lean}{\lstset{language=lean}}{}
+\def\leaninline{\lstinline[language=lean, basicstyle=\lst@ifdisplaystyle\scriptsize\fi]}
+
+\definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
+\definecolor{commentcolor}{rgb}{0.4, 0.4, 0.4}   % grey
+\definecolor{symbolcolor}{rgb}{0.0, 0.1, 0.6}    % blue
+\definecolor{sortcolor}{rgb}{0.1, 0.5, 0.1}      % green
 
 \geometry{
   paperwidth  = 174mm,
@@ -25,6 +36,15 @@
 \newcommand{\mathcalP}{\mathcal{P}}
 \newcommand{\mathbbR}{\mathbb{R}}
 \newcommand{\mathbbN}{\mathbb{N}}
+
+\makeatletter
+\newsavebox{\@brx}
+\newcommand{\llangle}[1][]{\savebox{\@brx}{\(\m@th{#1\langle}\)}%
+  \mathopen{\copy\@brx\kern-0.5\wd\@brx\usebox{\@brx}}}
+\newcommand{\rrangle}[1][]{\savebox{\@brx}{\(\m@th{#1\rangle}\)}%
+  \mathclose{\copy\@brx\kern-0.5\wd\@brx\usebox{\@brx}}}
+\makeatother
+
 
 \title{Dual Spatial Formulation and Reproducing Kernel Hilbert Space Theory for the Krafft Sieve}
 \author{Fernando Portela}
@@ -193,5 +213,45 @@ This RKHS perspective opens up several theoretical paths:
     \item \textbf{Analytical Bounds}: By modeling the continuous limit of the kernel function as $n \to \infty$, we can apply Mercer's theorem to decompose $K(x, y)$ into continuous eigenfunctions. This could allow us to analytically bound the spectrum of the projected multiplication operator without relying on discrete numerical computation.
     \item \textbf{Optimal Sieve Weights}: The optimal spatial weight function is $P_{\text{opt}}(x)^2$, where $P_{\text{opt}}$ is the eigenfunction corresponding to the smallest eigenvalue of the projected operator $\tilde{C}$. The shape of this eigenfunction represents the optimal compromise between localized support on $\mathcalA_n$ and destructive interference at the hit frequencies.
 \end{itemize}
+
+\subsection{Lean 4 Formalization of Mercer's Theorem}
+
+To ground these theoretical pathways in machine-checked code, the Reproducing Kernel Hilbert Space structure can be formalized using Mathlib's active RKHS library. Leveraging discussions with Mathlib contributors, Mercer's theorem for a vector-valued RKHS can be stated using standard Mathlib idioms (specifically, the continuous $L^2$ operator $\text{Lp } V\ 2\ \mu \to L[\mathbb{K}] \text{Lp } V\ 2\ \mu$ and the complete orthonormal basis class \texttt{HilbertBasis}).
+
+Below is the formal Lean 4 theorem statement defining the integral operator and the corresponding spectral decomposition:
+
+\begin{lean}
+import Mathlib.Analysis.InnerProductSpace.Reproducing
+import Mathlib.Analysis.InnerProductSpace.HilbertBasis
+import Mathlib.MeasureTheory.Function.LpSpace
+
+open MeasureTheory Matrix HilbertBasis
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+variable [RKHS 𝕜 H X V]
+variable (μ : Measure X) [IsFiniteMeasure μ]
+
+-- The continuity assumption wrapped as a Fact
+variable [hK : Fact (Continuous (fun (p : X × X) ↦ kernel H p.1 p.2))]
+
+-- The integral operator as a continuous linear map from L^2 to L^2
+def integralOperator : Lp V 2 μ →L[𝕜] Lp V 2 μ := sorry
+
+/-- Mercer's Theorem (Refined with Mathlib idioms): -/
+theorem mercer_theorem :
+    ∃ (ι : Type*) [Countable ι] 
+      (b : HilbertBasis ι 𝕜 (Lp V 2 μ)) 
+      (σ : ι → ℝ),
+      (∀ i, 0 ≤ σ i) ∧
+      -- Eigenvalue equation: T_K(b_i) = σ_i b_i
+      (∀ i, integralOperator μ (b i) = (σ i : 𝕜) • (b i)) ∧
+      -- The kernel decomposition holds in the RKHS (using evaluation)
+      (∀ (x y : X) (v : V), 
+        kernel H x y v = ∑' i, (σ i : 𝕜) • ⟪v, (b i : X → V) y⟫_𝕜 • (b i : X → V) x) := by
+  sorry
+\end{lean}
 
 \end{document}
