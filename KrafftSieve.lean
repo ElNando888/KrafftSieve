@@ -13,6 +13,7 @@ import KrafftSieve.OptimalWeights
 import KrafftSieve.MainTheorem
 import KrafftSieve.SymmetricRecurrence
 import KrafftSieve.RKHSLimit
+import KrafftSieve.Discretization
 
 /-!
 # Krafft Sieve for Twin Primes
