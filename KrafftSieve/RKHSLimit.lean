@@ -47,15 +47,44 @@ theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) :
   sorry
 
 /--
+The continuous bilinear form associated with the weighted L^2 inner product.
+-/
+def weightedBilinearForm (c : X → ℝ) [Fact (Continuous c)] :
+    Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 μ →L[ℝ] ℝ := sorry
+
+theorem weightedBilinearForm_apply (c : X → ℝ) [Fact (Continuous c)] (g h : Lp ℝ 2 μ) :
+    weightedBilinearForm μ c g h = ∫ x, c x * (g : X → ℝ) x * (h : X → ℝ) x ∂μ := sorry
+
+/--
+Theorem: The quadratic form `g ↦ ∫ x, c x * g(x)^2` is continuous on L^2.
+-/
+theorem quadratic_form_continuous (c : X → ℝ) [Fact (Continuous c)] (f : Lp ℝ 2 μ) :
+    ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c x * (g : X → ℝ) x ^ 2 ∂μ) f := by
+  have h_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, c x * (g : X → ℝ) x ^ 2 ∂μ) =
+      (fun g ↦ weightedBilinearForm μ c g g) := by
+    ext g
+    have h_apply := weightedBilinearForm_apply μ c g g
+    simp only [h_apply]
+    congr 1
+    ext x
+    ring
+  rw [h_eq]
+  exact ContinuousAt.clm_apply
+    (weightedBilinearForm μ c).continuous.continuousAt continuous_id.continuousAt
+
+/--
 Theorem: The continuous Rayleigh quotient is continuous at any non-zero function in L^2.
 -/
 theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)]
     (f : Lp ℝ 2 μ) (hf : ‖f‖ > 0) :
     ContinuousAt (fun g : Lp ℝ 2 μ ↦ continuousRatio μ c_cont g) f := by
   have h_den_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) = (fun g ↦ ‖g‖ ^ 2) := by
-    sorry
-  have h_num_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) f := by
-    sorry
+    ext g
+    rw [← real_inner_self_eq_norm_sq g]
+    rw [L2.inner_def]
+    simp
+  have h_num_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) f :=
+    quadratic_form_continuous μ c_cont f
   have h_den_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f := by
     rw [h_den_eq]
     exact continuous_norm.continuousAt.pow 2
