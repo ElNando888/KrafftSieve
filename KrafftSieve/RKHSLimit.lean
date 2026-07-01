@@ -15,7 +15,7 @@ This file formalizes the Reproducing Kernel Hilbert Space (RKHS) projection limi
 sequence as $n \to \infty$ and states Mercer's spectral theorem for vector-valued RKHS.
 -/
 
-open MeasureTheory Matrix HilbertBasis RKHS InnerProductSpace
+open MeasureTheory Matrix HilbertBasis RKHS InnerProductSpace Topology
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
@@ -47,11 +47,33 @@ theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) :
   sorry
 
 /--
-Theorem: The continuous Rayleigh quotient is continuous as a map from L^2 to ℝ.
+Theorem: The continuous Rayleigh quotient is continuous at any non-zero function in L^2.
 -/
-theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)] :
-  Continuous (fun f : Lp ℝ 2 μ ↦ continuousRatio μ c_cont f) := by
-  sorry
+theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)]
+    (f : Lp ℝ 2 μ) (hf : ‖f‖ > 0) :
+    ContinuousAt (fun g : Lp ℝ 2 μ ↦ continuousRatio μ c_cont g) f := by
+  have h_den_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) = (fun g ↦ ‖g‖ ^ 2) := by
+    sorry
+  have h_num_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) f := by
+    sorry
+  have h_den_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f := by
+    rw [h_den_eq]
+    exact continuous_norm.continuousAt.pow 2
+  have h_den_pos : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f > 0 := by
+    have : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f = ‖f‖ ^ 2 := by
+      exact congr_fun h_den_eq f
+    rw [this]
+    exact sq_pos_of_pos hf
+  have h_eq : (fun g : Lp ℝ 2 μ ↦
+      (∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) / (∫ x, (g : X → ℝ) x ^ 2 ∂μ)) =ᶠ[𝓝 f]
+      (fun g ↦ continuousRatio μ c_cont g) := by
+    have h_eventually_pos : ∀ᶠ g in 𝓝 f, (fun h : Lp ℝ 2 μ ↦ ∫ x, (h : X → ℝ) x ^ 2 ∂μ) g > 0 :=
+      h_den_cont.eventually_const_lt h_den_pos
+    filter_upwards [h_eventually_pos] with g hg_pos
+    simp only [continuousRatio]
+    have hg_ne : (∫ x, (g : X → ℝ) x ^ 2 ∂μ) ≠ 0 := ne_of_gt hg_pos
+    rw [if_neg hg_ne]
+  exact (ContinuousAt.div h_num_cont h_den_cont (ne_of_gt h_den_pos)).congr h_eq
 
 
 /-- Mercer's Theorem (Refined with Tjeerd's feedback): -/

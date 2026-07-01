@@ -50,13 +50,13 @@ Rayleigh quotients converge to the Rayleigh quotient of the limit function.
 -/
 theorem continuousRatio_limit (μ : Measure X) [IsFiniteMeasure μ]
     (c_cont : X → ℝ) [Fact (Continuous c_cont)]
-    (f : Lp ℝ 2 μ) (f_seq : ℕ → Lp ℝ 2 μ)
+    (f : Lp ℝ 2 μ) (hf : ‖f‖ > 0) (f_seq : ℕ → Lp ℝ 2 μ)
     (h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f‖) Filter.atTop (nhds 0)) :
     Filter.Tendsto (fun n ↦ continuousRatio μ c_cont (f_seq n)) Filter.atTop
       (nhds (continuousRatio μ c_cont f)) := by
   have h_conv' : Filter.Tendsto f_seq Filter.atTop (nhds f) := by
     rwa [tendsto_iff_norm_sub_tendsto_zero]
-  exact (continuousRatio_continuous μ c_cont).tendsto f |>.comp h_conv'
+  exact Filter.Tendsto.comp (continuousRatio_continuous μ c_cont f hf) h_conv'
 
 /--
 Theorem: For any n, the discrete minimum sieve quotient muMin n is bounded by the
@@ -88,7 +88,7 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
   let f_seq : ℕ → Lp ℝ 2 μ := fun n ↦ coeCLM_seq n (projectionToRKHS n f_test)
   have h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f_test‖) Filter.atTop (nhds 0) :=
     projection_strong_convergence μ H_seq coeCLM_seq projectionToRKHS f_test
-  have h_ratio_conv := continuousRatio_limit μ c_cont f_test f_seq h_conv
+  have h_ratio_conv := continuousRatio_limit μ c_cont f_test hf_test_norm f_seq h_conv
   have h_eventually_lt : ∀ᶠ n in Filter.atTop, continuousRatio μ c_cont (f_seq n) < 1 :=
     h_ratio_conv.eventually_lt_const hf_test_ratio
   have h_muMin_eventually : ∀ᶠ n in Filter.atTop, muMin n < 1 := by

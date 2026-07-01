@@ -18,7 +18,8 @@ sieve quotients computed on the finite grid $\mathcal{A}_n \subseteq \mathbb{Z}/
 The central theorem requiring this bridge is `muMin_le_rkhs_ratio` in `MainTheorem.lean`:
 ```lean
 theorem muMin_le_rkhs_ratio (μ : Measure X) [IsFiniteMeasure μ] (n : ℕ)
-    (H_seq : ℕ → Type*) [∀ i, NormedAddCommGroup (H_seq i)] [∀ i, InnerProductSpace ℝ (H_seq i)]
+    (H_seq : ℕ → Type*) [∀ i, NormedAddCommGroup (H_seq i)]
+    [∀ i, InnerProductSpace ℝ (H_seq i)]
     [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
@@ -40,8 +41,12 @@ for any function $g$ in the range of the RKHS projection.
 
 ## 2. Exact Quadrature / Numerical Integration Equivalence
 Prove that for any continuous function $g$ in the range of the projection, its discrete Rayleigh
-quotient over the grid $\mathcal{A}_n$ is exactly equal to its continuous Rayleigh quotient over $X$:
-$$ \frac{\sum_{x \in \mathcal{A}_n} c(x) g(x)^2}{\sum_{x \in \mathcal{A}_n} g(x)^2} = \frac{\int_X c_{\text{cont}}(t) g(t)^2 \, dt}{\int_X g(t)^2 \, dt} $$
+quotient over the grid $\mathcal{A}_n$ is exactly equal to its continuous
+Rayleigh quotient over $X$:
+$$ \frac{\sum_{x \in \mathcal{A}_n} c(x) g(x)^2}
+        {\sum_{x \in \mathcal{A}_n} g(x)^2}
+   = \frac{\int_X c_{\text{cont}}(t) g(t)^2 \, dt}
+          {\int_X g(t)^2 \, dt} $$
 This step uses the fact that the grid points $\mathcal{A}_n$ are the exact quadrature nodes
 where the discrete kernel $K = M M^T$ interpolates the continuous kernel function.
 
@@ -49,6 +54,7 @@ where the discrete kernel $K = M M^T$ interpolates the continuous kernel functio
 Since the discrete optimal quotient `muMin n` is the infimum of the discrete Rayleigh quotient
 over all representable grid functions, and the discretized function $\text{evalOnGrid}(g_n)$ is
 representable, we obtain:
-$$ \mu_{\min}(n) \le \mathcal{R}_{\text{discrete}}(\text{evalOnGrid}(g_n)) = \mathcal{R}_{\text{continuous}}(g_n) $$
+$$ \mu_{\min}(n) \le \mathcal{R}_{\text{discrete}}(\text{evalOnGrid}(g_n))
+   = \mathcal{R}_{\text{continuous}}(g_n) $$
 establishing the upper bound.
 -/
