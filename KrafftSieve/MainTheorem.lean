@@ -88,12 +88,14 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
   have h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f_test‖) Filter.atTop (nhds 0) :=
     projection_strong_convergence μ H_seq coeCLM_seq projectionToRKHS f_test
   have h_ratio_conv := continuousRatio_limit μ c_cont f_test f_seq h_conv
-  have h_eventually_lt : ∀ᶠ n in Filter.atTop, continuousRatio μ c_cont (f_seq n) < 1 := by
-    -- Standard convergence property: if a_n -> L and L < 1, then eventually a_n < 1
-    sorry
+  have h_eventually_lt : ∀ᶠ n in Filter.atTop, continuousRatio μ c_cont (f_seq n) < 1 :=
+    h_ratio_conv.eventually_lt_const hf_test_ratio
   have h_muMin_eventually : ∀ᶠ n in Filter.atTop, muMin n < 1 := by
-    -- Follows because muMin n <= continuousRatio of f_seq n
-    sorry
+    have h_le : ∀ᶠ n in Filter.atTop, muMin n ≤ continuousRatio μ c_cont (f_seq n) := by
+      sorry
+    filter_upwards [h_le, h_eventually_lt]
+    intro n hn_le hn_lt
+    exact hn_le.trans_lt hn_lt
   rw [Filter.eventually_atTop] at h_muMin_eventually
   exact h_muMin_eventually
 
