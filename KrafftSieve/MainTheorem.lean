@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 Fernando Portela. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Fernando Portela, Google DeepMind
+Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 -/
 
 import KrafftSieve.OptimalWeights
@@ -54,8 +54,9 @@ theorem continuousRatio_limit (μ : Measure X) [IsFiniteMeasure μ]
     (h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f‖) Filter.atTop (nhds 0)) :
     Filter.Tendsto (fun n ↦ continuousRatio μ c_cont (f_seq n)) Filter.atTop
       (nhds (continuousRatio μ c_cont f)) := by
-  -- Follows from the continuity of continuousRatio
-  sorry
+  have h_conv' : Filter.Tendsto f_seq Filter.atTop (nhds f) := by
+    rwa [tendsto_iff_norm_sub_tendsto_zero]
+  exact (continuousRatio_continuous μ c_cont).tendsto f |>.comp h_conv'
 
 /--
 Theorem: For any n, the discrete minimum sieve quotient muMin n is bounded by the
@@ -92,7 +93,14 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
     h_ratio_conv.eventually_lt_const hf_test_ratio
   have h_muMin_eventually : ∀ᶠ n in Filter.atTop, muMin n < 1 := by
     have h_le : ∀ᶠ n in Filter.atTop, muMin n ≤ continuousRatio μ c_cont (f_seq n) := by
-      sorry
+      have h_conv' : Filter.Tendsto f_seq Filter.atTop (nhds f_test) := by
+        rwa [tendsto_iff_norm_sub_tendsto_zero]
+      have h_norm_conv : Filter.Tendsto (fun n ↦ ‖f_seq n‖) Filter.atTop (nhds ‖f_test‖) :=
+        continuous_norm.tendsto f_test |>.comp h_conv'
+      have h_norm_pos : ∀ᶠ n in Filter.atTop, 0 < ‖f_seq n‖ :=
+        h_norm_conv.eventually_const_lt hf_test_norm
+      filter_upwards [h_norm_pos] with n hn_pos
+      exact muMin_le_rkhs_ratio μ n H_seq coeCLM_seq projectionToRKHS c_cont f_test hn_pos
     filter_upwards [h_le, h_eventually_lt]
     intro n hn_le hn_lt
     exact hn_le.trans_lt hn_lt
