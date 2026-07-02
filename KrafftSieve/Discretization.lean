@@ -5,6 +5,10 @@ Authors: Fernando Portela
 -/
 
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Constructions.UnitInterval
+import Mathlib.Topology.UnitInterval
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Data.Fintype.Powerset
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
 
@@ -77,4 +81,65 @@ which will be achieved by executing the three-step program detailed above (defin
 `evalOnGrid` using the reproducing property, proving exact quadrature, and embedding it
 into the discrete minimum).
 -/
+
+namespace KrafftSieve
+
+open scoped unitInterval
+open unitInterval
+open MeasureTheory HilbertBasis RKHS InnerProductSpace
+
+-- Concrete space and measure for Route B
+abbrev X₀ : Type := I
+noncomputable def μ₀ : Measure X₀ := volume
+
+-- Sieve-specific grid mapping and RKHS definitions
+def gridPt (n : ℕ) (x : ℕ) : X₀ := sorry
+
+-- Ensure Fintype instance is synthesized for Finset (Fin (w n))
+instance (n : ℕ) : Fintype (Finset (Fin (w n))) := Finset.fintype
+
+-- H₀ n is the finite dimensional EuclideanSpace
+abbrev H₀ (n : ℕ) : Type := EuclideanSpace ℝ (Finset (Fin (w n)))
+
+-- We declare that H₀ n has an RKHS instance
+instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ := sorry
+
+-- coeCLM₀ maps a coefficient vector to its L² class of the spatialVector
+noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ := sorry
+
+-- The continuous weight c_cont₀
+noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ := sorry
+
+/-- Grid Evaluation / Sampling of an RKHS element. -/
+noncomputable def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
+  fun x ↦ if x ∈ evalInterval n then coeCLM ℝ h (gridPt n x) else 0
+
+/-- Sieve Representability of Grid Evaluations -/
+theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
+    ∃ lambda : Finset (Fin (w n)) → ℝ, evalOnGrid n h = spatialVector n lambda := by
+  sorry
+
+/-- Discrete Rayleigh quotient lower bound for RKHS functions. -/
+theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
+    (h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 > 0) :
+    muMin n ≤ spatialRatio n (evalOnGrid n h) := by
+  sorry
+
+/-- Denominator Quadrature (L² Norm Equivalence) -/
+theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
+    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ = ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 := by
+  sorry
+
+/-- Numerator Quadrature (Weighted Norm Equivalence) -/
+theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
+    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
+      ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
+  sorry
+
+/-- The final discretization bridge theorem. -/
+theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
+    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h) := by
+  sorry
+
+end KrafftSieve
 
