@@ -7,6 +7,7 @@ Authors: Fernando Portela
 import Mathlib.Analysis.InnerProductSpace.Reproducing
 import Mathlib.Analysis.InnerProductSpace.l2Space
 import Mathlib.MeasureTheory.Function.L2Space
+import KrafftSieve.RKHSLimitAux
 
 /-!
 # RKHS Limits and Mercer's Theorem
@@ -42,22 +43,29 @@ noncomputable def continuousRatio (c_cont : X → ℝ) (f : Lp ℝ 2 μ) : ℝ :
 Theorem: There exists a continuous test function in L^2 whose continuous
 Rayleigh quotient is strictly less than 1.
 -/
-theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) :
+theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ)
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < μ s ∧ ∀ x ∈ s, c_cont x < 1) :
     ∃ f : Lp ℝ 2 μ, ‖f‖ > 0 ∧ continuousRatio μ c_cont f < 1 := by
   sorry
 
 /--
 The continuous bilinear form associated with the weighted L^2 inner product.
 -/
-def weightedBilinearForm (c : X → ℝ) [Fact (Continuous c)] :
-    Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 μ →L[ℝ] ℝ := sorry
+noncomputable def weightedBilinearForm (c : X → ℝ) [Fact (Continuous c)] :
+    Lp ℝ 2 μ →L[ℝ] Lp ℝ 2 μ →L[ℝ] ℝ :=
+  LinearMap.mkContinuous₂ (weightedBilinearFormLin μ c)
+    (weightedBilinearForm_exists_bound μ c).choose
+    (weightedBilinearForm_exists_bound μ c).choose_spec
 
+omit [IsFiniteMeasure μ] in
 theorem weightedBilinearForm_apply (c : X → ℝ) [Fact (Continuous c)] (g h : Lp ℝ 2 μ) :
-    weightedBilinearForm μ c g h = ∫ x, c x * (g : X → ℝ) x * (h : X → ℝ) x ∂μ := sorry
+    weightedBilinearForm μ c g h = ∫ x, c x * (g : X → ℝ) x * (h : X → ℝ) x ∂μ := by
+  simp only [weightedBilinearForm, LinearMap.mkContinuous₂_apply, weightedBilinearFormLin_apply]
 
-/--
+/-
 Theorem: The quadratic form `g ↦ ∫ x, c x * g(x)^2` is continuous on L^2.
 -/
+omit [IsFiniteMeasure μ] in
 theorem quadratic_form_continuous (c : X → ℝ) [Fact (Continuous c)] (f : Lp ℝ 2 μ) :
     ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c x * (g : X → ℝ) x ^ 2 ∂μ) f := by
   have h_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, c x * (g : X → ℝ) x ^ 2 ∂μ) =
@@ -72,9 +80,10 @@ theorem quadratic_form_continuous (c : X → ℝ) [Fact (Continuous c)] (f : Lp 
   exact ContinuousAt.clm_apply
     (weightedBilinearForm μ c).continuous.continuousAt continuous_id.continuousAt
 
-/--
+/-
 Theorem: The continuous Rayleigh quotient is continuous at any non-zero function in L^2.
 -/
+omit [IsFiniteMeasure μ] in
 theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)]
     (f : Lp ℝ 2 μ) (hf : ‖f‖ > 0) :
     ContinuousAt (fun g : Lp ℝ 2 μ ↦ continuousRatio μ c_cont g) f := by
@@ -131,6 +140,12 @@ variable (coeCLM : ∀ i, H_seq i →L[𝕜] Lp V 2 μ)
 variable (projectionToRKHS : ∀ i, Lp V 2 μ →L[𝕜] H_seq i)
 
 /-- Theorem: Strong convergence of the projected functions in L^2. -/
-theorem projection_strong_convergence (f : Lp V 2 μ) :
+theorem projection_strong_convergence (f : Lp V 2 μ)
+    (h_orthogonal : ∀ i (g : Lp V 2 μ) (h : H_seq i),
+      ⟪coeCLM i (projectionToRKHS i g) - g, coeCLM i h⟫_𝕜 = 0)
+    (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
+      ∃ y : H_seq j, coeCLM i x = coeCLM j y)
+    (h_dense : ∀ (g : Lp V 2 μ) (ε : ℝ) (_ : 0 < ε),
+      ∃ i, ∃ h : H_seq i, ‖coeCLM i h - g‖ < ε) :
     Filter.Tendsto (fun i ↦ ‖coeCLM i (projectionToRKHS i f) - f‖) Filter.atTop (nhds 0) := by
   sorry

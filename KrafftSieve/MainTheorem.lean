@@ -82,12 +82,21 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
     [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) [Fact (Continuous c_cont)] :
+    (c_cont : X → ℝ) [Fact (Continuous c_cont)]
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < μ s ∧ ∀ x ∈ s, c_cont x < 1)
+    (h_orthogonal : ∀ i (g : Lp ℝ 2 μ) (h : H_seq i),
+      ⟪coeCLM_seq i (projectionToRKHS i g) - g, coeCLM_seq i h⟫_ℝ = 0)
+    (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
+      ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
+    (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
     ∃ N_0 : ℕ, ∀ n ≥ N_0, muMin n < 1 := by
-  obtain ⟨f_test, hf_test_norm, hf_test_ratio⟩ := exists_continuous_ratio_lt_one μ c_cont
+  obtain ⟨f_test, hf_test_norm, hf_test_ratio⟩ :=
+    exists_continuous_ratio_lt_one μ c_cont h_dip
   let f_seq : ℕ → Lp ℝ 2 μ := fun n ↦ coeCLM_seq n (projectionToRKHS n f_test)
   have h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f_test‖) Filter.atTop (nhds 0) :=
     projection_strong_convergence μ H_seq coeCLM_seq projectionToRKHS f_test
+      h_orthogonal h_mono h_dense
   have h_ratio_conv := continuousRatio_limit μ c_cont f_test hf_test_norm f_seq h_conv
   have h_eventually_lt : ∀ᶠ n in Filter.atTop, continuousRatio μ c_cont (f_seq n) < 1 :=
     h_ratio_conv.eventually_lt_const hf_test_ratio
@@ -116,9 +125,17 @@ theorem mu_min_infinite (μ : Measure X) [IsFiniteMeasure μ]
     [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) [Fact (Continuous c_cont)] :
+    (c_cont : X → ℝ) [Fact (Continuous c_cont)]
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < μ s ∧ ∀ x ∈ s, c_cont x < 1)
+    (h_orthogonal : ∀ i (g : Lp ℝ 2 μ) (h : H_seq i),
+      ⟪coeCLM_seq i (projectionToRKHS i g) - g, coeCLM_seq i h⟫_ℝ = 0)
+    (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
+      ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
+    (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
     {n : ℕ | muMin n < 1}.Infinite := by
   obtain ⟨N_0, hN⟩ := mu_min_eventually_lt_one μ H_seq coeCLM_seq projectionToRKHS c_cont
+    h_dip h_orthogonal h_mono h_dense
   refine Set.Infinite.mono ?_ (Set.Ici_infinite N_0)
   intro n hn
   exact hN n hn
@@ -131,9 +148,17 @@ theorem twin_prime_conjecture (μ : Measure X) [IsFiniteMeasure μ]
     [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) [Fact (Continuous c_cont)] :
+    (c_cont : X → ℝ) [Fact (Continuous c_cont)]
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < μ s ∧ ∀ x ∈ s, c_cont x < 1)
+    (h_orthogonal : ∀ i (g : Lp ℝ 2 μ) (h : H_seq i),
+      ⟪coeCLM_seq i (projectionToRKHS i g) - g, coeCLM_seq i h⟫_ℝ = 0)
+    (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
+      ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
+    (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
     {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
   apply mu_min_lt_one_implies_tpc
   exact mu_min_infinite μ H_seq coeCLM_seq projectionToRKHS c_cont
+    h_dip h_orthogonal h_mono h_dense
 
 end KrafftSieve
