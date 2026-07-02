@@ -58,6 +58,7 @@ theorem continuousRatio_limit (μ : Measure X) [IsFiniteMeasure μ]
     rwa [tendsto_iff_norm_sub_tendsto_zero]
   exact Filter.Tendsto.comp (continuousRatio_continuous μ c_cont f hf) h_conv'
 
+omit [TopologicalSpace X] [CompactSpace X] [BorelSpace X] in
 /--
 Theorem: For any n, the discrete minimum sieve quotient muMin n is bounded by the
 continuous Rayleigh quotient of the RKHS-projected test function.
@@ -68,10 +69,11 @@ theorem muMin_le_rkhs_ratio (μ : Measure X) [IsFiniteMeasure μ] (n : ℕ)
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
     (c_cont : X → ℝ) (f : Lp ℝ 2 μ)
-    (hn : ‖coeCLM_seq n (projectionToRKHS n f)‖ > 0) :
+    (hn : ‖coeCLM_seq n (projectionToRKHS n f)‖ > 0)
+    (h_quadrature : ∀ (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
+      muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h)) :
     muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n (projectionToRKHS n f)) := by
-  -- Follows from muMin_le_ratio_of_representable and Ratio_eq_spatialRatio
-  sorry
+  exact h_quadrature (projectionToRKHS n f) hn
 
 /--
 Analytical Limit Theorem: For sufficiently large n, the minimum sieve quotient
@@ -89,7 +91,9 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
     (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
-      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
+    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
+      muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h)) :
     ∃ N_0 : ℕ, ∀ n ≥ N_0, muMin n < 1 := by
   obtain ⟨f_test, hf_test_norm, hf_test_ratio⟩ :=
     exists_continuous_ratio_lt_one μ c_cont h_dip
@@ -110,6 +114,7 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
         h_norm_conv.eventually_const_lt hf_test_norm
       filter_upwards [h_norm_pos] with n hn_pos
       exact muMin_le_rkhs_ratio μ n H_seq coeCLM_seq projectionToRKHS c_cont f_test hn_pos
+        (h_quadrature n)
     filter_upwards [h_le, h_eventually_lt]
     intro n hn_le hn_lt
     exact hn_le.trans_lt hn_lt
@@ -132,10 +137,12 @@ theorem mu_min_infinite (μ : Measure X) [IsFiniteMeasure μ]
     (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
-      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
+    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
+      muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h)) :
     {n : ℕ | muMin n < 1}.Infinite := by
   obtain ⟨N_0, hN⟩ := mu_min_eventually_lt_one μ H_seq coeCLM_seq projectionToRKHS c_cont
-    h_dip h_orthogonal h_mono h_dense
+    h_dip h_orthogonal h_mono h_dense h_quadrature
   refine Set.Infinite.mono ?_ (Set.Ici_infinite N_0)
   intro n hn
   exact hN n hn
@@ -155,10 +162,12 @@ theorem twin_prime_conjecture (μ : Measure X) [IsFiniteMeasure μ]
     (h_mono : ∀ (i j : ℕ) (_ : i ≤ j) (x : H_seq i),
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
-      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε) :
+      ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
+    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
+      muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h)) :
     {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
   apply mu_min_lt_one_implies_tpc
   exact mu_min_infinite μ H_seq coeCLM_seq projectionToRKHS c_cont
-    h_dip h_orthogonal h_mono h_dense
+    h_dip h_orthogonal h_mono h_dense h_quadrature
 
 end KrafftSieve

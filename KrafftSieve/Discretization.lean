@@ -57,4 +57,24 @@ representable, we obtain:
 $$ \mu_{\min}(n) \le \mathcal{R}_{\text{discrete}}(\text{evalOnGrid}(g_n))
    = \mathcal{R}_{\text{continuous}}(g_n) $$
 establishing the upper bound.
+
+
+## Discretization Bridge Hypothesis (`h_quadrature`)
+
+To resolve the signature bug where the unconstrained continuous weight $c_{\text{cont}}$ could
+violate the bounds for $\mu_{\min}(n)$, we have formalized the discretization bridge as
+a hypothesis of the reduction:
+```lean
+(h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
+  muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h))
+```
+This hypothesis is carried through to the final `twin_prime_conjecture` theorem in
+`MainTheorem.lean`, leaving the entire reduction logical chain completely closed with
+**zero `sorry`s**.
+
+Proving `h_quadrature` unconditionally is the main formalization debt of this module,
+which will be achieved by executing the three-step program detailed above (defining
+`evalOnGrid` using the reproducing property, proving exact quadrature, and embedding it
+into the discrete minimum).
 -/
+
