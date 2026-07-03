@@ -157,9 +157,30 @@ theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
       ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
   sorry
 
+/-- The `L²` norm-squared of `coeCLM₀ n h`, expressed as an integral, is strictly positive
+whenever its norm is positive. -/
+theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
+    (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ := by
+  have hid : ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ = ‖coeCLM₀ n h‖ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, MeasureTheory.L2.inner_def]
+    simp only [RCLike.inner_apply, conj_trivial, pow_two]
+  rw [hid]
+  exact pow_pos hn 2
+
 /-- The final discretization bridge theorem. -/
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
     muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h) := by
-  sorry
+  -- The denominator (grid L²-norm, expressed as an integral) is strictly positive.
+  have hden : (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ := denominator_pos n h hn
+  -- Hence the discrete grid L²-norm is positive too.
+  have h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 > 0 := by
+    rw [← denominator_quadrature n h]; exact hden
+  -- Identify the continuous ratio with the discrete spatial ratio.
+  have h_eq : continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)
+      = spatialRatio n (evalOnGrid n h) := by
+    simp only [continuousRatio, spatialRatio]
+    rw [numerator_quadrature n h, denominator_quadrature n h]
+  rw [h_eq]
+  exact muMin_le_discreteRatio n h h_nonZero
 
 end KrafftSieve
