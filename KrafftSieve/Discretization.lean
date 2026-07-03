@@ -90,7 +90,7 @@ open MeasureTheory HilbertBasis RKHS InnerProductSpace
 
 -- Concrete space and measure for Route B
 abbrev X₀ : Type := I
-noncomputable def μ₀ : Measure X₀ := volume
+noncomputable abbrev μ₀ : Measure X₀ := volume
 
 -- Sieve-specific grid mapping and RKHS definitions.
 -- Note: the residue `x % q n` is taken in `ℕ` and then cast to `ℝ`. (Writing `(x % q n : ℝ)`
@@ -149,9 +149,13 @@ noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
   coeCLM := coeCLM_H₀ n
   coeCLM_injective := sorry
 
+/-- The continuous polynomial evaluation function `coeFun_H₀ n h` is continuous. -/
+lemma coeFun_H₀_continuous (n : ℕ) (h : H₀ n) : Continuous (coeFun_H₀ n h) := by
+  sorry
+
 /-- Evaluation as an L² class (linear map). -/
 noncomputable def coeLM₀ (n : ℕ) : H₀ n →ₗ[ℝ] Lp ℝ 2 μ₀ where
-  toFun h := ContinuousMap.toLp 2 μ₀ ℝ ⟨coeFun_H₀ n h, sorry⟩
+  toFun h := ContinuousMap.toLp 2 μ₀ ℝ ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩
   map_add' h1 h2 := sorry
   map_smul' c h := sorry
 
