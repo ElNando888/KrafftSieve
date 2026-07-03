@@ -144,6 +144,11 @@ noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ :=
 @[simp] lemma coeCLM_H₀_apply (n : ℕ) (h : H₀ n) (t : X₀) :
     coeCLM_H₀ n h t = coeFun_H₀ n h t := rfl
 
+/-- The continuous basis cosines are linearly independent. -/
+theorem basisCos_cont_linear_independent (n : ℕ) :
+    LinearIndependent ℝ (fun S : Finset (Fin (w n)) ↦ basisCos_cont n S) := by
+  sorry
+
 -- We declare that H₀ n has an RKHS instance
 noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
   coeCLM := coeCLM_H₀ n
@@ -266,13 +271,14 @@ theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
 
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ = ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 := by
+    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 := by
   sorry
 
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
     ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
-      ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
+      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
   sorry
 
 /-- The `L²` norm-squared of `coeCLM₀ n h`, expressed as an integral, is strictly positive
@@ -291,13 +297,25 @@ theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖
   -- The denominator (grid L²-norm, expressed as an integral) is strictly positive.
   have hden : (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ := denominator_pos n h hn
   -- Hence the discrete grid L²-norm is positive too.
+  have hq : (q n : ℝ) > 0 := by
+    exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
+  have hq_inv : (0 : ℝ) < 1 / (q n : ℝ) := one_div_pos.mpr hq
   have h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 > 0 := by
-    rw [← denominator_quadrature n h]; exact hden
+    have hden_eq := denominator_quadrature n h
+    rw [hden_eq] at hden
+    exact (mul_pos_iff_of_pos_left hq_inv).mp hden
   -- Identify the continuous ratio with the discrete spatial ratio.
   have h_eq : continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)
       = spatialRatio n (evalOnGrid n h) := by
     simp only [continuousRatio, spatialRatio]
     rw [numerator_quadrature n h, denominator_quadrature n h]
+    have hsum_ne : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 ≠ 0 := h_nonZero.ne'
+    have hq_ne : (q n : ℝ) ≠ 0 := hq.ne'
+    have hdiv_ne : (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 ≠ 0 :=
+      mul_ne_zero (div_ne_zero one_ne_zero hq_ne) hsum_ne
+    rw [if_neg hdiv_ne, if_neg hsum_ne]
+    have hdiv : (1 / (q n : ℝ)) ≠ 0 := div_ne_zero one_ne_zero hq_ne
+    rw [mul_div_mul_left _ _ hdiv]
   rw [h_eq]
   exact muMin_le_discreteRatio n h h_nonZero
 
