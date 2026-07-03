@@ -196,8 +196,15 @@ noncomputable def coeLM₀ (n : ℕ) : H₀ n →ₗ[ℝ] Lp ℝ 2 μ₀ where
 noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ :=
   (coeLM₀ n).toContinuousLinearMap
 
--- The continuous weight c_cont₀
-noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ := sorry
+/-- Cosine-basis coefficients of the continuous weight `c_cont₀`. The precise values (which make
+`c_cont₀` interpolate the discrete hit counter `c n` exactly on the grid, see `c_cont₀_eq_c`)
+encode a separate number-theoretic fact and are left as a stub for a later run. -/
+noncomputable def c_coef (n : ℕ) : Finset (Fin (w n)) → ℝ := sorry
+
+/-- The continuous weight `c_cont₀`, a trigonometric polynomial expressed as a combination of the
+basis cosines with coefficients `c_coef n`. -/
+noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
+  fun t => ∑ R : Finset (Fin (w n)), c_coef n R * basisCos_cont n R t
 
 /-- The continuous weight c_cont₀ interpolates the discrete weight c n exactly on the grid. -/
 theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
@@ -297,17 +304,197 @@ theorem basisCos_triple_product_quadrature (n : ℕ) (R S T : Finset (Fin (w n))
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n R x * basisCos n S x * basisCos n T x := by
   sorry
 
+/-- Each continuous basis cosine is continuous as a function on the interval. -/
+lemma basisCos_cont_continuous (n : ℕ) (S : Finset (Fin (w n))) :
+    Continuous (basisCos_cont n S) := by
+  unfold basisCos_cont; fun_prop
+
+/-- Products of two continuous basis cosines are integrable (continuous on a compact,
+finite-measure domain). -/
+lemma integrable_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
+    Integrable (fun t => basisCos_cont n S t * basisCos_cont n T t) μ₀ :=
+  ((basisCos_cont_continuous n S).mul
+    (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
+    (HasCompactSupport.of_compactSpace _)
+
+/-- Products of three continuous basis cosines are integrable. -/
+lemma integrable_basisCos_triple (n : ℕ) (R S T : Finset (Fin (w n))) :
+    Integrable (fun t => basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t) μ₀ :=
+  (((basisCos_cont_continuous n R).mul (basisCos_cont_continuous n S)).mul
+    (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
+    (HasCompactSupport.of_compactSpace _)
+
+/-- The `Lp` coercion of `coeCLM₀ n h` agrees almost everywhere with the honest continuous
+function `coeFun_H₀ n h`. -/
+lemma coeCLM₀_coeFn_ae (n : ℕ) (h : H₀ n) :
+    (coeCLM₀ n h : X₀ → ℝ) =ᵐ[μ₀] coeFun_H₀ n h := by
+  have hclm : (coeCLM₀ n h : X₀ → ℝ)
+      = (ContinuousMap.toLp (E := ℝ) 2 μ₀ ℝ
+          ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩ : X₀ → ℝ) := by
+    rfl
+  rw [hclm]
+  exact ContinuousMap.coeFn_toLp (E := ℝ) (𝕜 := ℝ) (p := 2) μ₀
+    ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩
+
+/-- The grid samples of an RKHS element, on the evaluation window, expand as a linear combination
+of the discrete basis cosines. -/
+lemma evalOnGrid_mem_eq (n : ℕ) (h : H₀ n) (x : ℕ) (hx : x ∈ evalInterval n) :
+    evalOnGrid n h x =
+      ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos n S (x : ZMod (q n)) := by
+  unfold evalOnGrid
+  rw [if_pos hx]
+  change coeCLM_H₀ n h (gridPt n x) = _
+  rw [coeCLM_H₀_apply]
+  unfold coeFun_H₀
+  rw [Finset.powerset_univ]
+  refine Finset.sum_congr rfl fun S _ => ?_
+  rw [basisCos_cont_gridPt]
+
+/-- On the evaluation window, the cosine-coefficient combination `c_coef` reconstructs the discrete
+hit counter `c n`. This follows from `c_cont₀_eq_c` and `basisCos_cont_gridPt`. -/
+lemma c_coef_reconstructs (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
+    ∑ R : Finset (Fin (w n)), c_coef n R * basisCos n R (x : ZMod (q n))
+      = c n (x : ZMod (q n)) := by
+  have hh := c_cont₀_eq_c n x hx
+  simp only [c_cont₀, basisCos_cont_gridPt] at hh
+  exact hh
+
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
     ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 := by
-  sorry
+  -- Step 1: replace the `Lp` representative by the honest continuous function.
+  have hae : (fun t => ((coeCLM₀ n h : X₀ → ℝ) t) ^ 2)
+      =ᵐ[μ₀] (fun t => (coeFun_H₀ n h t) ^ 2) := by
+    filter_upwards [coeCLM₀_coeFn_ae n h] with t ht
+    rw [ht]
+  rw [integral_congr_ae hae]
+  -- Step 2: expand the square of the sum as a double sum.
+  have h1 : (fun t => (coeFun_H₀ n h t) ^ 2)
+      = (fun t => ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+            (basisCos_cont n S t * basisCos_cont n T t)) := by
+    funext t
+    have hc : coeFun_H₀ n h t
+        = ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t := by
+      rw [coeFun_H₀, Finset.powerset_univ]
+    rw [hc, sq, Fintype.sum_mul_sum]
+    exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by ring
+  rw [h1]
+  -- Step 3: push the integral through the two finite sums, pulling out the coefficients.
+  rw [integral_finsetSum _ (fun S _ => integrable_finsetSum _
+    (fun T _ => (integrable_basisCos_prod n S T).const_mul _))]
+  have h2 : ∀ S : Finset (Fin (w n)),
+      (∫ t, ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
+          (h : Finset (Fin (w n)) → ℝ) T * (basisCos_cont n S t * basisCos_cont n T t) ∂μ₀)
+        = ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
+            (h : Finset (Fin (w n)) → ℝ) T *
+            ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ := by
+    intro S
+    rw [integral_finsetSum _ (fun T _ => (integrable_basisCos_prod n S T).const_mul _)]
+    exact Finset.sum_congr rfl fun T _ => integral_const_mul _ _
+  simp_rw [h2]
+  -- Step 4: substitute the product quadrature and reassemble the grid sum.
+  simp_rw [basisCos_product_quadrature n]
+  -- Reduce to a pure reindexing/algebra identity between triple sums.
+  have key : (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2
+      = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+            ((1 / (q n : ℝ)) *
+              ∑ x ∈ evalInterval n, basisCos n S x * basisCos n T x) := by
+    have e1 : ∀ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2
+        = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+            (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+              (basisCos n S x * basisCos n T x) := by
+      intro x hx
+      rw [evalOnGrid_mem_eq n h x hx, sq, Fintype.sum_mul_sum]
+      exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by ring
+    rw [Finset.sum_congr rfl e1, Finset.mul_sum]
+    simp_rw [Finset.mul_sum]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun S _ => ?_
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun T _ => Finset.sum_congr rfl fun x _ => by ring
+  rw [key]
 
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
     ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
-  sorry
+  -- Step 1: replace the `Lp` representative by the honest continuous function.
+  have hae : (fun t => c_cont₀ n t * ((coeCLM₀ n h : X₀ → ℝ) t) ^ 2)
+      =ᵐ[μ₀] (fun t => c_cont₀ n t * (coeFun_H₀ n h t) ^ 2) := by
+    filter_upwards [coeCLM₀_coeFn_ae n h] with t ht
+    rw [ht]
+  rw [integral_congr_ae hae]
+  -- Step 2: expand `c_cont₀` and the square of the sum into a triple sum.
+  have h1 : (fun t => c_cont₀ n t * (coeFun_H₀ n h t) ^ 2)
+      = (fun t => ∑ R : Finset (Fin (w n)), ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+          c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+            (basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t)) := by
+    funext t
+    have hcoe : coeFun_H₀ n h t
+        = ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t := by
+      rw [coeFun_H₀, Finset.powerset_univ]
+    have hcc : c_cont₀ n t
+        = ∑ R : Finset (Fin (w n)), c_coef n R * basisCos_cont n R t := rfl
+    rw [hcc, hcoe, sq, Fintype.sum_mul_sum, Fintype.sum_mul_sum]
+    simp_rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun R _ => Finset.sum_congr rfl fun S _ =>
+      Finset.sum_congr rfl fun T _ => by ring
+  rw [h1]
+  -- Step 3: push the integral through the three finite sums.
+  rw [integral_finsetSum _ (fun R _ => integrable_finsetSum _ (fun S _ =>
+    integrable_finsetSum _ (fun T _ => (integrable_basisCos_triple n R S T).const_mul _)))]
+  have h2 : ∀ R : Finset (Fin (w n)),
+      (∫ t, ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+          c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+            (basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t) ∂μ₀)
+        = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+            c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+              ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ := by
+    intro R
+    rw [integral_finsetSum _ (fun S _ => integrable_finsetSum _
+      (fun T _ => (integrable_basisCos_triple n R S T).const_mul _))]
+    refine Finset.sum_congr rfl fun S _ => ?_
+    rw [integral_finsetSum _ (fun T _ => (integrable_basisCos_triple n R S T).const_mul _)]
+    exact Finset.sum_congr rfl fun T _ => integral_const_mul _ _
+  simp_rw [h2]
+  -- Step 4: substitute the triple-product quadrature.
+  simp_rw [basisCos_triple_product_quadrature n]
+  -- Step 5: reassemble the grid sum. Both sides equal a common quadruple sum.
+  have Lexp : (∑ R : Finset (Fin (w n)), ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+        c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+          ((1 / (q n : ℝ)) * ∑ x ∈ evalInterval n,
+            basisCos n R x * basisCos n S x * basisCos n T x))
+      = ∑ R : Finset (Fin (w n)), ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
+          ∑ x ∈ evalInterval n, (1 / (q n : ℝ)) *
+            (c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+              (basisCos n R x * basisCos n S x * basisCos n T x)) := by
+    refine Finset.sum_congr rfl fun R _ => Finset.sum_congr rfl fun S _ =>
+      Finset.sum_congr rfl fun T _ => ?_
+    simp_rw [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun x _ => by ring
+  have Rexp : (1 / (q n : ℝ)) *
+        ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
+      = ∑ x ∈ evalInterval n, ∑ R : Finset (Fin (w n)), ∑ S : Finset (Fin (w n)),
+          ∑ T : Finset (Fin (w n)), (1 / (q n : ℝ)) *
+            (c_coef n R * (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
+              (basisCos n R x * basisCos n S x * basisCos n T x)) := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun x hx => ?_
+    rw [← c_coef_reconstructs n x hx, evalOnGrid_mem_eq n h x hx, sq,
+      Fintype.sum_mul_sum, Fintype.sum_mul_sum]
+    simp_rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun R _ => Finset.sum_congr rfl fun S _ =>
+      Finset.sum_congr rfl fun T _ => by ring
+  rw [Lexp, Rexp]
+  -- Reorder the quadruple sum: move the grid sum to the outside.
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun R _ => ?_
+  conv_rhs => rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun S _ => ?_
+  conv_rhs => rw [Finset.sum_comm]
 
 /-- The `L²` norm-squared of `coeCLM₀ n h`, expressed as an integral, is strictly positive
 whenever its norm is positive. -/
