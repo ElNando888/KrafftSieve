@@ -201,6 +201,11 @@ noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ :=
 encode a separate number-theoretic fact and are left as a stub for a later run. -/
 noncomputable def c_coef (n : ℕ) : Finset (Fin (w n)) → ℝ := sorry
 
+/-- The discrete coefficients reconstruct the counter `c n` exactly. -/
+theorem c_coef_spec (n : ℕ) (x : ZMod (q n)) :
+    ∑ R : Finset (Fin (w n)), c_coef n R * basisCos n R x = c n x := by
+  sorry
+
 /-- The continuous weight `c_cont₀`, a trigonometric polynomial expressed as a combination of the
 basis cosines with coefficients `c_coef n`. -/
 noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
