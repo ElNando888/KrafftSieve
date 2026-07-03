@@ -92,11 +92,17 @@ open MeasureTheory HilbertBasis RKHS InnerProductSpace
 abbrev X₀ : Type := I
 noncomputable def μ₀ : Measure X₀ := volume
 
--- Sieve-specific grid mapping and RKHS definitions
+-- Sieve-specific grid mapping and RKHS definitions.
+-- Note: the residue `x % q n` is taken in `ℕ` and then cast to `ℝ`. (Writing `(x % q n : ℝ)`
+-- directly would instead use the `EuclideanDomain` remainder on `ℝ`, which is `0` whenever
+-- `q n ≠ 0`, collapsing every grid point to `0`; the natural-number modulus is the intended one.)
 noncomputable def gridPt (n : ℕ) (x : ℕ) : X₀ :=
-  let q_real : ℝ := q n
-  let val := (x % q n : ℝ) / q_real
-  ⟨val, sorry⟩
+  ⟨((x % q n : ℕ) : ℝ) / (q n : ℝ), by
+    have hq : (0 : ℝ) < (q n : ℝ) := by
+      exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
+    refine ⟨by positivity, ?_⟩
+    rw [div_le_one hq]
+    exact_mod_cast (Nat.mod_lt x (Nat.pos_of_ne_zero (NeZero.ne (q n)))).le⟩
 
 -- Ensure Fintype instance is synthesized for Finset (Fin (w n))
 instance (n : ℕ) : Fintype (Finset (Fin (w n))) := Finset.fintype
@@ -112,36 +118,116 @@ noncomputable def basisCos_cont (n : ℕ) (S : Finset (Fin (w n))) (t : X₀) : 
 noncomputable def coeFun_H₀ (n : ℕ) (h : H₀ n) (t : X₀) : ℝ :=
   ∑ S ∈ Finset.univ.powerset, (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t
 
-/-- Continuous evaluation map as a continuous linear map. -/
-noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ := sorry
+/-- Continuous evaluation as a linear map. Since `coeFun_H₀ n` is linear in the
+coefficient vector, this packages it as an `ℝ`-linear map. -/
+noncomputable def coeLM_H₀ (n : ℕ) : H₀ n →ₗ[ℝ] (X₀ → ℝ) where
+  toFun h := coeFun_H₀ n h
+  map_add' h1 h2 := by
+    ext t
+    simp only [coeFun_H₀, Pi.add_apply]
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun S _ => ?_
+    have hS : (h1 + h2 : H₀ n) S = h1 S + h2 S := rfl
+    rw [hS]; ring
+  map_smul' c h := by
+    ext t
+    simp only [coeFun_H₀, RingHom.id_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun S _ => ?_
+    have hS : (c • h : H₀ n) S = c * h S := rfl
+    rw [hS]; ring
+
+/-- Continuous evaluation map as a continuous linear map. The domain `H₀ n` is
+finite dimensional, so the linear map `coeLM_H₀ n` is automatically continuous. -/
+noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ :=
+  (coeLM_H₀ n).toContinuousLinearMap
+
+@[simp] lemma coeCLM_H₀_apply (n : ℕ) (h : H₀ n) (t : X₀) :
+    coeCLM_H₀ n h t = coeFun_H₀ n h t := rfl
 
 -- We declare that H₀ n has an RKHS instance
 noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
   coeCLM := coeCLM_H₀ n
   coeCLM_injective := sorry
 
+/-- Evaluation as an L² class (linear map). -/
+noncomputable def coeLM₀ (n : ℕ) : H₀ n →ₗ[ℝ] Lp ℝ 2 μ₀ where
+  toFun h := ContinuousMap.toLp 2 μ₀ ℝ ⟨coeFun_H₀ n h, sorry⟩
+  map_add' h1 h2 := sorry
+  map_smul' c h := sorry
+
 -- coeCLM₀ maps a coefficient vector to its L² class of the spatialVector
-noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ := sorry
+noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ :=
+  (coeLM₀ n).toContinuousLinearMap
 
 -- The continuous weight c_cont₀
 noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ := sorry
+
+/-- The continuous weight c_cont₀ interpolates the discrete weight c n exactly on the grid. -/
+theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
+    c_cont₀ n (gridPt n x) = c n (x : ZMod (q n)) := by
+  sorry
 
 /-- Grid Evaluation / Sampling of an RKHS element. -/
 noncomputable def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
   fun x ↦ if x ∈ evalInterval n then coeCLM ℝ h (gridPt n x) else 0
 
-/-- Sieve Representability of Grid Evaluations -/
+/-- The continuous basis cosine, evaluated at the grid point `gridPt n x`, agrees exactly with
+the discrete basis cosine at the residue of `x` modulo `q n`. This is the exact-sampling identity:
+the extra factor `q n` in `basisCos_cont` cancels the `1 / q n` inside `gridPt`, leaving
+`(x % q n)`, which is exactly `(x : ZMod (q n)).val`. -/
+lemma basisCos_cont_gridPt (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
+    basisCos_cont n S (gridPt n x) = basisCos n S (x : ZMod (q n)) := by
+  unfold basisCos_cont basisCos
+  refine Finset.prod_congr rfl fun i _ => ?_
+  congr 1
+  have hq : (q n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne (q n))
+  have hval : ((gridPt n x : X₀) : ℝ) = ((x % q n : ℕ) : ℝ) / (q n : ℝ) := rfl
+  have hvalcast : ((x : ZMod (q n)).val : ℝ) = ((x % q n : ℕ) : ℝ) := by
+    rw [ZMod.val_natCast]
+  rw [hval, hvalcast, mul_assoc, div_mul_cancel₀ _ hq]
+
+/-- Sieve Representability of Grid Evaluations.
+
+Note. The original statement asserted the *global* equality of functions
+`evalOnGrid n h = spatialVector n lambda` on all of `ℕ`. That statement is false:
+`evalOnGrid n h` is supported on the finite window `evalInterval n`, whereas
+`spatialVector n lambda x = pMulti n lambda (x : ZMod (q n))` is `q n`-periodic in `x`, so it
+cannot vanish off a finite window unless it is identically zero. We therefore state the true
+(and, for the discrete Rayleigh quotient, entirely sufficient) equality restricted to
+`evalInterval n`; this is all that `muMin_le_discreteRatio` and `spatialRatio` ever use, since
+both only look at the values on `evalInterval n`. -/
 theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
-    ∃ lambda : Finset (Fin (w n)) → ℝ, evalOnGrid n h = spatialVector n lambda := by
-  sorry
+    ∃ lambda : Finset (Fin (w n)) → ℝ,
+      ∀ x ∈ evalInterval n, evalOnGrid n h x = spatialVector n lambda x := by
+  refine ⟨(h : Finset (Fin (w n)) → ℝ), fun x hx => ?_⟩
+  unfold evalOnGrid
+  rw [if_pos hx]
+  change coeCLM_H₀ n h (gridPt n x) = spatialVector n (h : Finset (Fin (w n)) → ℝ) x
+  rw [coeCLM_H₀_apply]
+  unfold coeFun_H₀ spatialVector pMulti
+  refine Finset.sum_congr rfl fun S _ => ?_
+  rw [basisCos_cont_gridPt]
 
 /-- Discrete Rayleigh quotient lower bound for RKHS functions. -/
 theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
     (h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 > 0) :
     muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  -- Represent the grid samples of `h` as a genuine sieve weight vector `spatialVector n lambda`.
+  -- Represent the grid samples of `h` as a genuine sieve weight vector `spatialVector n lambda`,
+  -- with equality holding on the evaluation window `evalInterval n`.
   obtain ⟨lambda, hlam⟩ := evalOnGrid_eq_spatialVector n h
-  rw [hlam] at h_nonZero ⊢
+  -- The two grid functions have the same discrete `L²` norm and weighted norm over the window,
+  -- because they agree pointwise there.
+  have hsum1 : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2
+      = ∑ x ∈ evalInterval n, (spatialVector n lambda x) ^ 2 :=
+    Finset.sum_congr rfl (fun x hx => by rw [hlam x hx])
+  have hsum2 : ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
+      = ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (spatialVector n lambda x) ^ 2 :=
+    Finset.sum_congr rfl (fun x hx => by rw [hlam x hx])
+  -- Hence their discrete Rayleigh quotients coincide.
+  have hratio : spatialRatio n (evalOnGrid n h) = spatialRatio n (spatialVector n lambda) := by
+    simp only [spatialRatio, hsum1, hsum2]
+  rw [hratio]
+  rw [hsum1] at h_nonZero
   -- The nonzero grid-norm hypothesis says exactly that the primal quadratic form `q1` is positive.
   have hq1 : q1 n lambda > 0 := by
     rw [q1_eq_spatialVector_norm]; exact h_nonZero
@@ -200,3 +286,4 @@ theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖
   exact muMin_le_discreteRatio n h h_nonZero
 
 end KrafftSieve
+
