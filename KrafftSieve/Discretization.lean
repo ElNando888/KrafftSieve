@@ -144,10 +144,64 @@ noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ :=
 @[simp] lemma coeCLM_H₀_apply (n : ℕ) (h : H₀ n) (t : X₀) :
     coeCLM_H₀ n h t = coeFun_H₀ n h t := rfl
 
+/-- Each continuous basis cosine is continuous as a function on the interval. -/
+lemma basisCos_cont_continuous (n : ℕ) (S : Finset (Fin (w n))) :
+    Continuous (basisCos_cont n S) := by
+  unfold basisCos_cont; fun_prop
+
+/-- Products of two continuous basis cosines are integrable (continuous on a compact,
+finite-measure domain). -/
+lemma integrable_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
+    Integrable (fun t => basisCos_cont n S t * basisCos_cont n T t) μ₀ :=
+  ((basisCos_cont_continuous n S).mul
+    (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
+    (HasCompactSupport.of_compactSpace _)
+
+/-- The continuous basis cosines are orthogonal under the L² inner product. -/
+theorem basisCos_cont_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
+      if S = T then (1 / 2 ^ S.card : ℝ) else 0 := by
+  sorry
+
 /-- The continuous basis cosines are linearly independent. -/
 theorem basisCos_cont_linear_independent (n : ℕ) :
     LinearIndependent ℝ (fun S : Finset (Fin (w n)) ↦ basisCos_cont n S) := by
-  sorry
+  rw [Fintype.linearIndependent_iff]
+  intro l hl T
+  -- The linear combination vanishes pointwise on the interval.
+  have hfun : ∀ t, (∑ S, l S * basisCos_cont n S t) = 0 := by
+    intro t
+    have h := congrFun hl t
+    simpa [Finset.sum_apply, Pi.smul_apply, smul_eq_mul] using h
+  -- The integral of the vanishing combination times `basisCos_cont n T` is `0`.
+  have hI : (∑ S, l S * ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀) = 0 := by
+    have key : (∑ S, l S * ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀)
+        = ∫ t, (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t ∂μ₀ := by
+      have hpt : (fun t => (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t)
+          = fun t => ∑ S, l S * (basisCos_cont n S t * basisCos_cont n T t) := by
+        funext t
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun S _ => by ring
+      rw [hpt, integral_finsetSum _ (fun S _ => (integrable_basisCos_prod n S T).const_mul (l S))]
+      exact Finset.sum_congr rfl fun S _ => (integral_const_mul (l S) _).symm
+    rw [key]
+    have hz : (fun t => (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t)
+        = fun _ => (0 : ℝ) := by
+      funext t; rw [hfun t]; ring
+    rw [hz, integral_zero]
+  -- Orthogonality collapses the sum to the single `S = T` term.
+  simp only [basisCos_cont_orthogonal] at hI
+  have hcollapse : (∑ S, l S * (if S = T then (1 / 2 ^ S.card : ℝ) else 0))
+      = l T * (1 / 2 ^ T.card : ℝ) := by
+    rw [Finset.sum_eq_single T]
+    · simp
+    · intro S _ hST; simp [hST]
+    · intro hT; exact absurd (Finset.mem_univ T) hT
+  rw [hcollapse] at hI
+  have hc : (1 / 2 ^ T.card : ℝ) ≠ 0 := by positivity
+  rcases mul_eq_zero.mp hI with h | h
+  · exact h
+  · exact absurd h hc
 
 -- We declare that H₀ n has an RKHS instance
 noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
@@ -227,7 +281,7 @@ lemma basisCos_cont_gridPt (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
   rw [hval, hvalcast, mul_assoc, div_mul_cancel₀ _ hq]
 
 /-- The continuous weight c_cont₀ interpolates the discrete weight c n exactly on the grid. -/
-theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
+theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (_ : x ∈ evalInterval n) :
     c_cont₀ n (gridPt n x) = c n (x : ZMod (q n)) := by
   unfold c_cont₀
   simp only [basisCos_cont_gridPt]
@@ -310,19 +364,6 @@ theorem basisCos_triple_product_quadrature (n : ℕ) (R S T : Finset (Fin (w n))
     ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n R x * basisCos n S x * basisCos n T x := by
   sorry
-
-/-- Each continuous basis cosine is continuous as a function on the interval. -/
-lemma basisCos_cont_continuous (n : ℕ) (S : Finset (Fin (w n))) :
-    Continuous (basisCos_cont n S) := by
-  unfold basisCos_cont; fun_prop
-
-/-- Products of two continuous basis cosines are integrable (continuous on a compact,
-finite-measure domain). -/
-lemma integrable_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
-    Integrable (fun t => basisCos_cont n S t * basisCos_cont n T t) μ₀ :=
-  ((basisCos_cont_continuous n S).mul
-    (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
-    (HasCompactSupport.of_compactSpace _)
 
 /-- Products of three continuous basis cosines are integrable. -/
 lemma integrable_basisCos_triple (n : ℕ) (R S T : Finset (Fin (w n))) :
