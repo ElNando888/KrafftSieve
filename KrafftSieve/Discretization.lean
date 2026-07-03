@@ -123,7 +123,28 @@ theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
 theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
     (h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 > 0) :
     muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  sorry
+  -- Represent the grid samples of `h` as a genuine sieve weight vector `spatialVector n lambda`.
+  obtain ⟨lambda, hlam⟩ := evalOnGrid_eq_spatialVector n h
+  rw [hlam] at h_nonZero ⊢
+  -- The nonzero grid-norm hypothesis says exactly that the primal quadratic form `q1` is positive.
+  have hq1 : q1 n lambda > 0 := by
+    rw [q1_eq_spatialVector_norm]; exact h_nonZero
+  -- Identify the discrete Rayleigh quotient with the primal `Ratio`.
+  rw [← Ratio_eq_spatialRatio]
+  -- `Ratio n lambda` is an attainable ratio.
+  have h_mem : Ratio n lambda ∈ attainableRatios n := ⟨lambda, hq1, rfl⟩
+  -- The attainable ratios are bounded below by `0`, since the discrete weights `c` are nonnegative.
+  have h_lower_bound : ∀ r ∈ attainableRatios n, r ≥ 0 := by
+    rintro r ⟨l, hl_q1, rfl⟩
+    unfold Ratio
+    rw [if_neg hl_q1.ne']
+    refine div_nonneg ?_ (le_of_lt hl_q1)
+    rw [q2_eq_spatialVector_weighted_norm]
+    refine Finset.sum_nonneg fun x _ ↦ ?_
+    exact mul_nonneg (c_nonneg n (x : ZMod (q n))) (sq_nonneg _)
+  have h_bdd : BddBelow (attainableRatios n) := ⟨0, h_lower_bound⟩
+  -- `muMin n` is the infimum of the attainable ratios, hence at most `Ratio n lambda`.
+  exact csInf_le h_bdd h_mem
 
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
@@ -142,4 +163,3 @@ theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖
   sorry
 
 end KrafftSieve
-
