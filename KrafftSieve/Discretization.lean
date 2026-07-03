@@ -151,13 +151,25 @@ noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
 
 /-- The continuous polynomial evaluation function `coeFun_H₀ n h` is continuous. -/
 lemma coeFun_H₀_continuous (n : ℕ) (h : H₀ n) : Continuous (coeFun_H₀ n h) := by
-  sorry
+  unfold coeFun_H₀ basisCos_cont
+  fun_prop
 
 /-- Evaluation as an L² class (linear map). -/
 noncomputable def coeLM₀ (n : ℕ) : H₀ n →ₗ[ℝ] Lp ℝ 2 μ₀ where
   toFun h := ContinuousMap.toLp 2 μ₀ ℝ ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩
-  map_add' h1 h2 := sorry
-  map_smul' c h := sorry
+  map_add' h1 h2 := by
+    have hcm : (⟨coeFun_H₀ n (h1 + h2), coeFun_H₀_continuous n (h1 + h2)⟩ : C(X₀, ℝ))
+        = ⟨coeFun_H₀ n h1, coeFun_H₀_continuous n h1⟩
+          + ⟨coeFun_H₀ n h2, coeFun_H₀_continuous n h2⟩ := by
+      ext t
+      exact congrFun ((coeLM_H₀ n).map_add h1 h2) t
+    simp only [hcm, map_add]
+  map_smul' c h := by
+    have hcm : (⟨coeFun_H₀ n (c • h), coeFun_H₀_continuous n (c • h)⟩ : C(X₀, ℝ))
+        = c • ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩ := by
+      ext t
+      exact congrFun ((coeLM_H₀ n).map_smul c h) t
+    simp only [hcm, map_smul, RingHom.id_apply]
 
 -- coeCLM₀ maps a coefficient vector to its L² class of the spatialVector
 noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ :=
@@ -290,4 +302,3 @@ theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖
   exact muMin_le_discreteRatio n h h_nonZero
 
 end KrafftSieve
-
