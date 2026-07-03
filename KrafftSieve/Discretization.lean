@@ -93,7 +93,10 @@ abbrev X₀ : Type := I
 noncomputable def μ₀ : Measure X₀ := volume
 
 -- Sieve-specific grid mapping and RKHS definitions
-def gridPt (n : ℕ) (x : ℕ) : X₀ := sorry
+noncomputable def gridPt (n : ℕ) (x : ℕ) : X₀ :=
+  let q_real : ℝ := q n
+  let val := (x % q n : ℝ) / q_real
+  ⟨val, sorry⟩
 
 -- Ensure Fintype instance is synthesized for Finset (Fin (w n))
 instance (n : ℕ) : Fintype (Finset (Fin (w n))) := Finset.fintype
@@ -101,8 +104,21 @@ instance (n : ℕ) : Fintype (Finset (Fin (w n))) := Finset.fintype
 -- H₀ n is the finite dimensional EuclideanSpace
 abbrev H₀ (n : ℕ) : Type := EuclideanSpace ℝ (Finset (Fin (w n)))
 
+/-- Continuous basis cosines on the interval. -/
+noncomputable def basisCos_cont (n : ℕ) (S : Finset (Fin (w n))) (t : X₀) : ℝ :=
+  ∏ i ∈ S, Real.cos (2 * Real.pi * 3 * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
+
+/-- Continuous polynomial evaluation of an RKHS element. -/
+noncomputable def coeFun_H₀ (n : ℕ) (h : H₀ n) (t : X₀) : ℝ :=
+  ∑ S ∈ Finset.univ.powerset, (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t
+
+/-- Continuous evaluation map as a continuous linear map. -/
+noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ := sorry
+
 -- We declare that H₀ n has an RKHS instance
-instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ := sorry
+noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
+  coeCLM := coeCLM_H₀ n
+  coeCLM_injective := sorry
 
 -- coeCLM₀ maps a coefficient vector to its L² class of the spatialVector
 noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ := sorry
