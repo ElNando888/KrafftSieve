@@ -152,7 +152,23 @@ theorem basisCos_cont_linear_independent (n : ℕ) :
 -- We declare that H₀ n has an RKHS instance
 noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
   coeCLM := coeCLM_H₀ n
-  coeCLM_injective := sorry
+  coeCLM_injective := by
+    intro h1 h2 heq
+    -- The difference of coefficient vectors gives a vanishing linear combination.
+    have hfun : (∑ S : Finset (Fin (w n)),
+        ((h1 : Finset (Fin (w n)) → ℝ) S - (h2 : Finset (Fin (w n)) → ℝ) S)
+          • basisCos_cont n S) = 0 := by
+      funext t
+      have ht := congrFun heq t
+      simp only [coeCLM_H₀_apply, coeFun_H₀, Finset.powerset_univ] at ht
+      simp only [Finset.sum_apply, Pi.zero_apply, Pi.smul_apply, smul_eq_mul, sub_mul]
+      rw [Finset.sum_sub_distrib, ht, sub_self]
+    -- Linear independence forces all coefficients of the difference to vanish.
+    have hcoef := Fintype.linearIndependent_iff.mp (basisCos_cont_linear_independent n) _ hfun
+    -- Conclude the two coefficient vectors are equal.
+    refine PiLp.ext fun S => ?_
+    have := hcoef S
+    linarith [this]
 
 /-- The continuous polynomial evaluation function `coeFun_H₀ n h` is continuous. -/
 lemma coeFun_H₀_continuous (n : ℕ) (h : H₀ n) : Continuous (coeFun_H₀ n h) := by
@@ -268,6 +284,18 @@ theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
   have h_bdd : BddBelow (attainableRatios n) := ⟨0, h_lower_bound⟩
   -- `muMin n` is the infimum of the attainable ratios, hence at most `Ratio n lambda`.
   exact csInf_le h_bdd h_mem
+
+/-- Exact Riemann sum quadrature for products of two basis cosines. -/
+theorem basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n S x * basisCos n T x := by
+  sorry
+
+/-- Exact Riemann sum quadrature for products of three basis cosines. -/
+theorem basisCos_triple_product_quadrature (n : ℕ) (R S T : Finset (Fin (w n))) :
+    ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n R x * basisCos n S x * basisCos n T x := by
+  sorry
 
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
