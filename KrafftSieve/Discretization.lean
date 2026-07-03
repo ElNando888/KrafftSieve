@@ -211,15 +211,6 @@ basis cosines with coefficients `c_coef n`. -/
 noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
   fun t => ∑ R : Finset (Fin (w n)), c_coef n R * basisCos_cont n R t
 
-/-- The continuous weight c_cont₀ interpolates the discrete weight c n exactly on the grid. -/
-theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
-    c_cont₀ n (gridPt n x) = c n (x : ZMod (q n)) := by
-  sorry
-
-/-- Grid Evaluation / Sampling of an RKHS element. -/
-noncomputable def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
-  fun x ↦ if x ∈ evalInterval n then coeCLM ℝ h (gridPt n x) else 0
-
 /-- The continuous basis cosine, evaluated at the grid point `gridPt n x`, agrees exactly with
 the discrete basis cosine at the residue of `x` modulo `q n`. This is the exact-sampling identity:
 the extra factor `q n` in `basisCos_cont` cancels the `1 / q n` inside `gridPt`, leaving
@@ -234,6 +225,17 @@ lemma basisCos_cont_gridPt (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
   have hvalcast : ((x : ZMod (q n)).val : ℝ) = ((x % q n : ℕ) : ℝ) := by
     rw [ZMod.val_natCast]
   rw [hval, hvalcast, mul_assoc, div_mul_cancel₀ _ hq]
+
+/-- The continuous weight c_cont₀ interpolates the discrete weight c n exactly on the grid. -/
+theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) (hx : x ∈ evalInterval n) :
+    c_cont₀ n (gridPt n x) = c n (x : ZMod (q n)) := by
+  unfold c_cont₀
+  simp only [basisCos_cont_gridPt]
+  exact c_coef_spec n (x : ZMod (q n))
+
+/-- Grid Evaluation / Sampling of an RKHS element. -/
+noncomputable def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
+  fun x ↦ if x ∈ evalInterval n then coeCLM ℝ h (gridPt n x) else 0
 
 /-- Sieve Representability of Grid Evaluations.
 
