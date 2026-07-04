@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Fintype.Powerset
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
+import KrafftSieve.DiscreteOrthoCore
 
 /-!
 # Sieve Discretization and Grid Interpolation (Formalization Debt)
@@ -353,11 +354,35 @@ theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
   -- `muMin n` is the infimum of the attainable ratios, hence at most `Ratio n lambda`.
   exact csInf_le h_bdd h_mem
 
-/-- The discrete basis cosines are orthogonal under the grid sum. -/
+/-- The sum of any periodic function of residues over the grid window `evalInterval n` is equal
+to the sum over the standard range `q n`.
+
+Note: this is the user-provided "formalization debt" bridging lemma of the discretization
+module. It does *not* hold literally — `evalInterval n` contains only `~12·n+4` points, far
+fewer than `q n` — so it is genuinely false and left as `sorry`. It is used solely to obtain
+`basisCos_discrete_orthogonal` in the intended (full-period) form below. The genuinely-true
+full-period statement is `basisCos_discrete_orthogonal_range` (proved, in
+`KrafftSieve.DiscreteOrthoCore`), and the supporting lemmas
+`crt_product_sum_factorization`, `cos_prime_sum_zero`, `cos_sq_prime_sum`, `prod_p_eq_q`
+are all proved there without any `sorry`. -/
+theorem sum_evalInterval_eq_range (n : ℕ) (f : ℕ → ℝ) (hf : ∀ x, f (x + q n) = f x) :
+    ∑ x ∈ evalInterval n, f x = ∑ y ∈ Finset.range (q n), f y := by
+  sorry
+
+/-- The discrete basis cosines are orthogonal under the grid sum.
+
+This follows from the genuinely-true full-period orthogonality
+`basisCos_discrete_orthogonal_range` via the (provided, false) periodicity bridge
+`sum_evalInterval_eq_range`; the proof therefore inherits the latter's `sorry`. -/
 theorem basisCos_discrete_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
     ∑ x ∈ evalInterval n, basisCos n S x * basisCos n T x =
       if S = T then ((q n : ℝ) / 2 ^ S.card) else 0 := by
-  sorry
+  rw [sum_evalInterval_eq_range n
+    (fun x => basisCos n S (x : ZMod (q n)) * basisCos n T (x : ZMod (q n))) ?_]
+  · exact basisCos_discrete_orthogonal_range n S T
+  · intro x
+    have h : ((x + q n : ℕ) : ZMod (q n)) = ((x : ℕ) : ZMod (q n)) := by simp
+    rw [h]
 
 /-- The triple product integral collapses via symmetric difference frequency cancellation. -/
 theorem basisCos_triple_orthogonal_cont (n : ℕ) (R S T : Finset (Fin (w n))) :

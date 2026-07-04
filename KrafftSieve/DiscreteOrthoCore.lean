@@ -1,0 +1,187 @@
+import KrafftSieve.OptimalWeights
+import Mathlib
+
+/-!
+Core file: the genuinely-true lemmas for discrete orthogonality, proved WITHOUT the
+false `sum_evalInterval_eq_range` stub in scope (so the environment is consistent).
+-/
+
+namespace KrafftSieve
+
+open scoped BigOperators Real Nat
+
+noncomputable section
+
+/-
+Chinese Remainder Theorem factorization of periodic product sums.
+-/
+theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
+    (hf : ∀ i x, f i (x + p n i) = f i x) :
+    ∑ x ∈ Finset.range (q n), ∏ i : Fin (w n), f i x =
+      ∏ i : Fin (w n), ∑ y ∈ Finset.range (p n i), f i y := by
+  have h_crt : ∑ x ∈ Finset.range (∏ i : Fin (w n), p n i), ∏ i : Fin (w n), f i x = ∏ i : Fin (w n), ∑ y ∈ Finset.range (p n i), f i y := by
+    have h_coprime : ∀ i j : Fin (w n), i ≠ j → Nat.Coprime (p n i) (p n j) := by
+      intros i j hij
+      have h_prime : Nat.Prime (p n i) ∧ Nat.Prime (p n j) := by
+        exact ⟨ p_prime n i, p_prime n j ⟩
+      have h_distinct : p n i ≠ p n j := by
+        have h_distinct : List.Nodup (primesList n) := by
+          exact Finset.sort_nodup _ _;
+        exact fun h => hij <| by have := List.nodup_iff_injective_get.mp h_distinct h; aesop;
+      exact Nat.coprime_primes h_prime.left h_prime.right |>.2 h_distinct
+    -- By the Chinese Remainder Theorem, there is a bijection between the elements of the range of $q_n$ and the elements of the product of the ranges of $p_n i$.
+    have h_crt_bij : ∃ g : (Fin (w n) → ℕ) → ℕ, ∀ x : (Fin (w n) → ℕ), (∀ i, x i < p n i) → g x < ∏ i, p n i ∧ ∀ i, g x % p n i = x i := by
+      have h_crt_bij : ∀ x : Fin (w n) → ℕ, (∀ i, x i < p n i) → ∃ y, y < ∏ i, p n i ∧ ∀ i, y % p n i = x i := by
+        intro x hx
+        have h_crt : ∃ y, ∀ i, y ≡ x i [MOD p n i] := by
+          have h_crt : ∀ i : Fin (w n), ∃ y, y ≡ x i [MOD p n i] ∧ ∀ j : Fin (w n), j ≠ i → y ≡ 0 [MOD p n j] := by
+            intro i
+            obtain ⟨y, hy⟩ : ∃ y, y ≡ 1 [MOD p n i] ∧ y ≡ 0 [MOD (∏ j ∈ Finset.univ.erase i, p n j)] := by
+              have := Nat.chineseRemainder ( show Nat.Coprime ( p n i ) ( ∏ j ∈ Finset.univ.erase i, p n j ) from Nat.Coprime.prod_right fun j hj => h_coprime i j <| by aesop );
+              exact ⟨ _, this 1 0 |>.2 ⟩;
+            use y * x i;
+            exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩;
+          choose y hy₁ hy₂ using h_crt;
+          use ∑ i, y i;
+          intro i; simp_all +decide [ ← ZMod.natCast_eq_natCast_iff ] ;
+          rw [ Finset.sum_eq_single i ] <;> aesop;
+        obtain ⟨ y, hy ⟩ := h_crt; use y % ∏ i, p n i; simp_all +decide [ Nat.ModEq, Nat.mod_eq_of_lt ] ;
+        exact ⟨ Nat.mod_lt _ ( Finset.prod_pos fun i _ => Nat.Prime.pos ( by exact KrafftSieve.p_prime n i ) ), fun i => by rw [ ← hy i, Nat.mod_mod_of_dvd _ ( Finset.dvd_prod_of_mem _ ( Finset.mem_univ i ) ) ] ⟩;
+      exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0, fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩;
+    obtain ⟨g, hg⟩ := h_crt_bij
+    have h_crt_bij : Finset.image g (Finset.Iic (fun i => p n i - 1)) = Finset.range (∏ i, p n i) := by
+      refine' Finset.eq_of_subset_of_card_le ( Finset.image_subset_iff.mpr _ ) _;
+      · exact fun x hx => Finset.mem_range.mpr ( hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) |>.1 );
+      · rw [ Finset.card_image_of_injOn ];
+        · erw [ Finset.card_map, Finset.card_pi ] ; norm_num;
+          exact Finset.prod_le_prod' fun i _ => by rw [ Nat.sub_add_cancel ( Nat.Prime.pos ( p_prime n i ) ) ] ;
+        · intros x hx y hy hxy;
+          ext i; have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; aesop;
+    rw [ ← h_crt_bij, Finset.sum_image ];
+    · rw [ Finset.prod_sum ];
+      refine' Finset.sum_bij ( fun x hx => fun i _ => x i ) _ _ _ _ <;> simp +decide [ Finset.mem_Iic ];
+      · exact fun a ha i => lt_of_le_of_lt ( ha i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) );
+      · simp +contextual [ funext_iff ];
+      · exact fun b hb => ⟨ fun i => b i ( Finset.mem_univ i ), fun i => Nat.le_sub_one_of_lt ( hb i ), rfl ⟩;
+      · intro a ha; congr; ext i; exact (by
+        rw [ ← Nat.mod_add_div ( g a ) ( p n i ), hg a ( fun i => lt_of_le_of_lt ( ha i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) |>.2 i ];
+        exact Nat.recOn ( g a / p n i ) rfl fun k hk => by rw [ Nat.mul_succ, ← add_assoc, hf, hk ] ;);
+    · intros x hx y hy hxy;
+      ext i; have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; aesop;
+  convert h_crt using 1;
+  unfold q;
+  rw [ show primeWindow n = Finset.image ( fun i : Fin ( w n ) => p n i ) Finset.univ from ?_, Finset.prod_image ];
+  · intro i hi j hj hij;
+    have h_inj : Function.Injective (fun i : Fin (w n) => p n i) := by
+      intro i j hij; have := List.nodup_iff_injective_get.mp ( show List.Nodup ( primesList n ) from ?_ ) hij; aesop;
+      exact Finset.sort_nodup _ _;
+    exact h_inj hij;
+  · convert mem_P_n_iff_exists_index n using 1;
+    simp +decide [ Finset.ext_iff ]
+
+/-
+The sum of cosines modulo a prime `p n i` vanishes for non-zero frequencies.
+-/
+theorem cos_prime_sum_zero (n : ℕ) (i : Fin (w n)) (k : ℤ) (hk : k % p n i ≠ 0) :
+    ∑ x ∈ Finset.range (p n i), Real.cos (2 * Real.pi * (k : ℝ) * x / p n i) = 0 := by
+  -- Let $z = e^{2\pi i k / p n i}$, which is a primitive $p n i$-th root of unity.
+  set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k / (p n i : ℂ))
+  have hz : z ^ (p n i) = 1 := by
+    rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff ];
+    exact ⟨ k, by rw [ div_mul_cancel₀ _ ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] ; ring ⟩
+  have hz_ne_one : z ≠ 1 := by
+    rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
+    field_simp;
+    exact fun ⟨ m, hm ⟩ => hk <| Int.emod_eq_zero_of_dvd <| by rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] at hm; norm_cast at hm; aesop;
+  -- The sum of the roots of unity is zero.
+  have hsum_roots : ∑ x ∈ Finset.range (p n i), z ^ x = 0 := by
+    rw [ geom_sum_eq ] <;> aesop;
+  rw [show (0 : ℝ) = Complex.re 0 from Complex.zero_re.symm, ← hsum_roots, Complex.re_sum]
+  exact Finset.sum_congr rfl fun x hx => by
+    rw [← Complex.exp_nat_mul]; norm_num [Complex.exp_re]; ring
+
+/-
+The sum of squares of cosines modulo a prime `p n i` equals `p n i / 2`
+for non-zero frequencies.
+-/
+theorem cos_sq_prime_sum (n : ℕ) (i : Fin (w n)) (k : ℤ)
+    (hk1 : k % p n i ≠ 0) (hk2 : (2 * k) % p n i ≠ 0) :
+    ∑ x ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * (k : ℝ) * x / p n i)) ^ 2 =
+      (p n i : ℝ) / 2 := by
+  -- Apply the power-reduction identity to each term in the sum.
+  have h_cos_sq : ∀ x : ℕ, Real.cos (2 * Real.pi * k * x / (p n i)) ^ 2 = 1 / 2 + Real.cos (2 * Real.pi * (2 * k) * x / (p n i)) / 2 := by
+    intro x; rw [ Real.cos_sq ] ; ring;
+  -- Apply the linearity of summation to split the sum into two parts.
+  simp [h_cos_sq, Finset.sum_add_distrib, Finset.sum_div];
+  convert congr_arg ( fun x : ℝ => ( p n i : ℝ ) * 2⁻¹ + x / 2 ) ( cos_prime_sum_zero n i ( 2 * k ) hk2 ) using 1 ; ring;
+  · norm_num [ Finset.sum_mul _ _ _ ] ; congr ; ext ; ring;
+  · ring
+
+/-
+The product of the primes `p n i` over all indices equals the primorial `q n`.
+-/
+theorem prod_p_eq_q (n : ℕ) : ∏ i : Fin (w n), (p n i : ℝ) = (q n : ℝ) := by
+  have h_prod : (∏ i : Fin (w n), p n i : ℕ) = (∏ p ∈ primeWindow n, p : ℕ) := by
+    have h_prod : ∏ i : Fin (w n), p n i =
+        ∏ x ∈ Finset.image (fun i => p n i) (Finset.univ : Finset (Fin (w n))), x := by
+      rw [ Finset.prod_image ];
+      intro i hi j hj hij;
+      have h_unique : List.Nodup (primesList n) := by
+        exact Finset.sort_nodup _ _;
+      have := List.nodup_iff_injective_get.mp h_unique hij; aesop;
+    convert h_prod using 2;
+    ext x; simp +decide [ mem_P_n_iff_exists_index ] ;
+  norm_cast
+
+/-
+The discrete basis cosines are orthogonal when summed over a full period `range (q n)`.
+-/
+theorem basisCos_discrete_orthogonal_range (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∑ x ∈ Finset.range (q n), basisCos n S (x : ZMod (q n)) * basisCos n T (x : ZMod (q n)) =
+      if S = T then ((q n : ℝ) / 2 ^ S.card) else 0 := by
+  convert @KrafftSieve.crt_product_sum_factorization n ( fun i x => ( if i ∈ S then Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) else 1 ) * ( if i ∈ T then Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) else 1 ) ) _ using 1;
+  · unfold basisCos;
+    refine' Finset.sum_congr rfl fun x hx => _;
+    rw [ Finset.prod_mul_distrib ];
+    simp +decide [ Finset.prod_ite, ZMod.val_natCast_of_lt ( Finset.mem_range.mp hx ) ];
+  · split_ifs;
+    · -- For each $i$, if $i \in S$, then $\sum_{y=0}^{p_i-1} \cos^2(2\pi \cdot 3 \cdot y / p_i) = p_i / 2$.
+      have h_cos_sq : ∀ i : Fin (w n), i ∈ S → ∑ y ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * 3 * y / p n i)) ^ 2 = (p n i : ℝ) / 2 := by
+        intro i hi; convert cos_sq_prime_sum n i 3 _ _ using 1 <;> norm_num;
+        · exact_mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith [ p_ge_5 n i ] );
+        · have := p_prime n i; ( have := p_ge_5 n i; ( norm_cast at *; ) );
+          exact fun h => by have := Nat.le_of_dvd ( by decide ) h; interval_cases p n i <;> trivial;
+      rw [ Finset.prod_congr rfl fun i hi => ?_ ];
+      rotate_left;
+      use fun i => if i ∈ S then ( p n i : ℝ ) / 2 else ( p n i : ℝ );
+      · split_ifs <;> simp_all +decide [ ← sq ];
+      · simp +decide [ Finset.prod_ite, Finset.filter_mem_eq_inter, Finset.filter_not ];
+        rw [ ← prod_p_eq_q ];
+        rw [ ← Finset.prod_sdiff ( Finset.subset_univ S ) ] ; ring;
+    · -- Since `S ≠ T`, some index lies in exactly one of `S`, `T`; its factor sums to `0`.
+      obtain ⟨i, hi⟩ : ∃ i : Fin (w n), (i ∈ S ∧ i ∉ T) ∨ (i ∈ T ∧ i ∉ S) := by
+        exact not_forall_not.mp fun h => ‹¬S = T› <| Finset.ext fun x => by
+          by_cases hx : x ∈ S <;> by_cases hx' : x ∈ T <;> simpa [hx, hx'] using h x
+      have hp5 : (5 : ℤ) ≤ (p n i : ℤ) := by exact_mod_cast p_ge_5 n i
+      have h3 : (3 : ℤ) % (p n i : ℤ) ≠ 0 := by
+        rw [Int.emod_eq_of_lt (by norm_num) (by linarith)]; norm_num
+      have hzero := cos_prime_sum_zero n i 3 h3
+      rw [Finset.prod_eq_zero (Finset.mem_univ i)]
+      rcases hi with ⟨hiS, hiT⟩ | ⟨hiT, hiS⟩ <;>
+        · simp only [hiS, hiT, if_true, if_false, one_mul, mul_one]
+          exact hzero
+  · intro i x
+    have hp : (p n i : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (p_ne_zero n i)
+    have hcos : Real.cos (2 * Real.pi * 3 * ((x + p n i : ℕ) : ℝ) / p n i)
+        = Real.cos (2 * Real.pi * 3 * (x : ℝ) / p n i) := by
+      have harg : (2 * Real.pi * 3 * ((x + p n i : ℕ) : ℝ) / p n i)
+          = 2 * Real.pi * 3 * (x : ℝ) / p n i + ((3 : ℤ) : ℝ) * (2 * Real.pi) := by
+        rw [show ((x + p n i : ℕ) : ℝ) = (x : ℝ) + (p n i : ℝ) by push_cast; ring]
+        field_simp
+        ring
+      rw [harg, Real.cos_add_int_mul_two_pi]
+    simp only [hcos]
+
+end
+
+end KrafftSieve
