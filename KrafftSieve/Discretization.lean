@@ -353,17 +353,43 @@ theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
   -- `muMin n` is the infimum of the attainable ratios, hence at most `Ratio n lambda`.
   exact csInf_le h_bdd h_mem
 
+/-- The discrete basis cosines are orthogonal under the grid sum. -/
+theorem basisCos_discrete_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∑ x ∈ evalInterval n, basisCos n S x * basisCos n T x =
+      if S = T then ((q n : ℝ) / 2 ^ S.card) else 0 := by
+  sorry
+
+/-- The triple product integral collapses via symmetric difference frequency cancellation. -/
+theorem basisCos_triple_orthogonal_cont (n : ℕ) (R S T : Finset (Fin (w n))) :
+    ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
+      if symmDiff R (symmDiff S T) = ∅ then (1 / 2 ^ (R ∪ S ∪ T).card : ℝ) else 0 := by
+  sorry
+
+/-- The discrete triple product sum collapses via symmetric difference frequency cancellation. -/
+theorem basisCos_triple_orthogonal_discrete (n : ℕ) (R S T : Finset (Fin (w n))) :
+    ∑ x ∈ evalInterval n, basisCos n R x * basisCos n S x * basisCos n T x =
+      if symmDiff R (symmDiff S T) = ∅ then ((q n : ℝ) / 2 ^ (R ∪ S ∪ T).card) else 0 := by
+  sorry
+
 /-- Exact Riemann sum quadrature for products of two basis cosines. -/
 theorem basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
     ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n S x * basisCos n T x := by
-  sorry
+  rw [basisCos_cont_orthogonal, basisCos_discrete_orthogonal]
+  have hq : (q n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne (q n))
+  split
+  · field_simp
+  · ring
 
 /-- Exact Riemann sum quadrature for products of three basis cosines. -/
 theorem basisCos_triple_product_quadrature (n : ℕ) (R S T : Finset (Fin (w n))) :
     ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
       (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, basisCos n R x * basisCos n S x * basisCos n T x := by
-  sorry
+  rw [basisCos_triple_orthogonal_cont, basisCos_triple_orthogonal_discrete]
+  have hq : (q n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne (q n))
+  split
+  · field_simp
+  · ring
 
 /-- Products of three continuous basis cosines are integrable. -/
 lemma integrable_basisCos_triple (n : ℕ) (R S T : Finset (Fin (w n))) :

@@ -5,6 +5,15 @@
 \usepackage{hyperref}
 \usepackage{algpseudocode}
 \usepackage{listings}
+\usepackage{iftex}
+\ifxetex
+  \usepackage{fontspec}
+  \setmonofont{Menlo}[Scale=MatchLowercase]
+\fi
+\ifluatex
+  \usepackage{fontspec}
+  \setmonofont{Menlo}[Scale=MatchLowercase]
+\fi
 
 \def\lstlanguagefiles{lstlean.sty}
 \lstset{language=lean}
@@ -47,7 +56,7 @@
 
 
 \title{Dual Spatial Formulation and Reproducing Kernel Hilbert Space Theory for the Krafft Sieve}
-\author{Gemini\thanks{Google DeepMind} \and Fernando Portela\thanks{RIIS 2.0}}
+\author{Gemini\thanks{Google DeepMind} \and Fernando Portela\thanks{RIIS 2.0. Corresponding author. Email: \href{mailto:fernando.portela@ronininstitute.org}{\texttt{fernando.portela@ronininstitute.org}}}}
 \date{\today}
 
 \begin{document}
@@ -257,30 +266,30 @@ import Mathlib.MeasureTheory.Function.L2Space
 
 open MeasureTheory Matrix HilbertBasis RKHS InnerProductSpace
 
-variable {𝕜 : Type*} [RCLike 𝕜]
+variable {$\mathbb{K}$ : Type*} [RCLike $\mathbb{K}$]
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X] [MeasurableSpace X] [BorelSpace X]
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
-variable [RKHS 𝕜 H X V]
-variable (μ : Measure X) [IsFiniteMeasure μ]
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace $\mathbb{K}$ V] [CompleteSpace V]
+variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace $\mathbb{K}$ H] [CompleteSpace H]
+variable [RKHS $\mathbb{K}$ H X V]
+variable ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
 
 -- The continuity assumption wrapped as a Fact
-variable [hK : Fact (Continuous (fun (p : X × X) ↦ kernel H p.1 p.2))]
+variable [hK : Fact (Continuous (fun (p : X × X) $\mapsto$ kernel H p.1 p.2))]
 
 -- The integral operator as a continuous linear map from L^2 to L^2
-def integralOperator : Lp V 2 μ →L[𝕜] Lp V 2 μ := sorry
+def integralOperator : Lp V 2 $\mu$ $\to\text{L}[\mathbb{K}]$ Lp V 2 $\mu$ := sorry
 
 /-- Mercer's Theorem (Refined with Mathlib idioms): -/
 theorem mercer_theorem :
-    ∃ (ι : Type*) (_ : Countable ι) 
-      (b : HilbertBasis ι 𝕜 (Lp V 2 μ)) 
-      (σ : ι → ℝ),
-      (∀ i, 0 ≤ σ i) ∧
-      -- Eigenvalue equation: T_K(b_i) = σ_i b_i
-      (∀ i, (integralOperator μ : Lp V 2 μ →L[𝕜] Lp V 2 μ) (b i) = (σ i : 𝕜) • (b i)) ∧
+    $\exists$ ($\iota$ : Type*) (_ : Countable $\iota$) 
+      (b : HilbertBasis $\iota$ $\mathbb{K}$ (Lp V 2 $\mu$)) 
+      ($\sigma$ : $\iota$ $\to$ $\mathbb{R}$),
+      ($\forall$ i, 0 $\le$ $\sigma$ i) $\wedge$
+      -- Eigenvalue equation: T_K(b_i) = \sigma_i b_i
+      ($\forall$ i, (integralOperator $\mu$ : Lp V 2 $\mu$ $\to\text{L}[\mathbb{K}]$ Lp V 2 $\mu$) (b i) = ($\sigma$ i : $\mathbb{K}$) $\cdot$ (b i)) $\wedge$
       -- The kernel decomposition holds in the RKHS (using evaluation)
-      (∀ (x y : X) (v : V), 
-        kernel H x y v = ∑' i, (σ i : 𝕜) • ⟪v, (b i : X → V) y⟫_𝕜 • (b i : X → V) x) := by
+      ($\forall$ (x y : X) (v : V), 
+        kernel H x y v = $\sum'$ i, ($\sigma$ i : $\mathbb{K}$) $\cdot$ $\langle$v, (b i : X $\to$ V) y$\rangle_{\mathbb{K}}$ $\cdot$ (b i : X $\to$ V) x) := by
   sorry
 \end{lean}
 
@@ -341,33 +350,33 @@ Below is the formalized Lean 4 signatures for the discretization bridge in \text
 
 \begin{lean}
 -- Concrete space and measure for the continuum limit
-abbrev X₀ : Type := I
-noncomputable abbrev μ₀ : Measure X₀ := volume
+abbrev X$_0$ : Type := I
+noncomputable abbrev $\mu_0$ : Measure X$_0$ := volume
 
 -- Continuous basis cosines and polynomial evaluations
-noncomputable def basisCos_cont (n : ℕ) (S : Finset (Fin (w n))) (t : X₀) : ℝ :=
-  ∏ i ∈ S, Real.cos (2 * Real.pi * 3 * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
+noncomputable def basisCos_cont (n : $\mathbb{N}$) (S : Finset (Fin (w n))) (t : X$_0$) : $\mathbb{R}$ :=
+  $\prod$ i $\in$ S, Real.cos (2 * Real.pi * 3 * (t : $\mathbb{R}$) * (q n : $\mathbb{R}$) / (p n i : $\mathbb{R}$))
 
-noncomputable def coeFun_H₀ (n : ℕ) (h : H₀ n) (t : X₀) : ℝ :=
-  ∑ S ∈ Finset.univ.powerset, (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t
+noncomputable def coeFun_H$_0$ (n : $\mathbb{N}$) (h : H$_0$ n) (t : X$_0$) : $\mathbb{R}$ :=
+  $\sum$ S $\in$ Finset.univ.powerset, (h : Finset (Fin (w n)) $\to$ $\mathbb{R}$) S * basisCos_cont n S t
 
 -- Grid evaluation representability on the evaluation window
-theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
-    ∃ lambda : Finset (Fin (w n)) → ℝ,
-      ∀ x ∈ evalInterval n, evalOnGrid n h x = spatialVector n lambda x
+theorem evalOnGrid_eq_spatialVector (n : $\mathbb{N}$) (h : H$_0$ n) :
+    $\exists$ lambda : Finset (Fin (w n)) $\to$ $\mathbb{R}$,
+      $\forall$ x $\in$ evalInterval n, evalOnGrid n h x = spatialVector n lambda x
 
 -- Riemann-scaled quadratures
-theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2
+theorem denominator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
+    $\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 $\partial\mu_0$ =
+      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ evalInterval n, (evalOnGrid n h x) ^ 2
 
-theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
+theorem numerator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
+    $\int$ x, c\_cont$_0$ n x * ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 $\partial\mu_0$ =
+      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
 
 -- The final discretization bridge
-theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
-    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)
+theorem krafft_quadrature_holds (n : $\mathbb{N}$) (h : H$_0$ n) (hn : $\Vert$coeCLM$_0$ n h$\Vert$ > 0) :
+    muMin n $\le$ continuousRatio $\mu_0$ (c\_cont$_0$ n) (coeCLM$_0$ n h)
 \end{lean}
 
 \subsection{Lean 4 Sieve Limit and Twin Prime Reduction}
@@ -383,33 +392,33 @@ Below is the formalized Lean 4 proof chain in \texttt{MainTheorem.lean} (abbrevi
 
 \begin{lean}
 -- Rayleigh quotients converge under strong L^2 convergence
-theorem continuousRatio_limit (μ : Measure X) [IsFiniteMeasure μ]
-    (c_cont : X → ℝ) [Fact (Continuous c_cont)]
-    (f : Lp ℝ 2 μ) (f_seq : ℕ → Lp ℝ 2 μ)
-    (h_conv : Filter.Tendsto (fun n ↦ ‖f_seq n - f‖) Filter.atTop (nhds 0)) :
-    Filter.Tendsto (fun n ↦ continuousRatio μ c_cont (f_seq n)) Filter.atTop
-      (nhds (continuousRatio μ c_cont f))
+theorem continuousRatio_limit ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
+    (c\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c\_cont)]
+    (f : Lp $\mathbb{R}$ 2 $\mu$) (f\_seq : $\mathbb{N}$ $\to$ Lp $\mathbb{R}$ 2 $\mu$)
+    (h\_conv : Filter.Tendsto (fun n $\mapsto$ $\Vert$f\_seq n - f$\Vert$) Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun n $\mapsto$ continuousRatio $\mu$ c\_cont (f\_seq n)) Filter.atTop
+      (nhds (continuousRatio $\mu$ c\_cont f))
 
 -- Discrete quotient bound by the RKHS-projected test function quotient
-theorem muMin_le_rkhs_ratio (μ : Measure X) [IsFiniteMeasure μ] (n : ℕ)
-    (H_seq : ℕ → Type*) [∀ i, NormedAddCommGroup (H_seq i)] [∀ i, InnerProductSpace ℝ (H_seq i)]
-    [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
-    (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
-    (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) (f : Lp ℝ 2 μ)
-    (hn : ‖coeCLM_seq n (projectionToRKHS n f)‖ > 0) :
-    muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n (projectionToRKHS n f))
+theorem muMin_le_rkhs_ratio ($\mu$ : Measure X) [IsFiniteMeasure $\mu$] (n : $\mathbb{N}$)
+    (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
+    [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
+    (coeCLM\_seq : $\forall$ i, H\_seq i $\to\text{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to\text{L}[\mathbb{R}]$ H\_seq i)
+    (c\_cont : X $\to$ $\mathbb{R}$) (f : Lp $\mathbb{R}$ 2 $\mu$)
+    (hn : $\Vert$coeCLM\_seq n (projectionToRKHS n f)$\Vert$ > 0) :
+    muMin n $\le$ continuousRatio $\mu$ c\_cont (coeCLM\_seq n (projectionToRKHS n f))
 
 -- The main reduction of the Twin Prime Conjecture
-theorem twin_prime_conjecture (μ : Measure X) [IsFiniteMeasure μ]
-    (H_seq : ℕ → Type*) [∀ i, NormedAddCommGroup (H_seq i)] [∀ i, InnerProductSpace ℝ (H_seq i)]
-    [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
-    (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
-    (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) [Fact (Continuous c_cont)] :
-    {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
+theorem twin_prime_conjecture ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
+    (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
+    [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
+    (coeCLM\_seq : $\forall$ i, H\_seq i $\to\text{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to\text{L}[\mathbb{R}]$ H\_seq i)
+    (c\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c\_cont)] :
+    {p : $\mathbb{N}$ | Prime p $\wedge$ Prime (p + 2)}.Infinite := by
   apply mu_min_lt_one_implies_tpc
-  exact mu_min_infinite μ H_seq coeCLM_seq projectionToRKHS c_cont
+  exact mu_min_infinite $\mu$ H\_seq coeCLM\_seq projectionToRKHS c\_cont
 \end{lean}
 
 \section{Concluding Remarks and Future Work} \label{sec:conclusion}
