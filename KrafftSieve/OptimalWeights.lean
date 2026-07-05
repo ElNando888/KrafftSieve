@@ -730,6 +730,19 @@ def IsFullRank (n : ℕ) : Prop :=
     ∀ x : ZMod (q n), pMulti n lambda x = v x
 
 /--
+Helper: a sum of `f` over the casts of `Finset.range m` equals the sum of `f` over all
+of `ZMod m` (the casting map `range m → ZMod m` is a bijection when `m ≠ 0`).
+-/
+private lemma sum_range_zmod (m : ℕ) [NeZero m] (f : ZMod m → ℝ) :
+    ∑ x ∈ Finset.range m, f (x : ZMod m) = ∑ y : ZMod m, f y := by
+  apply Finset.sum_nbij' (i := fun x : ℕ => (x : ZMod m)) (j := fun y : ZMod m => y.val)
+  · intro a _; exact Finset.mem_univ _
+  · intro a _; simp [Finset.mem_range, ZMod.val_lt]
+  · intro a ha; simp only [Finset.mem_range] at ha; exact ZMod.val_natCast_of_lt ha
+  · intro a _; simp [ZMod.natCast_val, ZMod.cast_id]
+  · intro a _; rfl
+
+/--
 Theorem: If the sieve is full rank and there exists a twin prime in A_n,
 then the minimum sieve quotient muMin n is exactly 0.
 -/
@@ -737,7 +750,56 @@ theorem muMin_eq_zero_of_fullRank_and_twinPrime (n : ℕ)
     (h_rank : IsFullRank n)
     (h_tp : ∃ x_0 ∈ evalInterval n, c n (x_0 : ZMod (q n)) = 0) :
     muMin n = 0 := by
-  sorry
+  obtain ⟨x_0, -, hx_0_c⟩ := h_tp
+  have hq_pos : 0 < q n := by
+    unfold q
+    apply Finset.prod_pos
+    intro i hi
+    rw [primeWindow, Finset.mem_filter] at hi
+    omega
+  haveI : NeZero (q n) := ⟨hq_pos.ne'⟩
+  set z0 : ZMod (q n) := (x_0 : ZMod (q n)) with hz0
+  set v : ZMod (q n) → ℝ := fun x => if x = z0 then 1 else 0 with hv
+  obtain ⟨lam, hlam⟩ := h_rank v
+  have hq1 : q1 n lam = 1 := by
+    rw [Q_1_sum_sq]
+    have h1 : (∑ x ∈ Finset.range (q n), (pMulti n lam (x : ZMod (q n))) ^ 2)
+        = ∑ y : ZMod (q n), (v y) ^ 2 := by
+      rw [← sum_range_zmod (q n) (fun y => (v y) ^ 2)]
+      exact Finset.sum_congr rfl fun x _ => by rw [hlam]
+    rw [h1]
+    have hval : ∀ y : ZMod (q n), (v y) ^ 2 = if y = z0 then (1:ℝ) else 0 := by
+      intro y; simp only [hv]; split_ifs <;> norm_num
+    simp only [hval]
+    rw [Finset.sum_ite_eq' Finset.univ z0 (fun _ => (1:ℝ))]
+    simp
+  have hq2 : q2 n lam = 0 := by
+    rw [q2_sum_sq]
+    have h2 : (∑ x ∈ Finset.range (q n),
+          c n (x : ZMod (q n)) * (pMulti n lam (x : ZMod (q n))) ^ 2)
+        = ∑ y : ZMod (q n), c n y * (v y) ^ 2 := by
+      rw [← sum_range_zmod (q n) (fun y => c n y * (v y) ^ 2)]
+      exact Finset.sum_congr rfl fun x _ => by rw [hlam]
+    rw [h2]
+    have hval : ∀ y : ZMod (q n), c n y * (v y) ^ 2 = if y = z0 then c n z0 else 0 := by
+      intro y; simp only [hv]; split_ifs with h <;> simp [h]
+    simp only [hval]
+    rw [Finset.sum_ite_eq' Finset.univ z0 (fun _ => c n z0)]
+    simp only [Finset.mem_univ, if_true]
+    rw [hz0]; exact hx_0_c
+  have hRatio : Ratio n lam = 0 := by
+    unfold Ratio; rw [hq1, hq2]; norm_num
+  have hmem : (0:ℝ) ∈ attainableRatios n :=
+    ⟨lam, by rw [hq1]; norm_num, hRatio.symm⟩
+  have hlb : ∀ r ∈ attainableRatios n, (0:ℝ) ≤ r := by
+    rintro r ⟨mu, hmu_pos, rfl⟩
+    unfold Ratio
+    rw [if_neg (ne_of_gt hmu_pos)]
+    apply div_nonneg _ (le_of_lt hmu_pos)
+    rw [q2_sum_sq]
+    exact Finset.sum_nonneg fun x _ => mul_nonneg (c_nonneg n _) (sq_nonneg _)
+  unfold muMin
+  exact le_antisymm (csInf_le ⟨0, hlb⟩ hmem) (le_csInf ⟨0, hmem⟩ hlb)
 
 /--
 Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
