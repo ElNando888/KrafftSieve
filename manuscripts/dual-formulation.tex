@@ -77,13 +77,19 @@ where $c(x)$ is the global additive penalty function counting the modular alignm
 \begin{equation}
 P(x) = \sum_{S \subseteq \{1, \dots, w(n)\}} \lambda_S B_S(x), \quad B_S(x) = \prod_{i \in S} \cos\left(\frac{6\pi x}{p_i}\right)
 \end{equation}
-Here, $w(n) = |\mathcalP_n|$ is the number of primes in the sieve window, and the basis dimension is $D = 2^{w(n)}$. Squaring $P(x)$ yields the weight function $W(x) = P(x)^2$ on $\mathcalA_n$. The total mass $S_1$ and the penalized mass $S_2$ are then quadratic forms:
+Here, $w(n) = |\mathcalP_n|$ is the number of primes in the sieve window, and the basis dimension is $D = 2^{w(n)}$. Squaring $P(x)$ yields the weight function $W(x) = P(x)^2$ on $\mathcalA_n$.
+
+To establish a mathematically consistent discretization bridge that preserves exact boundary quadratures, we formulate the optimization over the full period $\mathbb{Z}/q(n)\mathbb{Z}$ by introducing a discrete window function $\Psi_n(x)$ defined as the indicator function of the target interval $\mathcalA_n$:
+\begin{equation}
+\Psi_n(x) = \begin{cases} 1 & x \pmod{q(n)} \in \mathcalA_n \\ 0 & \text{otherwise} \end{cases}
+\end{equation}
+Using this window, the total mass $S_1$ and the penalized mass $S_2$ are expressed as full-period quadratic forms:
 \begin{equation}
 S_1(n, W) = \lambda^T B \lambda, \quad S_2(n, W) = \lambda^T A \lambda
 \end{equation}
-where $A$ and $B$ are $D \times D$ matrices defined by:
+where the $D \times D$ matrices $A$ and $B$ are defined by full-period sums:
 \begin{equation}
-B_{S, T} = \sum_{x \in \mathcalA_n} B_S(x) B_T(x), \quad A_{S, T} = \sum_{x \in \mathcalA_n} c(x) B_S(x) B_T(x)
+B_{S, T} = \sum_{x \in \mathbb{Z}/q(n)\mathbb{Z}} B_S(x) B_T(x) \Psi_n(x), \quad A_{S, T} = \sum_{x \in \mathbb{Z}/q(n)\mathbb{Z}} c(x) B_S(x) B_T(x) \Psi_n(x)
 \end{equation}
 Minimizing the sieve quotient corresponds to finding the minimum generalized eigenvalue of the system:
 \begin{equation} \label{eq:primal_gev}
@@ -93,11 +99,13 @@ Solving \eqref{eq:primal_gev} directly is computationally impossible for large $
 
 \section{The Dual Spatial Reformulation} \label{sec:dual}
 
-Let $N = |\mathcalA_n| = 12n + 4$ be the cardinality of the evaluation interval. Let $M$ be the $N \times D$ evaluation matrix whose entries are:
+Let $N = |\mathcalA_n| = 12n + 4$ be the cardinality of the evaluation interval. Because the window function $\Psi_n(x)$ is the indicator function of $\mathcalA_n$, the full-period sums weighted by $\Psi_n$ collapse exactly to interval sums.
+
+Let $M$ be the $N \times D$ evaluation matrix restricted to the target interval $\mathcalA_n$:
 \begin{equation}
 M_{x, S} = B_S(x) \quad \text{for } x \in \mathcalA_n, \ S \subseteq \{1, \dots, w(n)\}
 \end{equation}
-We can express the mass matrix $B$ and the penalty matrix $A$ in terms of $M$ as:
+We can express the period-level mass matrix $B$ and penalty matrix $A$ in terms of the interval-restricted matrix $M$ as:
 \begin{equation}
 B = M^T M, \quad A = M^T C M
 \end{equation}
