@@ -377,7 +377,8 @@ theorem basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
 /-- Exact Riemann sum quadrature for products of three basis cosines. -/
 theorem basisCos_triple_product_quadrature (n : ℕ) (R S T : Finset (Fin (w n))) :
     ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), basisCos n R x * basisCos n S x * basisCos n T x := by
+      (1 / (q n : ℝ)) *
+        ∑ x ∈ Finset.range (q n), basisCos n R x * basisCos n S x * basisCos n T x := by
   rw [basisCos_triple_orthogonal_cont, basisCos_triple_orthogonal_discrete]
   have hq : (q n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne (q n))
   split
@@ -403,7 +404,8 @@ lemma coeCLM₀_coeFn_ae (n : ℕ) (h : H₀ n) :
   exact ContinuousMap.coeFn_toLp (E := ℝ) (𝕜 := ℝ) (p := 2) μ₀
     ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩
 
-/-- The grid samples of an RKHS element expand as a linear combination of the discrete basis cosines. -/
+/-- The grid samples of an RKHS element expand as a linear combination of the discrete
+basis cosines. -/
 lemma evalOnGrid_mem_eq (n : ℕ) (h : H₀ n) (x : ℕ) :
     evalOnGrid n h x =
       ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos n S (x : ZMod (q n)) := by
@@ -476,7 +478,8 @@ theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
     ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
+      (1 / (q n : ℝ)) *
+        ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
   -- Step 1: replace the `Lp` representative by the honest continuous function.
   have hae : (fun t => c_cont₀ n t * ((coeCLM₀ n h : X₀ → ℝ) t) ^ 2)
       =ᵐ[μ₀] (fun t => c_cont₀ n t * (coeFun_H₀ n h t) ^ 2) := by

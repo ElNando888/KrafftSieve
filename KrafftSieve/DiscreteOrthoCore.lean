@@ -60,12 +60,26 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
               exact ⟨ _, this 1 0 |>.2 ⟩;
             use y * x i;
             exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩;
-          choose y hy₁ hy₂ using h_crt;
-          use ∑ i, y i;
-          intro i; simp_all +decide [ ← ZMod.natCast_eq_natCast_iff ] ;
-          rw [ Finset.sum_eq_single i ] <;> aesop;
-        obtain ⟨ y, hy ⟩ := h_crt; use y % ∏ i, p n i; simp_all +decide [ Nat.ModEq, Nat.mod_eq_of_lt ] ;
-        exact ⟨ Nat.mod_lt _ ( Finset.prod_pos fun i _ => Nat.Prime.pos ( by exact KrafftSieve.p_prime n i ) ), fun i => by rw [ ← hy i, Nat.mod_mod_of_dvd _ ( Finset.dvd_prod_of_mem _ ( Finset.mem_univ i ) ) ] ⟩;
+          choose y hy₁ hy₂ using h_crt
+          use ∑ i, y i
+          intro i
+          rw [← ZMod.natCast_eq_natCast_iff]
+          push_cast
+          rw [Finset.sum_eq_single i]
+          · have := hy₁ i
+            rwa [← ZMod.natCast_eq_natCast_iff] at this
+          · intro j _ hj
+            have := hy₂ j i hj.symm
+            rwa [← ZMod.natCast_eq_natCast_iff, Nat.cast_zero] at this
+          · intro hi; exact (hi (Finset.mem_univ i)).elim
+        obtain ⟨y, hy⟩ := h_crt
+        use y % ∏ i, p n i
+        have h_prod_pos : ∏ i, p n i > 0 := Finset.prod_pos fun i _ => p_pos n i
+        refine ⟨Nat.mod_lt _ h_prod_pos, fun i => ?_⟩
+        have h_div : p n i ∣ ∏ j, p n j := Finset.dvd_prod_of_mem _ (Finset.mem_univ i)
+        rw [Nat.mod_mod_of_dvd y h_div]
+        have hyi := hy i
+        rwa [Nat.ModEq, Nat.mod_eq_of_lt (hx i)] at hyi
       exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0, fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩;
     obtain ⟨g, hg⟩ := h_crt_bij
     have h_crt_bij : Finset.image g (Finset.Iic (fun i => p n i - 1)) = Finset.range (∏ i, p n i) := by
@@ -76,27 +90,62 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
           exact Finset.prod_le_prod' fun i _ => by rw [ Nat.sub_add_cancel ( Nat.Prime.pos ( p_prime n i ) ) ] ;
         · intros x hx y hy hxy;
           ext i; have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; aesop;
-    rw [ ← h_crt_bij, Finset.sum_image ];
-    · rw [ Finset.prod_sum ];
-      refine' Finset.sum_bij ( fun x hx => fun i _ => x i ) _ _ _ _ <;> simp +decide [ Finset.mem_Iic ];
-      · exact fun a ha i => lt_of_le_of_lt ( ha i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) );
-      · simp +contextual [ funext_iff ];
-      · exact fun b hb => ⟨ fun i => b i ( Finset.mem_univ i ), fun i => Nat.le_sub_one_of_lt ( hb i ), rfl ⟩;
-      · intro a ha; congr; ext i; exact (by
-        rw [ ← Nat.mod_add_div ( g a ) ( p n i ), hg a ( fun i => lt_of_le_of_lt ( ha i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) |>.2 i ];
-        exact Nat.recOn ( g a / p n i ) rfl fun k hk => by rw [ Nat.mul_succ, ← add_assoc, hf, hk ] ;);
-    · intros x hx y hy hxy;
-      ext i; have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; aesop;
+    rw [ ← h_crt_bij, Finset.sum_image ]
+    · rw [ Finset.prod_sum ]
+      refine Finset.sum_bij (fun x _hx => fun i _ => x i) ?_ ?_ ?_ ?_
+      · intro a ha
+        simp only [Finset.mem_pi, Finset.mem_univ, Finset.mem_range, forall_true_left]
+        intro i
+        have := Finset.mem_Iic.mp ha i
+        exact lt_of_le_of_lt this (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+      · intro a₁ _ ha₂ _ h_eq
+        ext i
+        have h_fun := congr_fun h_eq i
+        exact congr_fun h_fun (Finset.mem_univ i)
+      · intro b hb
+        have hb_mem := Finset.mem_pi.mp hb
+        refine ⟨fun i => b i (Finset.mem_univ i), ?_, ?_⟩
+        · rw [Finset.mem_Iic]
+          intro i
+          have hb_lt := hb_mem i (Finset.mem_univ i)
+          rw [Finset.mem_range] at hb_lt
+          exact Nat.le_sub_one_of_lt hb_lt
+        · ext i hi
+          rfl
+      · intro a ha
+        simp only [Finset.prod_attach_univ]
+        congr 1
+        ext i
+        rw [← Nat.mod_add_div (g a) (p n i)]
+        have h_lt : ∀ i, a i < p n i := by
+          intro i
+          exact lt_of_le_of_lt (Finset.mem_Iic.mp ha i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+        rw [hg a h_lt |>.2 i]
+        exact Nat.recOn (g a / p n i) rfl fun k hk => by
+          rw [Nat.mul_succ, ← add_assoc, hf, hk]
+    · intros x hx y hy hxy
+      ext i
+      have hx_lt : ∀ i, x i < p n i := fun i => lt_of_le_of_lt (Finset.mem_Iic.mp hx i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+      have hy_lt : ∀ i, y i < p n i := fun i => lt_of_le_of_lt (Finset.mem_Iic.mp hy i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+      have hg_x := hg x hx_lt |>.2 i
+      have hg_y := hg y hy_lt |>.2 i
+      rw [← hg_x, ← hg_y, hxy]
   convert h_crt using 1;
   unfold q;
   rw [ show primeWindow n = Finset.image ( fun i : Fin ( w n ) => p n i ) Finset.univ from ?_, Finset.prod_image ];
-  · intro i hi j hj hij;
+  · intro i hi j hj hij
     have h_inj : Function.Injective (fun i : Fin (w n) => p n i) := by
-      intro i j hij; have := List.nodup_iff_injective_get.mp ( show List.Nodup ( primesList n ) from ?_ ) hij; aesop;
-      exact Finset.sort_nodup _ _;
-    exact h_inj hij;
-  · convert mem_P_n_iff_exists_index n using 1;
-    simp +decide [ Finset.ext_iff ]
+      intro i j hij
+      have h_nodup : List.Nodup (primesList n) := Finset.sort_nodup _ _
+      have h : w n = (primesList n).length := by
+        unfold w primesList
+        simp only [Finset.length_sort]
+      exact Fin.cast_injective h (List.nodup_iff_injective_get.mp h_nodup hij)
+    exact h_inj hij
+  · rw [Finset.ext_iff]
+    intro a
+    rw [mem_P_n_iff_exists_index n a]
+    simp only [Finset.mem_image, Finset.mem_univ, true_and]
 
 /-
 The sum of cosines modulo a prime `p n i` vanishes for non-zero frequencies.
@@ -117,7 +166,7 @@ theorem cos_prime_sum_zero (n : ℕ) (i : Fin (w n)) (k : ℤ) (hk : k % p n i �
     rw [ geom_sum_eq ] <;> aesop;
   rw [show (0 : ℝ) = Complex.re 0 from Complex.zero_re.symm, ← hsum_roots, Complex.re_sum]
   exact Finset.sum_congr rfl fun x hx => by
-    rw [← Complex.exp_nat_mul]; norm_num [Complex.exp_re]; ring
+    rw [← Complex.exp_nat_mul]; norm_num [Complex.exp_re]; ring_nf
 
 /-
 The sum of squares of cosines modulo a prime `p n i` equals `p n i / 2`
@@ -129,7 +178,7 @@ theorem cos_sq_prime_sum (n : ℕ) (i : Fin (w n)) (k : ℤ)
       (p n i : ℝ) / 2 := by
   have h_cos_sq : ∀ x : ℕ, Real.cos (2 * Real.pi * k * x / (p n i)) ^ 2 =
       1 / 2 + Real.cos (2 * Real.pi * (2 * k) * x / (p n i)) / 2 := by
-    intro x; rw [ Real.cos_sq ] ; ring
+    intro x; rw [ Real.cos_sq ] ; ring_nf
   simp_rw [h_cos_sq]
   rw [Finset.sum_add_distrib]
   have h_const : ∑ _x ∈ Finset.range (p n i), (1 / 2 : ℝ) = (p n i : ℝ) / 2 := by
@@ -191,9 +240,14 @@ theorem basisCos_discrete_orthogonal_range (n : ℕ) (S T : Finset (Fin (w n))) 
           simp only [Finset.card_range, one_pow, nsmul_one]
       simp_rw [← sq]
       simp_rw [h_sum]
-      simp +decide [Finset.prod_ite, Finset.filter_not]
+      simp only [Finset.prod_ite, Finset.filter_not]
+      simp_rw [div_eq_mul_inv]
+      simp_rw [Finset.prod_mul_distrib, Finset.prod_const]
+      simp only [Finset.filter_mem_eq_inter, Finset.univ_inter]
+      rw [inv_pow]
       rw [← prod_p_eq_q]
-      rw [← Finset.prod_sdiff (Finset.subset_univ S)]; ring
+      rw [← Finset.prod_sdiff (Finset.subset_univ S)]
+      ring
     · -- Since `S ≠ T`, some index lies in exactly one of `S`, `T`; its factor sums to `0`.
       obtain ⟨i, hi⟩ : ∃ i : Fin (w n), (i ∈ S ∧ i ∉ T) ∨ (i ∈ T ∧ i ∉ S) := by
         exact not_forall_not.mp fun h => hST (Finset.ext fun x => by
