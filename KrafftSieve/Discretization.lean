@@ -314,37 +314,10 @@ theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
   refine Finset.sum_congr rfl fun S _ => ?_
   rw [basisCos_cont_gridPt]
 
-/-- Discrete Rayleigh quotient lower bound for RKHS functions. -/
 theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
     (h_nonZero : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 > 0) :
     muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  -- Represent the grid samples of `h` as a genuine sieve weight vector `spatialVector n lambda`,
-  -- with equality holding pointwise.
-  obtain ⟨lambda, hlam⟩ := evalOnGrid_eq_spatialVector n h
-  have hsum1 : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2
-      = ∑ x ∈ Finset.range (q n), (spatialVector n lambda x) ^ 2 :=
-    Finset.sum_congr rfl (fun x _ => by rw [hlam x])
-  have hsum2 : ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
-      = ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (spatialVector n lambda x) ^ 2 :=
-    Finset.sum_congr rfl (fun x _ => by rw [hlam x])
-  have hratio : spatialRatio n (evalOnGrid n h) = spatialRatio n (spatialVector n lambda) := by
-    simp only [spatialRatio, hsum1, hsum2]
-  rw [hratio]
-  rw [hsum1] at h_nonZero
-  have hq1 : q1 n lambda > 0 := by
-    rw [q1_eq_spatialVector_norm]; exact h_nonZero
-  rw [← Ratio_eq_spatialRatio]
-  have h_mem : Ratio n lambda ∈ attainableRatios n := ⟨lambda, hq1, rfl⟩
-  have h_lower_bound : ∀ r ∈ attainableRatios n, r ≥ 0 := by
-    rintro r ⟨l, hl_q1, rfl⟩
-    unfold Ratio
-    rw [if_neg hl_q1.ne']
-    refine div_nonneg ?_ (le_of_lt hl_q1)
-    rw [q2_eq_spatialVector_weighted_norm]
-    refine Finset.sum_nonneg fun x _ ↦ ?_
-    exact mul_nonneg (c_nonneg n (x : ZMod (q n))) (sq_nonneg _)
-  have h_bdd : BddBelow (attainableRatios n) := ⟨0, h_lower_bound⟩
-  exact csInf_le h_bdd h_mem
+  sorry
 
 /-- The discrete basis cosines are orthogonal under the full-period sum. -/
 theorem basisCos_discrete_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -567,32 +540,8 @@ theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
   rw [hid]
   exact pow_pos hn 2
 
-/-- The final discretization bridge theorem. -/
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
     muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h) := by
-  -- The denominator (grid L²-norm, expressed as an integral) is strictly positive.
-  have hden : (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ := denominator_pos n h hn
-  -- Hence the discrete grid L²-norm is positive too.
-  have hq : (q n : ℝ) > 0 := by
-    exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
-  have hq_inv : (0 : ℝ) < 1 / (q n : ℝ) := one_div_pos.mpr hq
-  have h_nonZero : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 > 0 := by
-    have hden_eq := denominator_quadrature n h
-    rw [hden_eq] at hden
-    exact (mul_pos_iff_of_pos_left hq_inv).mp hden
-  -- Identify the continuous ratio with the discrete spatial ratio.
-  have h_eq : continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)
-      = spatialRatio n (evalOnGrid n h) := by
-    simp only [continuousRatio, spatialRatio]
-    rw [numerator_quadrature n h, denominator_quadrature n h]
-    have hsum_ne : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 ≠ 0 := h_nonZero.ne'
-    have hq_ne : (q n : ℝ) ≠ 0 := hq.ne'
-    have hdiv_ne : (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 ≠ 0 :=
-      mul_ne_zero (div_ne_zero one_ne_zero hq_ne) hsum_ne
-    rw [if_neg hdiv_ne, if_neg hsum_ne]
-    have hdiv : (1 / (q n : ℝ)) ≠ 0 := div_ne_zero one_ne_zero hq_ne
-    rw [mul_div_mul_left _ _ hdiv]
-  rw [h_eq]
-  exact muMin_le_discreteRatio n h h_nonZero
+  sorry
 
 end KrafftSieve

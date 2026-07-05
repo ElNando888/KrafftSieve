@@ -105,6 +105,10 @@ evalInterval = {x in N | 6n^2 - 2n <= x <= 6n^2 + 10n + 3}. -/
 def evalInterval (n : ℕ) : Finset ℕ :=
   Finset.Icc (6 * n ^ 2 - 2 * n) (6 * n ^ 2 + 10 * n + 3)
 
+/-- Define the discrete window function Psi(x) supported on evalInterval n. -/
+noncomputable def Psi (n : ℕ) (x : ZMod (q n)) : ℝ :=
+  if x.val ∈ evalInterval n then 1 else 0
+
 /-- Define the local hit function g_i(x)
 Define the local hit function $g_i : \mathbb{Z}/q\mathbb{Z} \to \mathbb{R}$
 for each prime index $i \in \{1, \dots, w\}$.

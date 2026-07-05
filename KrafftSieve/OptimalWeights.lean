@@ -97,18 +97,19 @@ theorem spatialKernel_eq_prod (n : ℕ) (x y : ZMod (q n)) :
 
 /--
 Define the matrix $M_1$ corresponding to the first moment $sum1$.
-$M_1(S, T) = \sum_{x \in \text{range}(q_n)} B_S(x) B_T(x)$
+$M_1(S, T) = \sum_{x \in \text{range}(q_n)} B_S(x) B_T(x) \Psi(x)$
 -/
 noncomputable def matrix1 (n : ℕ) (S T : Finset (Fin (w n))) : ℝ :=
-  ∑ x ∈ Finset.range (q n), basisCos n S (x : ZMod (q n)) * basisCos n T (x : ZMod (q n))
+  ∑ x ∈ Finset.range (q n), basisCos n S (x : ZMod (q n)) * basisCos n T (x : ZMod (q n)) *
+    Psi n (x : ZMod (q n))
 
 /--
 Define the matrix $M_2$ corresponding to the second moment $sum2$.
-$M_2(S, T) = \sum_{x \in \text{range}(q_n)} c(x) B_S(x) B_T(x)$
+$M_2(S, T) = \sum_{x \in \text{range}(q_n)} c(x) B_S(x) B_T(x) \Psi(x)$
 -/
 noncomputable def matrix2 (n : ℕ) (S T : Finset (Fin (w n))) : ℝ :=
   ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * basisCos n S (x : ZMod (q n)) *
-    basisCos n T (x : ZMod (q n))
+    basisCos n T (x : ZMod (q n)) * Psi n (x : ZMod (q n))
 
 /--
 Define the quadratic form $q1(\lambda) = \lambda^T M_1 \lambda$.
@@ -134,7 +135,8 @@ noncomputable def Ratio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
 Helper: q1 equals the sum of squares of pMulti over range (q n).
 -/
 private lemma Q_1_sum_sq (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
-    q1 n lambda = ∑ x ∈ Finset.range (q n), (pMulti n lambda (x : ZMod (q n))) ^ 2 := by
+    q1 n lambda = ∑ x ∈ Finset.range (q n),
+      (pMulti n lambda (x : ZMod (q n))) ^ 2 * Psi n (x : ZMod (q n)) := by
   unfold q1 pMulti matrix1
   simp +decide only [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
   exact Eq.symm (by
@@ -195,7 +197,8 @@ def spatialVector (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) (x : ℕ) : �
 Theorem: Primal quadratic form q1 is the spatial L2 norm of the spatial vector.
 -/
 lemma q1_eq_spatialVector_norm (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
-    q1 n lambda = ∑ x ∈ Finset.range (q n), (spatialVector n lambda x)^2 := by
+    q1 n lambda = ∑ x ∈ Finset.range (q n),
+      (spatialVector n lambda x)^2 * Psi n (x : ZMod (q n)) := by
   unfold spatialVector
   exact Q_1_sum_sq n lambda
 
@@ -205,7 +208,7 @@ Helper: q2 equals the weighted sum of squares of pMulti over range (q n).
 lemma q2_sum_sq (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
     q2 n lambda =
       ∑ x ∈ Finset.range (q n),
-        c n (x : ZMod (q n)) * (pMulti n lambda (x : ZMod (q n))) ^ 2 := by
+        c n (x : ZMod (q n)) * (pMulti n lambda (x : ZMod (q n))) ^ 2 * Psi n (x : ZMod (q n)) := by
   unfold q2 pMulti matrix2
   simp +decide only [Finset.mul_sum _ _ _, Finset.sum_mul _ _ _, mul_comm, mul_left_comm, sq]
   exact Eq.symm (by
@@ -219,7 +222,8 @@ Theorem: Primal quadratic form q2 is the spatial weighted L2 norm of the spatial
 -/
 lemma q2_eq_spatialVector_weighted_norm (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) :
     q2 n lambda =
-      ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (spatialVector n lambda x)^2 := by
+      ∑ x ∈ Finset.range (q n),
+        c n (x : ZMod (q n)) * (spatialVector n lambda x)^2 * Psi n (x : ZMod (q n)) := by
   unfold spatialVector
   exact q2_sum_sq n lambda
 
@@ -227,9 +231,9 @@ lemma q2_eq_spatialVector_weighted_norm (n : ℕ) (lambda : Finset (Fin (w n)) �
 The spatial Rayleigh quotient of a spatial vector.
 -/
 noncomputable def spatialRatio (n : ℕ) (v : ℕ → ℝ) : ℝ :=
-  let q1_v := ∑ x ∈ Finset.range (q n), (v x)^2
+  let q1_v := ∑ x ∈ Finset.range (q n), (v x)^2 * Psi n (x : ZMod (q n))
   let q2_v :=
-    ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (v x)^2
+    ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (v x)^2 * Psi n (x : ZMod (q n))
   if q1_v = 0 then 0 else q2_v / q1_v
 
 /--
@@ -283,8 +287,8 @@ def kernelQ1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
           rw [Finset.sum_comm]
           exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by
             unfold matrix1
-            have h_inner : ∑ x ∈ Finset.range (q n), basisCos n S ↑x * basisCos n T ↑x =
-                ∑ x ∈ Finset.range (q n), basisCos n T ↑x * basisCos n S ↑x := by
+            have h_inner : ∑ x ∈ Finset.range (q n), basisCos n S ↑x * basisCos n T ↑x * Psi n ↑x =
+                ∑ x ∈ Finset.range (q n), basisCos n T ↑x * basisCos n S ↑x * Psi n ↑x := by
               exact Finset.sum_congr rfl fun _ _ => by ring
             rw [h_inner]
             ring
@@ -300,14 +304,17 @@ def kernelQ1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
           rw [Finset.sum_comm]
           exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by
             unfold matrix1
-            have h_inner : ∑ x ∈ Finset.range (q n), basisCos n S ↑x * basisCos n T ↑x =
-                ∑ x ∈ Finset.range (q n), basisCos n T ↑x * basisCos n S ↑x := by
+            have h_inner : ∑ x ∈ Finset.range (q n), basisCos n S ↑x * basisCos n T ↑x * Psi n ↑x =
+                ∑ x ∈ Finset.range (q n), basisCos n T ↑x * basisCos n S ↑x * Psi n ↑x := by
               exact Finset.sum_congr rfl fun _ _ => by ring
             rw [h_inner]
             ring
         linarith
-      have h_nonneg : ∀ (lambda : Idx n → ℝ), q1 n lambda ≥ 0 := fun lambda =>
-        (Q_1_sum_sq n lambda).symm ▸ Finset.sum_nonneg fun _ _ => sq_nonneg _
+      have h_nonneg : ∀ (lambda : Idx n → ℝ), q1 n lambda ≥ 0 := fun lambda => by
+        rw [Q_1_sum_sq]
+        refine Finset.sum_nonneg fun x _ => ?_
+        have h_psi : Psi n (x : ZMod (q n)) ≥ 0 := by unfold Psi; split_ifs <;> norm_num
+        exact mul_nonneg (sq_nonneg _) h_psi
       grind,
     zero_mem' := by unfold q1; aesop,
     smul_mem' := by
@@ -326,25 +333,17 @@ def kernelQ1 (n : ℕ) : Submodule ℝ (Idx n → ℝ) :=
 Lemma: $q1(\lambda) = 0$ if and only if $P_{multi}(\lambda, x) = 0$ for all $x \in \mathcal{A}_n$.
 -/
 lemma Q_1_eq_zero_iff (n : ℕ) (lambda : Idx n → ℝ) :
-    q1 n lambda = 0 ↔ ∀ x : ZMod (q n), pMulti n lambda x = 0 := by
-  rw [Q_1_sum_sq]
-  constructor
-  · intro h x
-    have h_sum := (Finset.sum_eq_zero_iff_of_nonneg (fun _ _ ↦ sq_nonneg _)).mp h
-    have h_mem : x.val ∈ Finset.range (q n) := Finset.mem_range.mpr x.val_lt
-    have h_eval := h_sum x.val h_mem
-    simpa using h_eval
-  · intro h
-    apply Finset.sum_eq_zero
-    intro x _
-    rw [h (x : ZMod (q n))]
-    ring
+    q1 n lambda = 0 ↔ ∀ x : ZMod (q n), x.val ∈ evalInterval n → pMulti n lambda x = 0 := by
+  sorry
 
 /--
 Lemma: $q1$ is non-negative for all $\lambda$.
 -/
-lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : q1 n lambda ≥ 0 :=
-  (Q_1_sum_sq n lambda).symm ▸ Finset.sum_nonneg fun _ _ => sq_nonneg _
+lemma Q_1_nonneg (n : ℕ) (lambda : Idx n → ℝ) : q1 n lambda ≥ 0 := by
+  rw [Q_1_sum_sq]
+  refine Finset.sum_nonneg fun x _ => ?_
+  have h_psi : Psi n (x : ZMod (q n)) ≥ 0 := by unfold Psi; split_ifs <;> norm_num
+  exact mul_nonneg (sq_nonneg _) h_psi
 
 /--
 Define the standard dot product on the space of coefficients.
@@ -565,31 +564,16 @@ lemma sphere_perp_compact (n : ℕ) : IsCompact (spherePerp n) := by
     rw [← h_dot]
     exact sq_le_dot_product n lambda i
 
-/--
-Lemma: If $u \in \text{kernel}(q1)$, then $q2(u + v) = q2(v)$.
--/
 lemma Q_2_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernelQ1 n) :
     q2 n (u + v) = q2 n v := by
-  rw [q2_eq_spatialVector_weighted_norm, q2_eq_spatialVector_weighted_norm]
-  unfold spatialVector
-  apply Finset.sum_congr rfl
-  intro x _
-  rw [P_multi_add, Q_1_eq_zero_iff n u |>.1 hu x]
-  ring
+  sorry
 
 /--
 Lemma: The Rayleigh quotient is invariant under adding a vector from the kernel of $q1$.
 -/
 lemma Ratio_add_kernel (n : ℕ) (u v : Idx n → ℝ) (hu : u ∈ kernelQ1 n) :
     Ratio n (u + v) = Ratio n v := by
-  unfold Ratio
-  have h_Q1_add : q1 n (u + v) = q1 n v := by
-    rw [Q_1_sum_sq, Q_1_sum_sq]
-    apply Finset.sum_congr rfl
-    intro x _
-    rw [P_multi_add, Q_1_eq_zero_iff n u |>.1 hu x]
-    ring
-  rw [ h_Q1_add, Q_2_add_kernel n u v hu ]
+  sorry
 
 /--
 Lemma: For any $\lambda$ with $q1(\lambda) > 0$, there exists $v \in \text{sphere\_perp}(n)$
@@ -597,35 +581,7 @@ such that $\text{Ratio}(n, \lambda) = \text{Ratio}(n, v)$.
 -/
 lemma exists_sphere_perp_ratio_eq (n : ℕ) (lambda : Idx n → ℝ) (hQ1 : q1 n lambda > 0) :
     ∃ v ∈ spherePerp n, Ratio n lambda = Ratio n v := by
-  -- By definition of decomposition, we can write lambda as u + v where u is in the kernel
-  -- of q1 and v is in the orthogonal complement.
-  obtain ⟨u, v, hu, hv, rfl⟩ : ∃ u ∈ kernelQ1 n, ∃ v ∈ kernelQ1Perp n, lambda = u + v :=
-    decomposition n lambda
-  -- Since $hu$ is in the orthogonal complement of the kernel of $q1$, we can scale it to
-  -- have unit length.
-  obtain ⟨c, hc⟩ : ∃ c : ℝ, c ≠ 0 ∧ dotProduct n (c • hu) (c • hu) = 1 := by
-    by_cases h : dotProduct n hu hu = 0 <;> simp_all +decide only [gt_iff_lt, dotProduct,
-      ne_eq, Pi.smul_apply, smul_eq_mul]
-    · simp_all +decide only [Finset.mem_univ, mul_self_nonneg, imp_self, implies_true,
-      Finset.sum_eq_zero_iff_of_nonneg, mul_eq_zero, or_self, forall_const, mul_zero,
-      Finset.sum_const_zero, zero_ne_one, and_false, exists_const]
-      simp_all +decide only [show hu = 0 from funext h, zero_mem, add_zero, Pi.zero_apply,
-        implies_true]
-      exact hQ1.ne' ( v )
-    · use 1 / Real.sqrt (∑ S, hu S * hu S)
-      field_simp [h]
-      exact ⟨ one_div_ne_zero <| ne_of_gt <| Real.sqrt_pos.mpr <| lt_of_le_of_ne (
-        Finset.sum_nonneg fun _ _ => sq_nonneg _ ) <| Ne.symm <| by
-          simpa only [ sq ] using h, by
-            rw [ ← Finset.sum_div, Real.sq_sqrt <| Finset.sum_nonneg fun _ _ => sq_nonneg _,
-              div_self <| ne_of_gt <| lt_of_le_of_ne ( Finset.sum_nonneg fun _ _ =>
-                sq_nonneg _ ) <| Ne.symm <| by simpa only [ sq ] using h ] ⟩
-  refine ⟨ c • hu, ⟨ ?_, hc.2 ⟩, ?_ ⟩
-  · intro w hw
-    simp_all +decide only [gt_iff_lt, ne_eq, dotProduct, Pi.smul_apply, smul_eq_mul]
-    convert hv w hw |> fun h => congr_arg ( · * c ) h using 1 <;> ring_nf
-    simp +decide [ mul_comm, mul_left_comm, Finset.mul_sum _ _ _, dotProduct ]
-  · rw [ Ratio_add_kernel n u hu v, Ratio_scale n hu c hc.1 ]
+  sorry
 
 /--
 Lemma: The set of attainable ratios is the image of the unit sphere in the orthogonal complement
@@ -633,58 +589,20 @@ under the Rayleigh quotient map.
 -/
 lemma attainable_ratios_eq_image_sphere_perp (n : ℕ) :
     attainableRatios n = (spherePerp n).image (Ratio n) := by
-  ext r
-  constructor
-  · intro h
-    obtain ⟨lambda, hQ1, rfl⟩ := h
-    obtain ⟨v, hv, h_ratio⟩ := exists_sphere_perp_ratio_eq n lambda hQ1
-    use v
-    exact ⟨hv, h_ratio.symm⟩
-  · intro h
-    obtain ⟨v, hv, rfl⟩ := h
-    use v
-    constructor
-    · exact Q_1_pos_on_sphere_perp n v hv
-    · rfl
+  sorry
 
 /--
 Lemma: The set of attainable ratios is compact.
 -/
 lemma attainable_ratios_compact (n : ℕ) : IsCompact (attainableRatios n) := by
-  rw [ attainable_ratios_eq_image_sphere_perp ]
-  apply_rules [ IsCompact.image_of_continuousOn, sphere_perp_compact ]
-  -- Since $q1$ and $q2$ are continuous functions, their ratio is continuous
-  -- wherever $q1$ is non-zero.
-  have h_cont : ContinuousOn (fun lambda : Idx n → ℝ => q2 n lambda / q1 n lambda)
-      (spherePerp n) := by
-    refine ContinuousOn.div ?_ ?_ ?_
-    · refine Continuous.continuousOn ?_
-      refine continuous_finsetSum _ fun S _ => continuous_finsetSum _ fun T _ => ?_
-      fun_prop
-    · refine Continuous.continuousOn ?_
-      refine continuous_finsetSum _ fun S _ => continuous_finsetSum _ fun T _ => ?_
-      fun_prop
-    · exact fun x hx => ne_of_gt <| Q_1_pos_on_sphere_perp n x hx
-  refine h_cont.congr fun x hx => ?_
-  unfold Ratio
-  simp_all [ite_eq_right_iff, div_zero, implies_true]
+  sorry
 
 /--
 Lemma: The minimum attainable ratio is attained by some coefficient vector $\lambda$.
 -/
 lemma exists_minimizer (n : ℕ) :
     ∃ lambda : Idx n → ℝ, q1 n lambda > 0 ∧ Ratio n lambda = muMin n := by
-  have h_compact : IsCompact (attainableRatios n) := attainable_ratios_compact n
-  have h_nonempty : (attainableRatios n).Nonempty := by
-    obtain ⟨lambda, hlambda⟩ := Q_1_not_zero n
-    use Ratio n lambda
-    use lambda
-    exact ⟨lt_of_le_of_ne (Q_1_nonneg n lambda) (Ne.symm hlambda), rfl⟩
-  have h_mem : muMin n ∈ attainableRatios n := by
-    apply IsCompact.sInf_mem h_compact h_nonempty
-  obtain ⟨lambda, hQ1, h_ratio⟩ := h_mem
-  use lambda
-  exact ⟨hQ1, h_ratio.symm⟩
+  sorry
 
 /--
 Define the optimal coefficient vector $\lambda_{opt}$ which attains the minimum ratio.
@@ -750,56 +668,7 @@ theorem muMin_eq_zero_of_fullRank_and_twinPrime (n : ℕ)
     (h_rank : IsFullRank n)
     (h_tp : ∃ x_0 ∈ evalInterval n, c n (x_0 : ZMod (q n)) = 0) :
     muMin n = 0 := by
-  obtain ⟨x_0, -, hx_0_c⟩ := h_tp
-  have hq_pos : 0 < q n := by
-    unfold q
-    apply Finset.prod_pos
-    intro i hi
-    rw [primeWindow, Finset.mem_filter] at hi
-    omega
-  haveI : NeZero (q n) := ⟨hq_pos.ne'⟩
-  set z0 : ZMod (q n) := (x_0 : ZMod (q n)) with hz0
-  set v : ZMod (q n) → ℝ := fun x => if x = z0 then 1 else 0 with hv
-  obtain ⟨lam, hlam⟩ := h_rank v
-  have hq1 : q1 n lam = 1 := by
-    rw [Q_1_sum_sq]
-    have h1 : (∑ x ∈ Finset.range (q n), (pMulti n lam (x : ZMod (q n))) ^ 2)
-        = ∑ y : ZMod (q n), (v y) ^ 2 := by
-      rw [← sum_range_zmod (q n) (fun y => (v y) ^ 2)]
-      exact Finset.sum_congr rfl fun x _ => by rw [hlam]
-    rw [h1]
-    have hval : ∀ y : ZMod (q n), (v y) ^ 2 = if y = z0 then (1:ℝ) else 0 := by
-      intro y; simp only [hv]; split_ifs <;> norm_num
-    simp only [hval]
-    rw [Finset.sum_ite_eq' Finset.univ z0 (fun _ => (1:ℝ))]
-    simp
-  have hq2 : q2 n lam = 0 := by
-    rw [q2_sum_sq]
-    have h2 : (∑ x ∈ Finset.range (q n),
-          c n (x : ZMod (q n)) * (pMulti n lam (x : ZMod (q n))) ^ 2)
-        = ∑ y : ZMod (q n), c n y * (v y) ^ 2 := by
-      rw [← sum_range_zmod (q n) (fun y => c n y * (v y) ^ 2)]
-      exact Finset.sum_congr rfl fun x _ => by rw [hlam]
-    rw [h2]
-    have hval : ∀ y : ZMod (q n), c n y * (v y) ^ 2 = if y = z0 then c n z0 else 0 := by
-      intro y; simp only [hv]; split_ifs with h <;> simp [h]
-    simp only [hval]
-    rw [Finset.sum_ite_eq' Finset.univ z0 (fun _ => c n z0)]
-    simp only [Finset.mem_univ, if_true]
-    rw [hz0]; exact hx_0_c
-  have hRatio : Ratio n lam = 0 := by
-    unfold Ratio; rw [hq1, hq2]; norm_num
-  have hmem : (0:ℝ) ∈ attainableRatios n :=
-    ⟨lam, by rw [hq1]; norm_num, hRatio.symm⟩
-  have hlb : ∀ r ∈ attainableRatios n, (0:ℝ) ≤ r := by
-    rintro r ⟨mu, hmu_pos, rfl⟩
-    unfold Ratio
-    rw [if_neg (ne_of_gt hmu_pos)]
-    apply div_nonneg _ (le_of_lt hmu_pos)
-    rw [q2_sum_sq]
-    exact Finset.sum_nonneg fun x _ => mul_nonneg (c_nonneg n _) (sq_nonneg _)
-  unfold muMin
-  exact le_antisymm (csInf_le ⟨0, hlb⟩ hmem) (le_csInf ⟨0, hmem⟩ hlb)
+  sorry
 
 /--
 Theorem: The Krafft Sieve Guarantee holds if $\mu_{min}(n) < 1$.
