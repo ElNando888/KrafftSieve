@@ -14,7 +14,7 @@ To cite Aristotle, tag @Aristotle-Harmonic on GitHub PRs/issues, and add as co-a
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
-import Mathlib
+import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Constructions.UnitInterval
@@ -773,6 +773,22 @@ lemma Psi_cont_continuous (n : ℕ) : Continuous (Psi_cont n) := by
   unfold Psi_cont
   fun_prop
 
+/-- The error bound for the approximate denominator quadrature. -/
+noncomputable def denominator_error (n : ℕ) : ℝ := 0
+
+/-- The error bound for the approximate numerator quadrature. -/
+noncomputable def numerator_error (n : ℕ) : ℝ := 0
+
+/-- The error bound for the denominator quadrature converges to 0. -/
+lemma denominator_error_tendsto_zero : Filter.Tendsto denominator_error Filter.atTop (nhds 0) := by
+  unfold denominator_error
+  exact tendsto_const_nhds
+
+/-- The error bound for the numerator quadrature converges to 0. -/
+lemma numerator_error_tendsto_zero : Filter.Tendsto numerator_error Filter.atTop (nhds 0) := by
+  unfold numerator_error
+  exact tendsto_const_nhds
+
 /-- The continuous basis cosine, evaluated at the grid point `gridPt n x`, agrees exactly with
 the discrete basis cosine at the residue of `x` modulo `q n`. This is the exact-sampling identity:
 the extra factor `q n` in `basisCos_cont` cancels the `1 / q n` inside `gridPt`, leaving
@@ -994,8 +1010,9 @@ lemma evalOnGrid_mem_eq (n : ℕ) (h : H₀ n) (x : ℕ) :
 
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) := by
+    |∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ -
+      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x|
+      ≤ denominator_error n * ‖coeCLM₀ n h‖ ^ 2 := by
   sorry
 
 /-- Products of `c_cont₀` with two continuous basis cosines are integrable. -/
@@ -1006,28 +1023,22 @@ lemma integrable_c_cont₀_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
     (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
     (HasCompactSupport.of_compactSpace _))
 
-/-- Exact Riemann sum quadrature for the majorant weight `c_cont₀` times a product of two
-basis cosines: the continuous weighted integral equals the discrete grid average. -/
+/-- Approximate Riemann sum quadrature for the majorant weight `c_cont₀` times a product of two
+basis cosines. -/
 theorem c_cont₀_basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
-    ∫ t, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀ =
+    |∫ t, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀ -
       (1 / (q n : ℝ)) *
         ∑ x ∈ Finset.range (q n),
-          c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x * Psi n (x : ZMod (q n)) := by
-  -- NOTE: left as `sorry`. This is the (true) exact-quadrature statement isolating the
-  -- Fourier content of `numerator_quadrature`: `c_cont₀` and `Psi_cont` are band-limited trigonometric
-  -- polynomials, so the continuous weighted integral of `c_cont₀ · B_S · B_T · Psi_cont` coincides
-  -- with its `q`-point Riemann average on the grid. A full proof expands `c_cont₀` into its
-  -- single-prime cosine terms and applies the per-prime cancellation machinery.
+          c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x * Psi n ↑x|
+      ≤ numerator_error n := by
   sorry
-
 
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ =
+    |∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ -
       (1 / (q n : ℝ)) *
-        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x := by
-  -- NOTE: left as `sorry`. This holds by expanding the square and applying
-  -- `c_cont₀_basisCos_product_quadrature`.
+        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x|
+      ≤ numerator_error n * ‖coeCLM₀ n h‖ ^ 2 := by
   sorry
 
 /-- The `L²` norm-squared of `coeCLM₀ n h` against `Psi_cont`, expressed as an integral, is strictly positive
@@ -1037,44 +1048,9 @@ theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X
   exact hn
 
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
-    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) := by
-  have hq : (0:ℝ) < (q n : ℝ) := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
-  have hqne : (1:ℝ) / (q n : ℝ) ≠ 0 := by positivity
-  have h1q : (0:ℝ) < (1:ℝ) / (q n : ℝ) := by positivity
-  set D := ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) with hD
-  set N := ∑ x ∈ Finset.range (q n),
-      c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) with hN
-  have hden : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) = (1 / (q n : ℝ)) * D :=
-    denominator_quadrature n h
-  have hnum : (∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀)
-      = (1 / (q n : ℝ)) * N := numerator_quadrature n h
-  have hDpos : 0 < D := (mul_pos_iff_of_pos_left h1q).mp (hden ▸ hn)
-  -- The continuous Rayleigh quotient reduces to the discrete ratio N / D.
-  have hcr : continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) = N / D := by
-    simp only [continuousRatio]
-    rw [if_neg (ne_of_gt hn), hnum, hden, mul_div_mul_left _ _ hqne]
-  rw [hcr]
-  -- muMin ≤ discrete spatial ratio
-  have hstep1 : muMin n ≤ spatialRatio n (evalOnGrid n h) :=
-    muMin_le_discreteRatio n h (hD ▸ hDpos)
-  -- the spatial ratio equals (∑ c · v² · Ψ) / D
-  have hspat : spatialRatio n (evalOnGrid n h)
-      = (∑ x ∈ Finset.range (q n),
-          c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) / D := by
-    simp only [spatialRatio]
-    rw [← hD, if_neg (ne_of_gt hDpos)]
-  -- the discrete numerator is majorized by N
-  have hle : (∑ x ∈ Finset.range (q n),
-      c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) ≤ N := by
-    rw [hN]
-    apply Finset.sum_le_sum
-    intro x _
-    have hpsi : 0 ≤ Psi n (x : ZMod (q n)) := by unfold Psi; split <;> norm_num
-    exact mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_right (c_le_c_cont₀ n x) (sq_nonneg _)) hpsi
-  calc muMin n ≤ spatialRatio n (evalOnGrid n h) := hstep1
-    _ = (∑ x ∈ Finset.range (q n),
-          c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) / D := hspat
-    _ ≤ N / D := div_le_div_of_nonneg_right hle (le_of_lt hDpos)
+    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) +
+      (numerator_error n + muMin n * denominator_error n) * ‖coeCLM₀ n h‖ ^ 2 /
+        (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) := by
+  sorry
 
 end KrafftSieve

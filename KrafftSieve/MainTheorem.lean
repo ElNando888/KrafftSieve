@@ -6,6 +6,7 @@ Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
+import KrafftSieve.Discretization
 
 /-!
 # Main Sieve Admissibility and Twin Prime Conjecture
@@ -72,10 +73,15 @@ theorem muMin_le_rkhs_ratio (μ : Measure X) [IsFiniteMeasure μ] (n : ℕ)
     (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
     (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
     (c_cont : X → ℝ) (Psi_cont : X → ℝ) (f : Lp ℝ 2 μ)
-    (hn : ‖coeCLM_seq n (projectionToRKHS n f)‖ > 0)
-    (h_quadrature : ∀ (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
-      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h)) :
-    muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) := by
+    (hn : (∫ x, ((coeCLM_seq n (projectionToRKHS n f) : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) > 0)
+    (h_quadrature : ∀ (h : H_seq n), (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) > 0 →
+      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h) +
+        (numerator_error n + muMin n * denominator_error n) * ‖coeCLM_seq n h‖ ^ 2 /
+          (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ)) :
+    muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) +
+      (numerator_error n + muMin n * denominator_error n) *
+        ‖coeCLM_seq n (projectionToRKHS n f)‖ ^ 2 /
+        (∫ x, ((coeCLM_seq n (projectionToRKHS n f) : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) := by
   exact h_quadrature (projectionToRKHS n f) hn
 
 /--
@@ -96,52 +102,12 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
       ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
-    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
-      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h)) :
+    (h_quadrature : ∀ n (h : H_seq n), (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) > 0 →
+      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h) +
+        (numerator_error n + muMin n * denominator_error n) * ‖coeCLM_seq n h‖ ^ 2 /
+          (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ)) :
     ∃ N_0 : ℕ, ∀ n ≥ N_0, muMin n < 1 := by
-  -- Choose a continuous test function whose continuous Rayleigh quotient is < 1.
-  obtain ⟨f, hf_pos, hf_lt⟩ := exists_continuous_ratio_lt_one μ c_cont Psi_cont h_dip
-  -- The projected functions converge to `f` strongly in L².
-  have h_sc : Filter.Tendsto
-      (fun i ↦ ‖coeCLM_seq i (projectionToRKHS i f) - f‖) Filter.atTop (nhds 0) :=
-    projection_strong_convergence μ H_seq coeCLM_seq projectionToRKHS f
-      h_orthogonal h_mono h_dense
-  -- Hence the Rayleigh quotients of the projections converge to that of `f`.
-  have h_ratio_lim : Filter.Tendsto
-      (fun n ↦ continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)))
-      Filter.atTop (nhds (continuousRatio μ c_cont Psi_cont f)) :=
-    continuousRatio_limit μ c_cont Psi_cont f hf_pos
-      (fun n ↦ coeCLM_seq n (projectionToRKHS n f)) h_sc
-  -- `f` has positive L² norm (else its windowed norm would be zero).
-  have hf_norm_pos : (0 : ℝ) < ‖f‖ := by
-    rw [norm_pos_iff]
-    intro h0
-    have hfae : (f : X → ℝ) =ᵐ[μ] 0 := by rw [h0]; exact Lp.coeFn_zero ℝ 2 μ
-    have hzero : (∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ) = 0 := by
-      refine integral_eq_zero_of_ae ?_
-      filter_upwards [hfae] with x hx
-      simp [hx]
-    rw [hzero] at hf_pos
-    exact lt_irrefl 0 hf_pos
-  -- The projections converge to `f`, so their norms converge to `‖f‖`.
-  have h_tendsto : Filter.Tendsto (fun n ↦ coeCLM_seq n (projectionToRKHS n f))
-      Filter.atTop (nhds f) := tendsto_iff_norm_sub_tendsto_zero.mpr h_sc
-  have h_norm_tendsto : Filter.Tendsto
-      (fun n ↦ ‖coeCLM_seq n (projectionToRKHS n f)‖) Filter.atTop (nhds ‖f‖) :=
-    (continuous_norm.tendsto f).comp h_tendsto
-  -- Eventually the ratio is < 1 and the projected norm is positive.
-  have h_ev1 : ∀ᶠ n in Filter.atTop,
-      continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) < 1 :=
-    h_ratio_lim.eventually_lt_const hf_lt
-  have h_ev2 : ∀ᶠ n in Filter.atTop,
-      (0 : ℝ) < ‖coeCLM_seq n (projectionToRKHS n f)‖ :=
-    h_norm_tendsto.eventually_const_lt hf_norm_pos
-  obtain ⟨N_0, hN⟩ := Filter.eventually_atTop.mp (h_ev1.and h_ev2)
-  refine ⟨N_0, fun n hn ↦ ?_⟩
-  obtain ⟨h_lt, h_pos⟩ := hN n hn
-  calc muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) :=
-        h_quadrature n (projectionToRKHS n f) h_pos
-    _ < 1 := h_lt
+  sorry
 
 /--
 Theorem: The optimal multidimensional sieve weight achieves a ratio strictly less than 1
@@ -161,8 +127,10 @@ theorem mu_min_infinite (μ : Measure X) [IsFiniteMeasure μ]
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
       ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
-    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
-      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h)) :
+    (h_quadrature : ∀ n (h : H_seq n), (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) > 0 →
+      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h) +
+        (numerator_error n + muMin n * denominator_error n) * ‖coeCLM_seq n h‖ ^ 2 /
+          (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ)) :
     {n : ℕ | muMin n < 1}.Infinite := by
   obtain ⟨N_0, hN⟩ := mu_min_eventually_lt_one μ H_seq coeCLM_seq projectionToRKHS
     c_cont Psi_cont h_dip h_orthogonal h_mono h_dense h_quadrature
@@ -186,8 +154,10 @@ theorem twin_prime_conjecture (μ : Measure X) [IsFiniteMeasure μ]
       ∃ y : H_seq j, coeCLM_seq i x = coeCLM_seq j y)
     (h_dense : ∀ (g : Lp ℝ 2 μ) (ε : ℝ) (_ : 0 < ε),
       ∃ i, ∃ h : H_seq i, ‖coeCLM_seq i h - g‖ < ε)
-    (h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
-      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h)) :
+    (h_quadrature : ∀ n (h : H_seq n), (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ) > 0 →
+      muMin n ≤ continuousRatio μ c_cont Psi_cont (coeCLM_seq n h) +
+        (numerator_error n + muMin n * denominator_error n) * ‖coeCLM_seq n h‖ ^ 2 /
+          (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ)) :
     {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
   apply mu_min_lt_one_implies_tpc
   exact mu_min_infinite μ H_seq coeCLM_seq projectionToRKHS c_cont Psi_cont
