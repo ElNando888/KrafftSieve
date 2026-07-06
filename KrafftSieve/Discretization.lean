@@ -838,8 +838,14 @@ theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
 theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
     (h_nonZero : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) > 0) :
     muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  -- NOTE: left as `sorry`. This holds because evaluation on grid has positive support on the window.
-  sorry
+  obtain ⟨lambda, hlambda⟩ := evalOnGrid_eq_spatialVector n h
+  have hfun : evalOnGrid n h = spatialVector n lambda := funext hlambda
+  rw [hfun, ← Ratio_eq_spatialRatio]
+  have hq1 : q1 n lambda > 0 := by
+    rw [q1_eq_spatialVector_norm, ← hfun]
+    exact h_nonZero
+  have hmem : Ratio n lambda ∈ attainableRatios n := ⟨lambda, hq1, rfl⟩
+  exact csInf_le (attainable_ratios_compact n).bddBelow hmem
 
 /-- The discrete basis cosines are orthogonal under the full-period sum. -/
 theorem basisCos_discrete_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -1032,9 +1038,43 @@ theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X
 
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
     muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) := by
-  -- NOTE: left as `sorry`. Under the windowed continuous formulation, the denominators
-  -- of the continuous and discrete quotients both incorporate the window functions,
-  -- resolving the dimensional mismatch and making the bridge provable.
-  sorry
+  have hq : (0:ℝ) < (q n : ℝ) := by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
+  have hqne : (1:ℝ) / (q n : ℝ) ≠ 0 := by positivity
+  have h1q : (0:ℝ) < (1:ℝ) / (q n : ℝ) := by positivity
+  set D := ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) with hD
+  set N := ∑ x ∈ Finset.range (q n),
+      c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) with hN
+  have hden : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) = (1 / (q n : ℝ)) * D :=
+    denominator_quadrature n h
+  have hnum : (∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀)
+      = (1 / (q n : ℝ)) * N := numerator_quadrature n h
+  have hDpos : 0 < D := (mul_pos_iff_of_pos_left h1q).mp (hden ▸ hn)
+  -- The continuous Rayleigh quotient reduces to the discrete ratio N / D.
+  have hcr : continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) = N / D := by
+    simp only [continuousRatio]
+    rw [if_neg (ne_of_gt hn), hnum, hden, mul_div_mul_left _ _ hqne]
+  rw [hcr]
+  -- muMin ≤ discrete spatial ratio
+  have hstep1 : muMin n ≤ spatialRatio n (evalOnGrid n h) :=
+    muMin_le_discreteRatio n h (hD ▸ hDpos)
+  -- the spatial ratio equals (∑ c · v² · Ψ) / D
+  have hspat : spatialRatio n (evalOnGrid n h)
+      = (∑ x ∈ Finset.range (q n),
+          c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) / D := by
+    simp only [spatialRatio]
+    rw [← hD, if_neg (ne_of_gt hDpos)]
+  -- the discrete numerator is majorized by N
+  have hle : (∑ x ∈ Finset.range (q n),
+      c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) ≤ N := by
+    rw [hN]
+    apply Finset.sum_le_sum
+    intro x _
+    have hpsi : 0 ≤ Psi n (x : ZMod (q n)) := by unfold Psi; split <;> norm_num
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_right (c_le_c_cont₀ n x) (sq_nonneg _)) hpsi
+  calc muMin n ≤ spatialRatio n (evalOnGrid n h) := hstep1
+    _ = (∑ x ∈ Finset.range (q n),
+          c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))) / D := hspat
+    _ ≤ N / D := div_le_div_of_nonneg_right hle (le_of_lt hDpos)
 
 end KrafftSieve
