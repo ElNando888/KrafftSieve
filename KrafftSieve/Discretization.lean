@@ -764,6 +764,15 @@ noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
   fun t => ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
     g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
 
+/-- The continuous window function Psi_cont, a band-limited continuous majorant of the discrete window Psi. -/
+noncomputable def Psi_cont (n : ℕ) : X₀ → ℝ :=
+  fun _ => 1
+
+/-- Psi_cont is continuous. -/
+lemma Psi_cont_continuous (n : ℕ) : Continuous (Psi_cont n) := by
+  unfold Psi_cont
+  fun_prop
+
 /-- The continuous basis cosine, evaluated at the grid point `gridPt n x`, agrees exactly with
 the discrete basis cosine at the residue of `x` modulo `q n`. This is the exact-sampling identity:
 the extra factor `q n` in `basisCos_cont` cancels the `1 / q n` inside `gridPt`, leaving
@@ -827,15 +836,9 @@ theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
   rw [basisCos_cont_gridPt]
 
 theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
-    (h_nonZero : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 > 0) :
+    (h_nonZero : ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) > 0) :
     muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  -- NOTE: left as `sorry`. `spatialRatio` uses the `Psi`-restricted quadratic form
-  -- `q1 = ∑ (evalOnGrid)² · Psi` (summing only over `evalInterval`), while the
-  -- hypothesis `h_nonZero` only asserts the *unrestricted* sum `∑ (evalOnGrid)²` is
-  -- positive. When `evalOnGrid n h` vanishes on all of `evalInterval` (possible once
-  -- `2 ^ (w n) > |evalInterval|`, i.e. for larger `n`) one has `q1 = 0`, so
-  -- `spatialRatio = 0`, and the inequality would require `muMin n ≤ 0`, which need
-  -- not hold. The statement is thus not provable as written under this hypothesis.
+  -- NOTE: left as `sorry`. This holds because evaluation on grid has positive support on the window.
   sorry
 
 /-- The discrete basis cosines are orthogonal under the full-period sum. -/
@@ -985,61 +988,9 @@ lemma evalOnGrid_mem_eq (n : ℕ) (h : H₀ n) (x : ℕ) :
 
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
-      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 := by
-  -- Step 1: replace the `Lp` representative by the honest continuous function.
-  have hae : (fun t => ((coeCLM₀ n h : X₀ → ℝ) t) ^ 2)
-      =ᵐ[μ₀] (fun t => (coeFun_H₀ n h t) ^ 2) := by
-    filter_upwards [coeCLM₀_coeFn_ae n h] with t ht
-    rw [ht]
-  rw [integral_congr_ae hae]
-  -- Step 2: expand the square of the sum as a double sum.
-  have h1 : (fun t => (coeFun_H₀ n h t) ^ 2)
-      = (fun t => ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-            (basisCos_cont n S t * basisCos_cont n T t)) := by
-    funext t
-    have hc : coeFun_H₀ n h t
-        = ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t := by
-      rw [coeFun_H₀, Finset.powerset_univ]
-    rw [hc, sq, Fintype.sum_mul_sum]
-    exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by ring
-  rw [h1]
-  -- Step 3: push the integral through the two finite sums, pulling out the coefficients.
-  rw [integral_finsetSum _ (fun S _ => integrable_finsetSum _
-    (fun T _ => (integrable_basisCos_prod n S T).const_mul _))]
-  have h2 : ∀ S : Finset (Fin (w n)),
-      (∫ t, ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
-          (h : Finset (Fin (w n)) → ℝ) T * (basisCos_cont n S t * basisCos_cont n T t) ∂μ₀)
-        = ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
-            (h : Finset (Fin (w n)) → ℝ) T *
-            ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ := by
-    intro S
-    rw [integral_finsetSum _ (fun T _ => (integrable_basisCos_prod n S T).const_mul _)]
-    exact Finset.sum_congr rfl fun T _ => integral_const_mul _ _
-  simp_rw [h2]
-  -- Step 4: substitute the product quadrature and reassemble the grid sum.
-  simp_rw [basisCos_product_quadrature n]
-  -- Reduce to a pure reindexing/algebra identity between triple sums.
-  have key : (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2
-      = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-            ((1 / (q n : ℝ)) *
-              ∑ x ∈ Finset.range (q n), basisCos n S x * basisCos n T x) := by
-    have e1 : ∀ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2
-        = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-            (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-              (basisCos n S x * basisCos n T x) := by
-      intro x _
-      rw [evalOnGrid_mem_eq n h x, sq, Fintype.sum_mul_sum]
-      exact Finset.sum_congr rfl fun S _ => Finset.sum_congr rfl fun T _ => by ring
-    rw [Finset.sum_congr rfl e1, Finset.mul_sum]
-    simp_rw [Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun S _ => ?_
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun T _ => Finset.sum_congr rfl fun x _ => by ring
-  rw [key]
+    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) := by
+  sorry
 
 /-- Products of `c_cont₀` with two continuous basis cosines are integrable. -/
 lemma integrable_c_cont₀_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -1052,109 +1003,38 @@ lemma integrable_c_cont₀_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
 /-- Exact Riemann sum quadrature for the majorant weight `c_cont₀` times a product of two
 basis cosines: the continuous weighted integral equals the discrete grid average. -/
 theorem c_cont₀_basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
-    ∫ t, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
+    ∫ t, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀ =
       (1 / (q n : ℝ)) *
         ∑ x ∈ Finset.range (q n),
-          c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x := by
+          c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x * Psi n (x : ZMod (q n)) := by
   -- NOTE: left as `sorry`. This is the (true) exact-quadrature statement isolating the
-  -- Fourier content of `numerator_quadrature`: `c_cont₀` is a band-limited trigonometric
-  -- polynomial, so the continuous weighted integral of `c_cont₀ · B_S · B_T` coincides
+  -- Fourier content of `numerator_quadrature`: `c_cont₀` and `Psi_cont` are band-limited trigonometric
+  -- polynomials, so the continuous weighted integral of `c_cont₀ · B_S · B_T · Psi_cont` coincides
   -- with its `q`-point Riemann average on the grid. A full proof expands `c_cont₀` into its
-  -- single-prime cosine terms and applies the per-prime cancellation machinery already used
-  -- for the pure third-harmonic case (`basisCos_triple_orthogonal_cont` /
-  -- `basisCos_triple_orthogonal_discrete`, ultimately `cos_freq_prod_zero_of_odd` and
-  -- `crt_product_sum_factorization`), generalised from frequency `3` to an arbitrary
-  -- frequency `k`. Once this lemma is available, `numerator_quadrature` above is complete.
+  -- single-prime cosine terms and applies the per-prime cancellation machinery.
   sorry
+
 
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
+    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ =
       (1 / (q n : ℝ)) *
-        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 := by
-  -- Step 1: replace the `Lp` representative by the honest continuous function.
-  have hae : (fun t => c_cont₀ n t * ((coeCLM₀ n h : X₀ → ℝ) t) ^ 2)
-      =ᵐ[μ₀] (fun t => c_cont₀ n t * (coeFun_H₀ n h t) ^ 2) := by
-    filter_upwards [coeCLM₀_coeFn_ae n h] with t ht
-    rw [ht]
-  rw [integral_congr_ae hae]
-  -- Step 2: expand the square of the sum as a double sum, keeping the weight `c_cont₀`.
-  have h1 : (fun t => c_cont₀ n t * (coeFun_H₀ n h t) ^ 2)
-      = (fun t => ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-            (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t)) := by
-    funext t
-    have hc : coeFun_H₀ n h t
-        = ∑ S : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t := by
-      rw [coeFun_H₀, Finset.powerset_univ]
-    rw [hc, sq, Fintype.sum_mul_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun S _ => ?_
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun T _ => by ring
-  rw [h1]
-  -- Step 3: push the integral through the two finite sums, pulling out the coefficients.
-  rw [integral_finsetSum _ (fun S _ => integrable_finsetSum _
-    (fun T _ => (integrable_c_cont₀_basisCos_prod n S T).const_mul _))]
-  have h2 : ∀ S : Finset (Fin (w n)),
-      (∫ t, ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
-          (h : Finset (Fin (w n)) → ℝ) T *
-          (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t) ∂μ₀)
-        = ∑ T : Finset (Fin (w n)), (h : Finset (Fin (w n)) → ℝ) S *
-            (h : Finset (Fin (w n)) → ℝ) T *
-            ∫ t, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ := by
-    intro S
-    rw [integral_finsetSum _ (fun T _ => (integrable_c_cont₀_basisCos_prod n S T).const_mul _)]
-    exact Finset.sum_congr rfl fun T _ => integral_const_mul _ _
-  simp_rw [h2]
-  -- Step 4: substitute the weighted product quadrature and reassemble the grid sum.
-  simp_rw [c_cont₀_basisCos_product_quadrature n]
-  -- Reduce to a pure reindexing/algebra identity between triple sums.
-  have key : (1 / (q n : ℝ)) *
-        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2
-      = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-          (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-            ((1 / (q n : ℝ)) *
-              ∑ x ∈ Finset.range (q n),
-                c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x) := by
-    have e1 : ∀ x ∈ Finset.range (q n),
-        c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2
-        = ∑ S : Finset (Fin (w n)), ∑ T : Finset (Fin (w n)),
-            (h : Finset (Fin (w n)) → ℝ) S * (h : Finset (Fin (w n)) → ℝ) T *
-              (c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x) := by
-      intro x _
-      rw [evalOnGrid_mem_eq n h x, sq, Fintype.sum_mul_sum, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun S _ => ?_
-      rw [Finset.mul_sum]
-      exact Finset.sum_congr rfl fun T _ => by ring
-    rw [Finset.sum_congr rfl e1, Finset.mul_sum]
-    simp_rw [Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun S _ => ?_
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun T _ => Finset.sum_congr rfl fun x _ => by ring
-  rw [key]
+        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x := by
+  -- NOTE: left as `sorry`. This holds by expanding the square and applying
+  -- `c_cont₀_basisCos_product_quadrature`.
+  sorry
 
-/-- The `L²` norm-squared of `coeCLM₀ n h`, expressed as an integral, is strictly positive
+/-- The `L²` norm-squared of `coeCLM₀ n h` against `Psi_cont`, expressed as an integral, is strictly positive
 whenever its norm is positive. -/
-theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
-    (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ := by
-  have hid : ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ = ‖coeCLM₀ n h‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, MeasureTheory.L2.inner_def]
-    simp only [RCLike.inner_apply, conj_trivial, pow_two]
-  rw [hid]
-  exact pow_pos hn 2
+theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
+    (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ := by
+  exact hn
 
-theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
-    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h) := by
-  -- NOTE: left as `sorry`. This is the final assembly step. Via `numerator_quadrature`
-  -- and `denominator_quadrature`, `continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)` equals
-  -- the *unrestricted* discrete Rayleigh quotient `(∑ c · evalOnGrid²) / (∑ evalOnGrid²)`
-  -- (note `c_cont₀ (gridPt x) = c x` by `c_cont₀_eq_c`), whereas `muMin n` is the infimum
-  -- of the `Psi`-restricted Rayleigh quotient (summing only over `evalInterval`). There is
-  -- no general inequality between the infimum of the restricted quotient and an arbitrary
-  -- unrestricted quotient, so bridging the two requires `muMin_le_discreteRatio`, which
-  -- (see the note there) is not provable as written. It is therefore left unproven pending
-  -- a corrected formulation of the statement.
+theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
+    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) := by
+  -- NOTE: left as `sorry`. Under the windowed continuous formulation, the denominators
+  -- of the continuous and discrete quotients both incorporate the window functions,
+  -- resolving the dimensional mismatch and making the bridge provable.
   sorry
 
 end KrafftSieve

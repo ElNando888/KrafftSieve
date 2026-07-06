@@ -34,9 +34,9 @@ def integralOperator : Lp V 2 μ →L[𝕜] Lp V 2 μ := sorry
 /--
 The continuous Rayleigh quotient of a function in L^2.
 -/
-noncomputable def continuousRatio (c_cont : X → ℝ) (f : Lp ℝ 2 μ) : ℝ :=
-  let num := ∫ x, c_cont x * (f : X → ℝ) x ^ 2 ∂μ
-  let den := ∫ x, (f : X → ℝ) x ^ 2 ∂μ
+noncomputable def continuousRatio (c_cont : X → ℝ) (Psi_cont : X → ℝ) (f : Lp ℝ 2 μ) : ℝ :=
+  let num := ∫ x, c_cont x * (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ
+  let den := ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ
   if den = 0 then 0 else num / den
 
 omit [TopologicalSpace X] [CompactSpace X] [BorelSpace X] [IsFiniteMeasure μ] in
@@ -59,62 +59,14 @@ lemma mul_sq_indicatorConstLp_ae (c_cont : X → ℝ) (s : Set X) (hs : Measurab
   by_cases hx' : x ∈ s <;> simp_all [Set.indicator]
   cases hx <;> simp [*]
 
-omit [TopologicalSpace X] [CompactSpace X] [BorelSpace X] in
 /--
 Theorem: There exists a continuous test function in L^2 whose continuous
 Rayleigh quotient is strictly less than 1.
 -/
-theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ)
-    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < μ s ∧ ∀ x ∈ s, c_cont x < 1) :
-    ∃ f : Lp ℝ 2 μ, ‖f‖ > 0 ∧ continuousRatio μ c_cont f < 1 := by
-  obtain ⟨s, hs_meas, hs_pos, hs_lt⟩ := h_dip
-  have h_ne_top := MeasureTheory.measure_ne_top μ s
-  let f_test := MeasureTheory.indicatorConstLp 2 hs_meas h_ne_top (1 : ℝ)
-  refine ⟨f_test, ?_, ?_⟩
-  · rw [gt_iff_lt, norm_pos_iff]
-    intro h
-    have h_norm := congr_arg Norm.norm h
-    rw [norm_zero, MeasureTheory.norm_indicatorConstLp] at h_norm
-    · simp only [norm_one, ENNReal.toReal_ofNat, one_mul] at h_norm
-      rw [MeasureTheory.measureReal_def] at h_norm
-      have h_pos_real : 0 < (μ s).toReal :=
-        ENNReal.toReal_pos hs_pos.ne' h_ne_top
-      have h_norm_pos : 0 < (μ s).toReal ^ (1 / 2 : ℝ) := by positivity
-      linarith [h_norm, h_norm_pos]
-    · norm_num
-    · simp
-  · have h_integrals :
-        (∫ x, c_cont x * (f_test : X → ℝ) x ^ 2 ∂μ) = ∫ x in s, c_cont x ∂μ ∧
-        (∫ x, (f_test : X → ℝ) x ^ 2 ∂μ) = (μ s).toReal := by
-      refine ⟨?_, ?_⟩
-      · rw [← MeasureTheory.integral_indicator hs_meas]
-        exact MeasureTheory.integral_congr_ae
-          (mul_sq_indicatorConstLp_ae μ c_cont s hs_meas h_ne_top)
-      · rw [MeasureTheory.integral_congr_ae (sq_indicatorConstLp_ae μ s hs_meas h_ne_top)]
-        rw [MeasureTheory.integral_indicator hs_meas]
-        simp [MeasureTheory.measureReal_def]
-    have h_den_pos : (∫ x, (f_test : X → ℝ) x ^ 2 ∂μ) > 0 := by
-      rw [h_integrals.2]
-      exact ENNReal.toReal_pos hs_pos.ne' h_ne_top
-    have h_den_ne : (∫ x, (f_test : X → ℝ) x ^ 2 ∂μ) ≠ 0 := ne_of_gt h_den_pos
-    rw [continuousRatio, if_neg h_den_ne, h_integrals.1, h_integrals.2]
-    by_cases hInt : MeasureTheory.IntegrableOn c_cont s μ
-    · rw [div_lt_one (ENNReal.toReal_pos hs_pos.ne' h_ne_top)]
-      have h_integral_lt : 0 < ∫ x in s, (1 - c_cont x) ∂μ := by
-        refine (MeasureTheory.setIntegral_pos_iff_support_of_nonneg_ae ?_ ?_).2 ?_
-        · filter_upwards [MeasureTheory.ae_restrict_mem hs_meas] with x hx using
-            sub_nonneg.2 (le_of_lt (hs_lt x hx))
-        · exact MeasureTheory.Integrable.sub (MeasureTheory.integrable_const _) hInt
-        · exact hs_pos.trans_le
-            (MeasureTheory.measure_mono fun x hx => ⟨ne_of_gt (sub_pos.mpr (hs_lt x hx)), hx⟩)
-      rw [MeasureTheory.integral_sub (MeasureTheory.integrable_const _) hInt] at h_integral_lt
-      rw [MeasureTheory.setIntegral_const (1 : ℝ)] at h_integral_lt
-      simp only [smul_eq_mul, mul_one] at h_integral_lt
-      rw [MeasureTheory.measureReal_def] at h_integral_lt
-      linarith [h_integral_lt]
-    · rw [MeasureTheory.integral_undef hInt]
-      simp only [zero_div]
-      exact zero_lt_one
+theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) (Psi_cont : X → ℝ) [Fact (Continuous Psi_cont)]
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < ∫ x in s, Psi_cont x ∂μ ∧ ∀ x ∈ s, c_cont x < 1) :
+    ∃ f : Lp ℝ 2 μ, (0 : ℝ) < ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ ∧ continuousRatio μ c_cont Psi_cont f < 1 := by
+  sorry
 
 /--
 The continuous bilinear form associated with the weighted L^2 inner product.
@@ -149,37 +101,14 @@ theorem quadratic_form_continuous (c : X → ℝ) [Fact (Continuous c)] (f : Lp 
     (weightedBilinearForm μ c).continuous.continuousAt continuous_id.continuousAt
 
 /-
-Theorem: The continuous Rayleigh quotient is continuous at any non-zero function in L^2.
+Theorem: The continuous Rayleigh quotient is continuous at any function in L^2 with positive windowed norm.
 -/
 omit [IsFiniteMeasure μ] in
 theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)]
-    (f : Lp ℝ 2 μ) (hf : ‖f‖ > 0) :
-    ContinuousAt (fun g : Lp ℝ 2 μ ↦ continuousRatio μ c_cont g) f := by
-  have h_den_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) = (fun g ↦ ‖g‖ ^ 2) := by
-    ext g
-    rw [← real_inner_self_eq_norm_sq g]
-    rw [L2.inner_def]
-    simp
-  have h_num_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) f :=
-    quadratic_form_continuous μ c_cont f
-  have h_den_cont : ContinuousAt (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f := by
-    rw [h_den_eq]
-    exact continuous_norm.continuousAt.pow 2
-  have h_den_pos : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f > 0 := by
-    have : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 ∂μ) f = ‖f‖ ^ 2 := by
-      exact congr_fun h_den_eq f
-    rw [this]
-    exact sq_pos_of_pos hf
-  have h_eq : (fun g : Lp ℝ 2 μ ↦
-      (∫ x, c_cont x * (g : X → ℝ) x ^ 2 ∂μ) / (∫ x, (g : X → ℝ) x ^ 2 ∂μ)) =ᶠ[𝓝 f]
-      (fun g ↦ continuousRatio μ c_cont g) := by
-    have h_eventually_pos : ∀ᶠ g in 𝓝 f, (fun h : Lp ℝ 2 μ ↦ ∫ x, (h : X → ℝ) x ^ 2 ∂μ) g > 0 :=
-      h_den_cont.eventually_const_lt h_den_pos
-    filter_upwards [h_eventually_pos] with g hg_pos
-    simp only [continuousRatio]
-    have hg_ne : (∫ x, (g : X → ℝ) x ^ 2 ∂μ) ≠ 0 := ne_of_gt hg_pos
-    rw [if_neg hg_ne]
-  exact (ContinuousAt.div h_num_cont h_den_cont (ne_of_gt h_den_pos)).congr h_eq
+    (Psi_cont : X → ℝ) [Fact (Continuous Psi_cont)]
+    (f : Lp ℝ 2 μ) (hf : (∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ) > 0) :
+    ContinuousAt (fun g : Lp ℝ 2 μ ↦ continuousRatio μ c_cont Psi_cont g) f := by
+  sorry
 
 
 /-- Mercer's Theorem (Refined with Tjeerd's feedback): -/
