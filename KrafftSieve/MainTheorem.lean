@@ -107,7 +107,46 @@ theorem mu_min_eventually_lt_one (μ : Measure X) [IsFiniteMeasure μ]
         (numerator_error n + muMin n * denominator_error n) * ‖coeCLM_seq n h‖ ^ 2 /
           (∫ x, ((coeCLM_seq n h : X → ℝ) x) ^ 2 * Psi_cont x ∂μ)) :
     ∃ N_0 : ℕ, ∀ n ≥ N_0, muMin n < 1 := by
-  sorry
+  -- Step 1: obtain a continuous witness with ratio < 1 and positive windowed norm.
+  obtain ⟨f, hf_pos, hf_lt⟩ := exists_continuous_ratio_lt_one μ c_cont Psi_cont h_dip
+  -- Step 2: the projected sequence converges strongly to `f` in `L²`.
+  have h_conv : Filter.Tendsto
+      (fun n ↦ ‖coeCLM_seq n (projectionToRKHS n f) - f‖) Filter.atTop (nhds 0) :=
+    projection_strong_convergence μ H_seq coeCLM_seq projectionToRKHS f
+      h_orthogonal h_mono h_dense
+  -- hence the continuous Rayleigh quotients converge to that of `f`.
+  have h_ratio : Filter.Tendsto
+      (fun n ↦ continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)))
+      Filter.atTop (nhds (continuousRatio μ c_cont Psi_cont f)) :=
+    continuousRatio_limit μ c_cont Psi_cont f hf_pos
+      (fun n ↦ coeCLM_seq n (projectionToRKHS n f)) h_conv
+  -- Step 3/4: the denominator converges to a positive limit, hence is eventually positive.
+  have h_fseq : Filter.Tendsto (fun n ↦ coeCLM_seq n (projectionToRKHS n f))
+      Filter.atTop (nhds f) := tendsto_iff_norm_sub_tendsto_zero.mpr h_conv
+  have hDcont : ContinuousAt
+      (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 * Psi_cont x ∂μ) f := by
+    have h_eq : (fun g : Lp ℝ 2 μ ↦ ∫ x, (g : X → ℝ) x ^ 2 * Psi_cont x ∂μ)
+        = (fun g : Lp ℝ 2 μ ↦ ∫ x, Psi_cont x * (g : X → ℝ) x ^ 2 ∂μ) := by
+      funext g; congr 1; funext x; ring
+    rw [h_eq]
+    exact quadratic_form_continuous μ Psi_cont f
+  have hDen : Filter.Tendsto
+      (fun n ↦ ∫ x, (coeCLM_seq n (projectionToRKHS n f) : X → ℝ) x ^ 2 * Psi_cont x ∂μ)
+      Filter.atTop (nhds (∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ)) :=
+    hDcont.tendsto.comp h_fseq
+  have h_ev_den : ∀ᶠ n in Filter.atTop,
+      0 < ∫ x, (coeCLM_seq n (projectionToRKHS n f) : X → ℝ) x ^ 2 * Psi_cont x ∂μ :=
+    hDen.eventually (lt_mem_nhds hf_pos)
+  have h_ev_ratio : ∀ᶠ n in Filter.atTop,
+      continuousRatio μ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) < 1 :=
+    h_ratio.eventually_lt_const hf_lt
+  -- Combine both eventual facts and conclude via the quadrature bound.
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp (h_ev_ratio.and h_ev_den)
+  refine ⟨N, fun n hn ↦ ?_⟩
+  obtain ⟨hr, hd⟩ := hN n hn
+  have hq := h_quadrature n (projectionToRKHS n f) hd
+  simp only [numerator_error, denominator_error, mul_zero, add_zero, zero_mul, zero_div] at hq
+  linarith [hq, hr]
 
 /--
 Theorem: The optimal multidimensional sieve weight achieves a ratio strictly less than 1
