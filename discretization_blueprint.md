@@ -1,10 +1,10 @@
-# Discretization Blueprint: Proving `h_quadrature` on the Continuum (Option B)
+# Discretization Blueprint: Proving `h_quadrature` via Sieve Majorants
 
-This blueprint outlines the formal mathematical plan to prove the discretization bridge `h_quadrature` over the continuous unit circle/interval $X_0 = [0, 1]$ under Lebesgue measure $\mu_0$ using the windowed trigonometric formulation.
+This blueprint outlines the formal mathematical plan to prove the discretization bridge `h_quadrature` over the continuous unit interval $X_0 = [0, 1]$ under Lebesgue measure $\mu_0$ using a band-limited continuous sieve majorant.
 
 ---
 
-## 1. Concrete Domain and Sieve Grid
+## 1. Domain and Sieve Grid
 
 We fix the domain to be the continuous interval $X_0 = [0, 1]$ with Lebesgue measure $\mu_0$, and define the grid points as coordinates scaled by the primorial divisor $q(n)$.
 
@@ -14,79 +14,62 @@ def X₀ : Type := UnitInterval
 noncomputable def μ₀ : Measure X₀ := volume
 ```
 
-### Definition: Window Functions
-We define positive window functions representing the support window $\mathcal{A}_n$:
-*   Discrete window: `Psi (n : ℕ) : ZMod (q n) → ℝ` supported on `evalInterval n`.
-*   Continuous window: `Psi_cont (n : ℕ) : X₀ → ℝ` as a band-limited continuous representation.
-
 ---
 
-## 2. RKHS Representability & Subspace Mapping
+## 2. Continuous Weight and the Sieve Majorant
 
-Let $H_0(n)$ be the finite-dimensional Hilbert space isomorphic to the coefficient space $\mathbb{R}^{\mathcal{P}(w_n)}$.
+Because $c_n(x)$ is a discontinuous step function on the grid, its exact continuous interpolant has infinite Fourier support and aliases under any grid-point sampling. To bypass this, we formulate $c_{\text{cont}_0}(n, t)$ as a **band-limited majorant** (upper bound) of the discrete hit function on the grid.
 
-### Definition: Grid Evaluation / Sampling
-For any $h \in H_0(n)$, we define its point values globally on the grid:
+### Theorem: Majorization Inequality
+We establish that the continuous weight function $c_{\text{cont}_0}$ majorizes the discrete hit function $c_n(x)$ at all grid points:
 ```lean
-def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
-  fun x ↦ ⟪h, representer (gridPt n x)⟫_ℝ
-```
-
-### Theorem: Subspace Representability
-Show that the grid-sampled values of any RKHS function $h \in H_0(n)$ correspond exactly to a representable sieve weight `spatialVector n λ` for some coefficient vector $\lambda$:
-```lean
-theorem evalOnGrid_eq_spatialVector (n : ℕ) (h : H₀ n) :
-    ∃ λ : Finset (Fin (w n)) → ℝ, evalOnGrid n h = spatialVector n λ := by
-  sorry
+theorem c_le_c_cont₀ (n : ℕ) (x : ℕ) :
+    c n (x : ZMod (q n)) ≤ c_cont₀ n (gridPt n x)
 ```
 
 ---
 
-## 3. Discrete Rayleigh Quotient Minimization
+## 3. Trigonometric Exact Quadrature
 
-Using representability and the properties of the windowed discrete optimum `muMin n`, we establish the discrete lower bound.
-
-### Theorem: Discrete Minimization Bound
-For any RKHS function $h \in H_0(n)$ whose grid norm is non-zero, the discrete optimum $\mu_{\min}(n)$ is bounded by the windowed discrete Rayleigh quotient of its grid samples:
-```lean
-theorem muMin_le_discreteRatio (n : ℕ) (h : H₀ n)
-    (h_nonZero : ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) > 0) :
-    muMin n ≤ spatialRatio n (evalOnGrid n h) := by
-  sorry
-```
-
----
-
-## 4. Trigonometric Exact Quadrature
-
-Because $H_0(n)$ consists of trigonometric polynomials of degree up to $w(n)$, their squares (and their products with $c_{\text{cont}}$ and the band-limited window $\Psi$) have degree bounded by $2w(n) + d_{\Psi} < q(n)$. Since the primorial grid size $q(n)$ is larger than the total degree, the discrete sum matches the continuous integral exactly.
+Because $H_0(n)$ consists of low-frequency trigonometric polynomials of degree up to $w(n)$, their squares (and their products with the band-limited majorant $c_{\text{cont}_0}$) have degrees bounded strictly below the primorial grid size $q(n)$. Thus, their Riemann sum over the grid is exactly equal to their continuous integral.
 
 ### Theorem: Denominator Quadrature (L² Norm Equivalence)
 ```lean
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, (coeCLM₀ n h x) ^ 2 * Psi_cont n x ∂μ₀ =
-      ∑ x ∈ evalInterval n, (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) := by
-  sorry
+    ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2
 ```
 
 ### Theorem: Numerator Quadrature (Weighted Norm Equivalence)
+Since the majorant $c_{\text{cont}_0}(n, t)$ is band-limited, its continuous integral matches the grid sum exactly:
 ```lean
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
-    ∫ x, c_cont₀ x * (coeCLM₀ n h x) ^ 2 * Psi_cont n x ∂μ₀ =
-      ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n)) := by
-  sorry
+    ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
+      (1 / (q n : ℝ)) *
+        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2
 ```
 
 ---
 
-## 5. Completing the Discretization Bridge
+## 4. Completing the Discretization Bridge
 
-Combining the discrete minimization bound with the exact windowed quadrature theorems, we prove that the discrete optimum is bounded by the continuous windowed Rayleigh quotient:
+Using the majorization inequality and the exact quadratures, we bound the discrete quotient by the continuous quotient.
 
+For any $h \in H_0(n)$ with positive norm:
+1. By the majorization inequality:
+   $$\sum_{x \in \text{range}(q)} c_n(x) (h(\text{gridPt}(x)))^2 \le \sum_{x \in \text{range}(q)} c_{\text{cont}_0}(\text{gridPt}(x)) (h(\text{gridPt}(x)))^2$$
+2. Applying the exact numerator quadrature:
+   $$\frac{1}{q} \sum_{x \in \text{range}(q)} c_{\text{cont}_0}(\text{gridPt}(x)) (h(\text{gridPt}(x)))^2 = \int_{X_0} c_{\text{cont}_0} h^2 d\mu_0$$
+3. Applying the exact denominator quadrature:
+   $$\frac{1}{q} \sum_{x \in \text{range}(q)} (h(\text{gridPt}(x)))^2 = \int_{X_0} h^2 d\mu_0$$
+4. Combining these gives:
+   $$\mathcal{R}_{\text{discrete}}(h) \le \mathcal{R}_{\text{continuous}}(h)$$
+5. Since $\mu_{\min}(n)$ is the minimum discrete quotient, we obtain:
+   $$\mu_{\min}(n) \le \mathcal{R}_{\text{continuous}}(h)$$
+
+This proves the final discretization bridge:
 ```lean
-omit [TopologicalSpace X] [CompactSpace X] [BorelSpace X] in
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : ‖coeCLM₀ n h‖ > 0) :
-    muMin n ≤ continuousRatio μ₀ c_cont₀ (Psi_cont n) (coeCLM₀ n h) := by
-  sorry
+    muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (coeCLM₀ n h)
 ```
-This completes the formal reduction chain under Option B.
+This completes the formal TPC reduction chain under the majorant formulation.

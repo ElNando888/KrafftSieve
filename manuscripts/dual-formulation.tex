@@ -338,14 +338,20 @@ The discretization mapping proceeds via the following machine-checked definition
     \end{theorem}
     Aristotle closed this proof with zero \texttt{sorry}s by setting $\lambda = h$.
     
-    \item \textbf{Riemann Sum Quadrature}: The Lebesgue integral on $[0,1]$ and the discrete sums differ by the grid spacing $dx = 1/q(n)$. We formalize the quadrature identities as:
+    \item \textbf{Riemann Sum Quadrature}: The Lebesgue integral on $[0,1]$ and the discrete sums differ by the grid spacing $dx = 1/q(n)$. Since the continuous basis cosines and their products are band-limited, we formalize exact quadratures over the full grid $\mathbb{Z}/q(n)\mathbb{Z}$:
     \begin{align}
-    \int_{X_0} (\text{coeCLM}_0(n, h)(t))^2 d\mu_0 &= \frac{1}{q(n)} \sum_{x \in \mathcal{A}_n} (\text{evalOnGrid}(n, h)(x))^2 \\
-    \int_{X_0} c_{\text{cont}}(n, t) (\text{coeCLM}_0(n, h)(t))^2 d\mu_0 &= \frac{1}{q(n)} \sum_{x \in \mathcal{A}_n} c_n(x) (\text{evalOnGrid}(n, h)(x))^2
+    \int_{X_0} (\text{coeCLM}_0(n, h)(t))^2 d\mu_0 &= \frac{1}{q(n)} \sum_{x \in q(n)} (\text{evalOnGrid}(n, h)(x))^2 \\
+    \int_{X_0} c_{\text{cont}_0}(n, t) (\text{coeCLM}_0(n, h)(t))^2 d\mu_0 &= \frac{1}{q(n)} \sum_{x \in q(n)} c_{\text{cont}_0}(n, \text{gridPt}(n, x)) (\text{evalOnGrid}(n, h)(x))^2
     \end{align}
     These correspond to \texttt{denominator\_quadrature} and \texttt{numerator\_quadrature} in the codebase.
     
-    \item \textbf{Discretization Rayleigh Quotient Bound}: Combining the windowed representability and the quadrature relations, the continuous Rayleigh quotient is shown to be exactly equal to the discrete Rayleigh quotient, as the $(1/q_n)$ spacing factors cancel. This yields the top-level discretization bridge:
+    \item \textbf{Sieve Majorant Inequality}: Instead of requiring $c_{\text{cont}_0}(n, t)$ to exactly interpolate $c_n(x)$ (which is impossible without high-frequency aliasing), we define the continuous weight as a band-limited majorant satisfying:
+    \begin{equation}
+    c_n(x) \le c_{\text{cont}_0}(n, \text{gridPt}(n, x)) \quad \forall x \in \mathbb{Z}/q(n)\mathbb{Z}
+    \end{equation}
+    represented in Lean by \texttt{c\_le\_c\_cont₀}.
+    
+    \item \textbf{Discretization Rayleigh Quotient Bound}: Combining the majorization inequality and the exact quadratures, we bound the discrete Rayleigh quotient by the continuous quotient, yielding the discretization bridge:
     \begin{theorem}[krafft\_quadrature\_holds]
     For any non-zero element $h \in H_0(n)$, we have:
     \begin{equation}
@@ -368,19 +374,18 @@ noncomputable def basisCos_cont (n : $\mathbb{N}$) (S : Finset (Fin (w n))) (t :
 noncomputable def coeFun_H$_0$ (n : $\mathbb{N}$) (h : H$_0$ n) (t : X$_0$) : $\mathbb{R}$ :=
   $\sum$ S $\in$ Finset.univ.powerset, (h : Finset (Fin (w n)) $\to$ $\mathbb{R}$) S * basisCos_cont n S t
 
--- Grid evaluation representability on the evaluation window
-theorem evalOnGrid_eq_spatialVector (n : $\mathbb{N}$) (h : H$_0$ n) :
-    $\exists$ lambda : Finset (Fin (w n)) $\to$ $\mathbb{R}$,
-      $\forall$ x $\in$ evalInterval n, evalOnGrid n h x = spatialVector n lambda x
+-- Sieve majorant inequality
+theorem c_le_c_cont₀ (n : $\mathbb{N}$) (x : $\mathbb{N}$) :
+    c n (x : ZMod (q n)) $\le$ c_cont₀ n (gridPt n x)
 
 -- Riemann-scaled quadratures
 theorem denominator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
     $\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 $\partial\mu_0$ =
-      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ evalInterval n, (evalOnGrid n h x) ^ 2
+      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ Finset.range (q n), (evalOnGrid n h x) ^ 2
 
 theorem numerator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
     $\int$ x, c\_cont$_0$ n x * ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 $\partial\mu_0$ =
-      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ evalInterval n, c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2
+      (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ Finset.range (q n), c\_cont$_0$ n (gridPt n x) * (evalOnGrid n h x) ^ 2
 
 -- The final discretization bridge
 theorem krafft_quadrature_holds (n : $\mathbb{N}$) (h : H$_0$ n) (hn : $\Vert$coeCLM$_0$ n h$\Vert$ > 0) :

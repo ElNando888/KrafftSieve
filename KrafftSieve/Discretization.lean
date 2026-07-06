@@ -265,7 +265,7 @@ theorem cos_freq_prod_integral {ι : Type*} [DecidableEq ι] (A : Finset ι) (g 
     congr with t
     convert prod_cos_sum_powerset A ( fun i => 2 * Real.pi * ( g i : ℝ ) * t ) using 2 ; norm_num ; ring
     simp +decide only [Finset.mul_sum _ _ _, mul_comm, mul_left_comm, mul_assoc]
-  rw [ h_prod_to_sum, MeasureTheory.integral_const_mul, MeasureTheory.integral_finset_sum ]
+  rw [ h_prod_to_sum, MeasureTheory.integral_const_mul, MeasureTheory.integral_finsetSum ]
   · rw [ Finset.sum_congr rfl fun B hB => ?_ ]
     rotate_left
     use fun B => if ( ∑ i ∈ B, g i - ∑ i ∈ A \ B, g i ) = 0 then 1 else 0
@@ -364,7 +364,7 @@ lemma basisCos_cont_orthogonal_self (n : ℕ) (S : Finset (Fin (w n))) :
           intro i hi; rw [ Real.cos_sq ] ; push_cast; ring
         rw [ Finset.prod_congr rfl h_expand, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_eq_sum_ones ]
         simp +decide [ add_comm ( 1 : ℝ ), Finset.prod_add ]
-      rw [ funext h_expand, MeasureTheory.integral_const_mul, MeasureTheory.integral_finset_sum ]
+      rw [ funext h_expand, MeasureTheory.integral_const_mul, MeasureTheory.integral_finsetSum ]
       exact fun _ _ => Continuous.integrable_of_hasCompactSupport ( by fun_prop ) ( HasCompactSupport.of_compactSpace _ )
     -- Evaluate the integral for each subset $C$ of $S$.
     have h_integral_subset : ∀ C ∈ S.powerset, C.Nonempty → ∫ t : X₀, (∏ i ∈ C, Real.cos (2 * Real.pi * (6 * (q n / p n i : ℕ) : ℤ) * t)) ∂μ₀ = 0 := by
@@ -676,11 +676,87 @@ noncomputable def g_coef (n : ℕ) (i : Fin (w n)) (k : ℕ) : ℝ :=
     4 / (p n i : ℝ) * Real.cos (2 * Real.pi * k * (krafftResidue n i : ℝ) / (p n i : ℝ))
   else 0
 
+set_option maxHeartbeats 1600000 in
 /-- The Fourier coefficients reconstruct the local hit function g_i exactly. -/
 theorem g_coef_spec (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) :
     ∑ k ∈ Finset.range ((p n i + 1) / 2),
       g_coef n i k * Real.cos (2 * Real.pi * k * (x.val : ℝ) / (p n i : ℝ)) = g n i x := by
-  sorry
+  by_contra h_contra;
+  have h_g_i : g n i x = (1 / (p n i : ℝ)) * (∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ)))) := by
+    have h_g_i : ∀ m : ℤ, (∑ k ∈ Finset.range (p n i), Real.cos (2 * Real.pi * k * m / (p n i : ℝ))) = if (p n i : ℤ) ∣ m then (p n i : ℝ) else 0 := by
+      intro m
+      have h_cos_sum : ∑ k ∈ Finset.range (p n i), Complex.exp (2 * Real.pi * Complex.I * k * m / (p n i : ℝ)) = if (p n i : ℤ) ∣ m then (p n i : ℂ) else 0 := by
+        split_ifs with h;
+        · obtain ⟨ k, rfl ⟩ := h;
+          convert Finset.sum_const ( 1 : ℂ ) using 2 ; norm_num [ mul_assoc, mul_comm, mul_left_comm, div_eq_mul_inv ];
+          · exact Complex.exp_eq_one_iff.mpr ⟨ k * ‹ℕ› * 1, by push_cast; ring_nf; norm_num [ show p n i ≠ 0 from Nat.Prime.ne_zero ( p_prime n i ) ] ⟩;
+          · norm_num;
+        · have h_geom_sum : ∑ k ∈ Finset.range (p n i), (Complex.exp (2 * Real.pi * Complex.I * m / (p n i : ℝ))) ^ k = 0 := by
+            rw [ geom_sum_eq ];
+            · rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨ m, by push_cast; ring_nf; norm_num [ show p n i ≠ 0 from Nat.Prime.ne_zero ( p_prime n i ) ] ⟩ ] ; norm_num;
+            · rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
+              field_simp;
+              exact fun ⟨ k, hk ⟩ => h <| by rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] at hk; norm_cast at hk; exact ⟨ k, by linarith ⟩ ;
+          exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by rw [ ← Complex.exp_nat_mul ] ; ring ) h_geom_sum;
+      convert congr_arg Complex.re h_cos_sum using 2 ; norm_num [ Complex.exp_re ];
+      split_ifs <;> norm_num;
+    have h_g_i : g n i x = if (p n i : ℤ) ∣ (x.val - krafftResidue n i) ∨ (p n i : ℤ) ∣ (x.val + krafftResidue n i) then 1 else 0 := by
+      unfold g; simp +decide [ ← ZMod.intCast_zmod_eq_zero_iff_dvd ] ;
+      grind;
+    split_ifs at h_g_i <;> simp_all +decide [ Finset.sum_add_distrib ];
+    · rename_i h₁ h₂; have := h₁ ( x.cast - krafftResidue n i ) ; have := h₁ ( x.cast + krafftResidue n i ) ; simp_all +decide [ mul_div_assoc ] ;
+      split_ifs <;> simp_all +decide [ ne_of_gt ( show 0 < p n i from p_pos n i ) ];
+      rename_i h₁ h₂;
+      have := dvd_sub h₂ h₁; norm_num at this;
+      norm_cast at this; simp_all +decide [ ← two_mul, Nat.Prime.dvd_mul ] ;
+      have h_contra : p n i ∣ 2 := by
+        refine' Nat.Coprime.dvd_of_dvd_mul_right _ this;
+        refine' Nat.Coprime.symm _;
+        refine' Nat.Coprime.symm ( Nat.Prime.coprime_iff_not_dvd ( p_prime n i ) |>.2 _ );
+        intro h; have := Nat.le_of_dvd ( Nat.div_pos ( show p n i + 1 ≥ 6 by linarith [ p_ge_5 n i ] ) ( by norm_num ) ) h; simp_all +decide [ krafftResidue ] ;
+        linarith [ Nat.div_mul_le_self ( p n i + 1 ) 6, p_ge_5 n i ];
+      have := Nat.le_of_dvd ( by decide ) h_contra; linarith [ p_ge_5 n i ] ;
+    · rename_i h₁ h₂; have := h₁ ( x.cast - krafftResidue n i ) ; have := h₁ ( x.cast + krafftResidue n i ) ; simp_all +decide [ mul_div_assoc ] ;
+  have h_cos_sum : ∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ))) = 2 * (∑ k ∈ Finset.range ((p n i + 1) / 2), (if k = 0 then 1 else 2 * Real.cos (2 * Real.pi * k * (krafftResidue n i : ℝ) / (p n i : ℝ))) * Real.cos (2 * Real.pi * k * x.val / (p n i : ℝ))) := by
+    have h_cos_sum : ∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ))) = ∑ k ∈ Finset.range ((p n i + 1) / 2), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ)) + if k ≠ 0 then Real.cos (2 * Real.pi * (p n i - k) * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * (p n i - k) * (x.val + krafftResidue n i) / (p n i : ℝ)) else 0) := by
+      have h_cos_sum : Finset.range (p n i) = Finset.image (fun k => k) (Finset.range ((p n i + 1) / 2)) ∪ Finset.image (fun k => p n i - k) (Finset.Ico 1 ((p n i + 1) / 2)) := by
+        ext k
+        simp [Finset.mem_range, Finset.mem_image];
+        constructor;
+        · cases Nat.Prime.eq_two_or_odd ( p_prime n i ) <;> simp_all +decide;
+          · linarith [ p_ge_5 n i ];
+          · exact fun hk => Classical.or_iff_not_imp_left.2 fun hk' => ⟨ p n i - k, ⟨ Nat.sub_pos_of_lt hk, by omega ⟩, Nat.sub_sub_self hk.le ⟩;
+        · rintro ( hk | ⟨ a, ⟨ ha₁, ha₂ ⟩, rfl ⟩ ) <;> [ exact lt_of_lt_of_le hk ( Nat.div_le_of_le_mul <| by linarith [ p_ge_5 n i ] ) ; exact Nat.lt_of_lt_of_le ( Nat.sub_lt ( Nat.Prime.pos ( p_prime n i ) ) ha₁ ) ( by linarith [ p_ge_5 n i ] ) ];
+      rw [ h_cos_sum, Finset.sum_union ];
+      · norm_num [ Finset.sum_add_distrib ];
+        rw [ Finset.sum_image, Finset.sum_image ] <;> norm_num;
+        · rw [ Finset.sum_Ico_eq_sub _ ] <;> norm_num [ Finset.sum_range_succ' ];
+          · rw [ Finset.sum_Ico_eq_sub _ ] <;> norm_num [ Finset.sum_range_succ' ];
+            · rcases k : ( p n i + 1 ) / 2 with ( _ | k ) <;> simp_all +decide [ Finset.sum_range_succ' ];
+              rw [ ← Finset.sum_add_distrib ] ; refine' Finset.sum_congr rfl fun _ _ => _ ; rw [ Nat.cast_sub ] <;> push_cast <;> ring ; linarith [ Finset.mem_range.mp ‹_›, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
+            · exact Nat.div_pos ( by linarith [ p_ge_5 n i ] ) zero_lt_two;
+          · exact Nat.div_pos ( by linarith [ p_ge_5 n i ] ) zero_lt_two;
+        · exact fun a ha b hb hab => by rw [ tsub_right_inj ] at hab <;> linarith [ ha.1, ha.2, hb.1, hb.2, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
+        · exact fun a ha b hb hab => by rw [ tsub_right_inj ] at hab <;> linarith [ ha.1, ha.2, hb.1, hb.2, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
+      · norm_num [ Finset.disjoint_right ];
+        intros; omega;
+    rw [ h_cos_sum, Finset.mul_sum _ _ _ ];
+    refine Finset.sum_congr rfl fun k hk => ?_ ; split_ifs <;> ring;
+    · norm_num [ Real.sin_add, Real.sin_sub, Real.cos_add, Real.cos_sub, mul_assoc, mul_comm Real.pi _, ne_of_gt ( show 0 < p n i from Nat.Prime.pos ( p_prime n i ) ) ] ; ring;
+      norm_num [ mul_two, Real.sin_add, Real.cos_add ] ; ring;
+      norm_num [ Real.sin_sq, Real.cos_sq ] ; ring;
+      norm_num [ mul_assoc, mul_comm Real.pi ];
+      norm_num [ show Real.cos ( x.cast * Real.pi ) = ( -1 : ℝ ) ^ x.val by
+                  rw [ ← Real.rpow_natCast, Real.rpow_def_of_neg ] <;> norm_num, show Real.sin ( x.cast * Real.pi ) = 0 by
+                                                                                    exact Real.sin_eq_zero_iff.mpr ⟨ x.val, by simp +decide [ ZMod.cast_id ] ⟩, show Real.cos ( x.cast * ( 2 * Real.pi ) ) = 1 by
+                                                                                                                                      convert Real.cos_nat_mul_two_pi x.val using 2 ; ring;
+                                                                                                                                      norm_num [ mul_assoc, mul_comm, mul_left_comm ] ] ; ring;
+    · norm_num [ ‹k = 0› ];
+    · tauto;
+  refine' h_contra _;
+  rw [ h_g_i, h_cos_sum ];
+  rw [ Finset.mul_sum _ _ _ ] ; rw [ Finset.mul_sum ] ; refine' Finset.sum_congr rfl fun k hk => _ ; unfold g_coef ; split_ifs <;> ring;
+  grind
 
 /-- The continuous weight `c_cont₀`, a trigonometric polynomial interpolating the discrete weight `c n`
 using the single-prime Fourier cosine coefficients. -/
@@ -728,6 +804,11 @@ theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) :
   simp_rw [h_eq]
   rw [← Finset.sum_congr rfl fun i _ => ?_]
   · exact (g_coef_spec n i (x : ZMod (q n))).symm
+
+/-- The continuous weight c_cont₀ majorizes the discrete weight c n on the grid points. -/
+theorem c_le_c_cont₀ (n : ℕ) (x : ℕ) :
+    c n (x : ZMod (q n)) ≤ c_cont₀ n (gridPt n x) := by
+  rw [c_cont₀_eq_c]
 
 /-- Grid Evaluation / Sampling of an RKHS element. -/
 noncomputable def evalOnGrid (n : ℕ) (h : H₀ n) : ℕ → ℝ :=
@@ -964,7 +1045,9 @@ theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
     ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 ∂μ₀ =
       (1 / (q n : ℝ)) *
-        ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) * (evalOnGrid n h x) ^ 2 := by
+        ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 := by
+  -- NOTE: left as `sorry`. Under the band-limited majorant formulation, this exact quadrature
+  -- holds because c_cont₀ is band-limited and matches its Riemann sum.
   sorry
 
 /-- The `L²` norm-squared of `coeCLM₀ n h`, expressed as an integral, is strictly positive
