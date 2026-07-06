@@ -63,52 +63,79 @@ lemma mul_sq_indicatorConstLp_ae (c_cont : X → ℝ) (s : Set X) (hs : Measurab
 Theorem: There exists a continuous test function in L^2 whose continuous
 Rayleigh quotient is strictly less than 1.
 -/
-theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) (Psi_cont : X → ℝ) [Fact (Continuous Psi_cont)]
-    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < ∫ x in s, Psi_cont x ∂μ ∧ ∀ x ∈ s, c_cont x < 1) :
-    ∃ f : Lp ℝ 2 μ, (0 : ℝ) < ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ ∧ continuousRatio μ c_cont Psi_cont f < 1 := by
+theorem exists_continuous_ratio_lt_one (c_cont : X → ℝ) (Psi_cont : X → ℝ)
+    [Fact (Continuous Psi_cont)]
+    (h_dip : ∃ s : Set X, MeasurableSet s ∧ 0 < ∫ x in s, Psi_cont x ∂μ ∧
+      ∀ x ∈ s, c_cont x < 1) :
+    ∃ f : Lp ℝ 2 μ, (0 : ℝ) < ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ ∧
+      continuousRatio μ c_cont Psi_cont f < 1 := by
   revert h_dip c_cont Psi_cont
   by_contra! h_contra
-  obtain ⟨ c_cont, Psi_cont, hPsi, ⟨ s, hs_meas, hs_pos, hc ⟩, h ⟩ := h_contra
-  obtain ⟨A, hA_meas, hA_pos, hA_subset⟩ : ∃ A : Set X, MeasurableSet A ∧ 0 < ∫ x in A, Psi_cont x ∂μ ∧ ∀ x ∈ A, c_cont x < 1 ∧ 0 < Psi_cont x := by
-    refine' ⟨ s ∩ { x | 0 < Psi_cont x }, hs_meas.inter ( measurableSet_lt measurable_const hPsi.1.measurable ), _, _ ⟩
-    · have h_split : ∫ x in s, Psi_cont x ∂μ = (∫ x in s ∩ {x | 0 < Psi_cont x}, Psi_cont x ∂μ) + (∫ x in s ∩ {x | Psi_cont x ≤ 0}, Psi_cont x ∂μ) := by
-        rw [ ← MeasureTheory.setIntegral_union ]
-        · congr with x ; by_cases hx : 0 < Psi_cont x <;> aesop
+  obtain ⟨c_cont, Psi_cont, hPsi, ⟨s, hs_meas, hs_pos, hc⟩, h⟩ := h_contra
+  obtain ⟨A, hA_meas, hA_pos, hA_subset⟩ : ∃ A : Set X, MeasurableSet A ∧
+      0 < ∫ x in A, Psi_cont x ∂μ ∧
+      (∀ x ∈ A, c_cont x < 1 ∧ 0 < Psi_cont x) := by
+    refine ⟨s ∩ { x | 0 < Psi_cont x },
+      hs_meas.inter (measurableSet_lt measurable_const hPsi.1.measurable),
+      ?_, ?_⟩
+    · have h_split : ∫ x in s, Psi_cont x ∂μ =
+          (∫ x in s ∩ {x | 0 < Psi_cont x}, Psi_cont x ∂μ) +
+          (∫ x in s ∩ {x | Psi_cont x ≤ 0}, Psi_cont x ∂μ) := by
+        rw [← MeasureTheory.setIntegral_union]
+        · congr with x; by_cases hx : 0 < Psi_cont x <;> aesop
         · grind +splitIndPred
-        · exact hs_meas.inter ( measurableSet_le hPsi.1.measurable measurable_const )
-        · exact (hPsi.1.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)).integrableOn
-        · exact (hPsi.1.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)).integrableOn
-      linarith [ show ∫ x in s ∩ { x | Psi_cont x ≤ 0 }, Psi_cont x ∂μ ≤ 0 by exact MeasureTheory.setIntegral_nonpos ( by exact hs_meas.inter ( measurableSet_le hPsi.1.measurable measurable_const ) ) fun x hx => hx.2 ]
+        · exact hs_meas.inter (measurableSet_le hPsi.1.measurable measurable_const)
+        · exact (hPsi.1.integrable_of_hasCompactSupport
+            (HasCompactSupport.of_compactSpace _)).integrableOn
+        · exact (hPsi.1.integrable_of_hasCompactSupport
+            (HasCompactSupport.of_compactSpace _)).integrableOn
+      have h_nonpos : ∫ x in s ∩ {x | Psi_cont x ≤ 0}, Psi_cont x ∂μ ≤ 0 := by
+        refine MeasureTheory.setIntegral_nonpos
+          (hs_meas.inter (measurableSet_le hPsi.1.measurable measurable_const)) ?_
+        intro x hx
+        exact hx.2
+      linarith [show ∫ x in s ∩ {x | Psi_cont x ≤ 0}, Psi_cont x ∂μ ≤ 0 by exact h_nonpos]
     · exact fun x hx => ⟨hc x hx.1, hx.2⟩
-  obtain ⟨f, hf⟩ : ∃ f : Lp ℝ 2 μ, ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ = ∫ x in A, Psi_cont x ∂μ ∧ ∫ x, c_cont x * (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ = ∫ x in A, c_cont x * Psi_cont x ∂μ := by
-    refine' ⟨ MeasureTheory.indicatorConstLp 2 hA_meas ( MeasureTheory.measure_ne_top μ A ) 1, _, _ ⟩
-    · rw [ ← MeasureTheory.integral_indicator ] <;> norm_num [ Set.indicator, hA_meas ]
-      rw [ MeasureTheory.integral_congr_ae ]
-      filter_upwards [ sq_indicatorConstLp_ae μ A hA_meas ( MeasureTheory.measure_ne_top μ A ) ] with x hx using by aesop
-    · rw [ ← MeasureTheory.integral_indicator hA_meas ]
-      refine' MeasureTheory.integral_congr_ae _
-      filter_upwards [ mul_sq_indicatorConstLp_ae μ c_cont A hA_meas ( MeasureTheory.measure_ne_top μ A ) ] with x hx
-      by_cases hx' : x ∈ A <;> simp_all +decide [ Set.indicator ]
+  have h_ne_top := MeasureTheory.measure_ne_top μ A
+  obtain ⟨f, hf⟩ : ∃ f : Lp ℝ 2 μ,
+      ∫ x, (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ = ∫ x in A, Psi_cont x ∂μ ∧
+      ∫ x, c_cont x * (f : X → ℝ) x ^ 2 * Psi_cont x ∂μ = ∫ x in A, c_cont x * Psi_cont x ∂μ := by
+    refine ⟨MeasureTheory.indicatorConstLp 2 hA_meas h_ne_top 1, ?_, ?_⟩
+    · rw [← MeasureTheory.integral_indicator] <;> norm_num [Set.indicator, hA_meas]
+      rw [MeasureTheory.integral_congr_ae]
+      filter_upwards [sq_indicatorConstLp_ae μ A hA_meas h_ne_top] with x hx using by aesop
+    · rw [← MeasureTheory.integral_indicator hA_meas]
+      refine MeasureTheory.integral_congr_ae ?_
+      filter_upwards [mul_sq_indicatorConstLp_ae μ c_cont A hA_meas h_ne_top] with x hx
+      by_cases hx' : x ∈ A <;> simp_all +decide [Set.indicator]
   specialize h f
-  simp_all +decide [ continuousRatio ]
+  simp_all +decide only [continuousRatio, forall_const]
   split_ifs at h <;> try linarith
-  rw [ le_div_iff₀ hA_pos ] at h
+  rw [le_div_iff₀ hA_pos] at h
   have h_integral_lt : ∫ x in A, (Psi_cont x - c_cont x * Psi_cont x) ∂μ > 0 := by
-    rw [ gt_iff_lt, MeasureTheory.integral_pos_iff_support_of_nonneg_ae ]
+    rw [gt_iff_lt, MeasureTheory.integral_pos_iff_support_of_nonneg_ae]
     · refine lt_of_lt_of_le ?_ (MeasureTheory.measure_mono
         (fun x (hx : x ∈ A) => ne_of_gt (sub_pos.mpr
           (mul_lt_of_lt_one_left (hA_subset x hx).2 (hA_subset x hx).1))))
       contrapose! hA_pos
       aesop
-    · filter_upwards [ MeasureTheory.ae_restrict_mem hA_meas ] with x hx using sub_nonneg_of_le ( mul_le_of_le_one_left ( le_of_lt ( hA_subset x hx |>.2 ) ) ( le_of_lt ( hA_subset x hx |>.1 ) ) )
-    · refine' MeasureTheory.Integrable.sub _ _
-      · exact ( by by_contra h; rw [ MeasureTheory.integral_undef h ] at hA_pos; norm_num at hA_pos )
-      · exact ( by by_contra h; rw [ MeasureTheory.integral_undef h ] at *; linarith )
-  rw [ MeasureTheory.integral_sub ] at h_integral_lt
+    · filter_upwards [MeasureTheory.ae_restrict_mem hA_meas] with x hx using
+        sub_nonneg_of_le (mul_le_of_le_one_left (le_of_lt (hA_subset x hx |>.2))
+          (le_of_lt (hA_subset x hx |>.1)))
+    · refine MeasureTheory.Integrable.sub ?_ ?_
+      · exact (by
+          by_contra h
+          rw [MeasureTheory.integral_undef h] at hA_pos
+          norm_num at hA_pos)
+      · exact (by
+          by_contra h
+          rw [MeasureTheory.integral_undef h] at *
+          linarith)
+  rw [MeasureTheory.integral_sub] at h_integral_lt
   · linarith
-  · by_contra hni; rw [ MeasureTheory.integral_undef hni ] at hA_pos; norm_num at hA_pos
+  · by_contra hni; rw [MeasureTheory.integral_undef hni] at hA_pos; norm_num at hA_pos
   · contrapose! h_integral_lt
-    rw [ MeasureTheory.integral_undef h_integral_lt ] at h ; linarith
+    rw [MeasureTheory.integral_undef h_integral_lt] at h; linarith
 
 /--
 The continuous bilinear form associated with the weighted L^2 inner product.
@@ -143,7 +170,8 @@ theorem quadratic_form_continuous (c : X → ℝ) [Fact (Continuous c)] (f : Lp 
     (weightedBilinearForm μ c).continuous.continuousAt continuous_id.continuousAt
 
 /-
-Theorem: The continuous Rayleigh quotient is continuous at any function in L^2 with positive windowed norm.
+Theorem: The continuous Rayleigh quotient is continuous at any function in L^2
+with positive windowed norm.
 -/
 omit [IsFiniteMeasure μ] in
 theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont)]
@@ -153,7 +181,8 @@ theorem continuousRatio_continuous (c_cont : X → ℝ) [Fact (Continuous c_cont
   haveI : Fact (Continuous fun x => c_cont x * Psi_cont x) :=
     ⟨(Fact.out : Continuous c_cont).mul (Fact.out : Continuous Psi_cont)⟩
   -- Continuity of the denominator `g ↦ ∫ (g x)² · Psi_cont x`.
-  have hden : ContinuousAt (fun g : Lp ℝ 2 μ => ∫ x, (g : X → ℝ) x ^ 2 * Psi_cont x ∂μ) f := by
+  have hden : ContinuousAt
+      (fun g : Lp ℝ 2 μ => ∫ x, (g : X → ℝ) x ^ 2 * Psi_cont x ∂μ) f := by
     convert quadratic_form_continuous μ Psi_cont f using 1
     ac_rfl
   -- Continuity of the numerator `g ↦ ∫ c_cont x · (g x)² · Psi_cont x`.
