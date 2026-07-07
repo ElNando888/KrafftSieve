@@ -24,75 +24,13 @@ import Mathlib.Data.Fintype.Powerset
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
 import KrafftSieve.DiscreteOrthoCore
+import KrafftSieve.FourierInterpolation
 
 /-!
-# Sieve Discretization and Grid Interpolation (Formalization Debt)
+# Sieve Discretization and Approximate Quadratures
 
-This module documents the mathematical and logical strategy to bridge the gap
-between the continuous operator limits on $L^2([0, 1])$ and the discrete optimal
-sieve quotients computed on the finite grid $\mathcal{A}_n \subseteq \mathbb{Z}/(q(n)\mathbb{Z})$.
-
-The central theorem requiring this bridge is `muMin_le_rkhs_ratio` in `MainTheorem.lean`:
-```lean
-theorem muMin_le_rkhs_ratio (μ : Measure X) [IsFiniteMeasure μ] (n : ℕ)
-    (H_seq : ℕ → Type*) [∀ i, NormedAddCommGroup (H_seq i)]
-    [∀ i, InnerProductSpace ℝ (H_seq i)]
-    [∀ i, CompleteSpace (H_seq i)] [∀ i, RKHS ℝ (H_seq i) X ℝ]
-    (coeCLM_seq : ∀ i, H_seq i →L[ℝ] Lp ℝ 2 μ)
-    (projectionToRKHS : ∀ i, Lp ℝ 2 μ →L[ℝ] H_seq i)
-    (c_cont : X → ℝ) (f : Lp ℝ 2 μ)
-    (hn : ‖coeCLM_seq n (projectionToRKHS n f)‖ > 0) :
-    muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n (projectionToRKHS n f))
-```
-
-This equivalence is considered "formalization debt" to be closed in this module
-using the following three-step mathematical strategy:
-
-## 1. Grid Discretization Operator
-Define a sampling operator that maps continuous $L^2$ functions to discrete grid functions:
-$$ \text{evalOnGrid} : L^2(X, \mu) \to (\mathcal{A}_n \to \mathbb{R}) $$
-Because point evaluation is generally not well-defined on $L^2$ equivalence classes,
-this operator must be defined using the reproducing property of the RKHS:
-$$ (\text{evalOnGrid}(g))(x) = \langle g, K_x \rangle_{\mathcal{H}_K} $$
-for any function $g$ in the range of the RKHS projection.
-
-## 2. Exact Quadrature / Numerical Integration Equivalence
-Prove that for any continuous function $g$ in the range of the projection, its discrete Rayleigh
-quotient over the grid $\mathcal{A}_n$ is exactly equal to its continuous
-Rayleigh quotient over $X$:
-$$ \frac{\sum_{x \in \mathcal{A}_n} c(x) g(x)^2}
-        {\sum_{x \in \mathcal{A}_n} g(x)^2}
-   = \frac{\int_X c_{\text{cont}}(t) g(t)^2 \, dt}
-          {\int_X g(t)^2 \, dt} $$
-This step uses the fact that the grid points $\mathcal{A}_n$ are the exact quadrature nodes
-where the discrete kernel $K = M M^T$ interpolates the continuous kernel function.
-
-## 3. Minimization Embedding
-Since the discrete optimal quotient `muMin n` is the infimum of the discrete Rayleigh quotient
-over all representable grid functions, and the discretized function $\text{evalOnGrid}(g_n)$ is
-representable, we obtain:
-$$ \mu_{\min}(n) \le \mathcal{R}_{\text{discrete}}(\text{evalOnGrid}(g_n))
-   = \mathcal{R}_{\text{continuous}}(g_n) $$
-establishing the upper bound.
-
-
-## Discretization Bridge Hypothesis (`h_quadrature`)
-
-To resolve the signature bug where the unconstrained continuous weight $c_{\text{cont}}$ could
-violate the bounds for $\mu_{\min}(n)$, we have formalized the discretization bridge as
-a hypothesis of the reduction:
-```lean
-(h_quadrature : ∀ n (h : H_seq n), ‖coeCLM_seq n h‖ > 0 →
-  muMin n ≤ continuousRatio μ c_cont (coeCLM_seq n h))
-```
-This hypothesis is carried through to the final `twin_prime_conjecture` theorem in
-`MainTheorem.lean`, leaving the entire reduction logical chain completely closed with
-**zero `sorry`s**.
-
-Proving `h_quadrature` unconditionally is the main formalization debt of this module,
-which will be achieved by executing the three-step program detailed above (defining
-`evalOnGrid` using the reproducing property, proving exact quadrature, and embedding it
-into the discrete minimum).
+This module defines the discretization bridge connecting the discrete optimal sieve
+quotients to the continuous Rayleigh quotients on the unit interval via approximate quadratures.
 -/
 
 namespace KrafftSieve
@@ -101,671 +39,15 @@ open scoped unitInterval
 open unitInterval
 open MeasureTheory HilbertBasis RKHS InnerProductSpace
 
--- Concrete space and measure for Route B
-abbrev X₀ : Type := I
-noncomputable abbrev μ₀ : Measure X₀ := volume
-
--- Sieve-specific grid mapping and RKHS definitions.
--- Note: the residue `x % q n` is taken in `ℕ` and then cast to `ℝ`. (Writing `(x % q n : ℝ)`
--- directly would instead use the `EuclideanDomain` remainder on `ℝ`, which is `0` whenever
--- `q n ≠ 0`, collapsing every grid point to `0`; the natural-number modulus is the intended one.)
-noncomputable def gridPt (n : ℕ) (x : ℕ) : X₀ :=
-  ⟨((x % q n : ℕ) : ℝ) / (q n : ℝ), by
-    have hq : (0 : ℝ) < (q n : ℝ) := by
-      exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne (q n))
-    refine ⟨by positivity, ?_⟩
-    rw [div_le_one hq]
-    exact_mod_cast (Nat.mod_lt x (Nat.pos_of_ne_zero (NeZero.ne (q n)))).le⟩
-
--- Ensure Fintype instance is synthesized for Finset (Fin (w n))
-instance (n : ℕ) : Fintype (Finset (Fin (w n))) := Finset.fintype
-
--- H₀ n is the finite dimensional EuclideanSpace
-abbrev H₀ (n : ℕ) : Type := EuclideanSpace ℝ (Finset (Fin (w n)))
-
-/-- Continuous basis cosines on the interval. -/
-noncomputable def basisCos_cont (n : ℕ) (S : Finset (Fin (w n))) (t : X₀) : ℝ :=
-  ∏ i ∈ S, Real.cos (2 * Real.pi * 3 * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
-
-/-- Continuous polynomial evaluation of an RKHS element. -/
-noncomputable def coeFun_H₀ (n : ℕ) (h : H₀ n) (t : X₀) : ℝ :=
-  ∑ S ∈ Finset.univ.powerset, (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t
-
-/-- Continuous evaluation as a linear map. Since `coeFun_H₀ n` is linear in the
-coefficient vector, this packages it as an `ℝ`-linear map. -/
-noncomputable def coeLM_H₀ (n : ℕ) : H₀ n →ₗ[ℝ] (X₀ → ℝ) where
-  toFun h := coeFun_H₀ n h
-  map_add' h1 h2 := by
-    ext t
-    simp only [coeFun_H₀, Pi.add_apply]
-    rw [← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun S _ => ?_
-    have hS : (h1 + h2 : H₀ n) S = h1 S + h2 S := rfl
-    rw [hS]; ring
-  map_smul' c h := by
-    ext t
-    simp only [coeFun_H₀, RingHom.id_apply, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun S _ => ?_
-    have hS : (c • h : H₀ n) S = c * h S := rfl
-    rw [hS]; ring
-
-/-- Continuous evaluation map as a continuous linear map. The domain `H₀ n` is
-finite dimensional, so the linear map `coeLM_H₀ n` is automatically continuous. -/
-noncomputable def coeCLM_H₀ (n : ℕ) : H₀ n →L[ℝ] X₀ → ℝ :=
-  (coeLM_H₀ n).toContinuousLinearMap
-
-@[simp] lemma coeCLM_H₀_apply (n : ℕ) (h : H₀ n) (t : X₀) :
-    coeCLM_H₀ n h t = coeFun_H₀ n h t := rfl
-
-/-- Each continuous basis cosine is continuous as a function on the interval. -/
-lemma basisCos_cont_continuous (n : ℕ) (S : Finset (Fin (w n))) :
-    Continuous (basisCos_cont n S) := by
-  unfold basisCos_cont; fun_prop
-
-/-- Products of two continuous basis cosines are integrable (continuous on a compact,
-finite-measure domain). -/
-lemma integrable_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
-    Integrable (fun t => basisCos_cont n S t * basisCos_cont n T t) μ₀ :=
-  ((basisCos_cont_continuous n S).mul
-    (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
-    (HasCompactSupport.of_compactSpace _)
-
-/-- `3` is not divisible by `p n i` (since `p n i ≥ 5`). -/
-lemma p_mod3_ne (n : ℕ) (i : Fin (w n)) : ((3 : ℤ) % (p n i : ℤ)) ≠ 0 := by
-  have h5 : (5 : ℤ) ≤ (p n i : ℤ) := by exact_mod_cast p_ge_5 n i
-  rw [Int.emod_eq_of_lt (by norm_num) (by linarith)]; norm_num
-
-/-- `9` is not divisible by `p n i` (since `p n i ≥ 5` is prime, hence `≠ 3`). -/
-lemma p_mod9_ne (n : ℕ) (i : Fin (w n)) : ((9 : ℤ) % (p n i : ℤ)) ≠ 0 := by
-  intro h
-  have hp := p_prime n i; have h5 := p_ge_5 n i
-  have hd : (p n i) ∣ 9 := by exact_mod_cast Int.dvd_of_emod_eq_zero h
-  have hle := Nat.le_of_dvd (by norm_num) hd
-  interval_cases (p n i) <;> revert hp hd <;> decide
-
-/-- `p n i` does not divide `3` (since `p n i ≥ 5`). -/
-lemma p_not_dvd_3 (n : ℕ) (i : Fin (w n)) : ¬ ((p n i : ℤ) ∣ 3) := by
-  intro h; have h5 := p_ge_5 n i
-  have hd : (p n i) ∣ 3 := by exact_mod_cast h
-  have := Nat.le_of_dvd (by norm_num) hd; omega
-
-/-- `p n i` does not divide `6` (since `p n i ≥ 5` is prime). -/
-lemma p_not_dvd_6 (n : ℕ) (i : Fin (w n)) : ¬ ((p n i : ℤ) ∣ 6) := by
-  intro h; have hp := p_prime n i; have h5 := p_ge_5 n i
-  have hd : (p n i) ∣ 6 := by exact_mod_cast h
-  have hle := Nat.le_of_dvd (by norm_num) hd
-  interval_cases (p n i) <;> revert hp hd <;> decide
-
-/-
-Base integral: the average of `cos (2π k t)` over the unit interval is `1` if `k = 0`
-and `0` otherwise.
--/
-theorem base_cos_integral (k : ℤ) :
-    ∫ t : X₀, Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ)) ∂μ₀ = if k = 0 then 1 else 0 := by
-  split_ifs with hk <;> simp_all +decide only [X₀, μ₀, Int.cast_zero, mul_zero, zero_mul,
-    Real.cos_zero, integral_const, probReal_univ, smul_eq_mul, mul_one]
-  · convert MeasureTheory.integral_subtype (measurableSet_Icc)
-      (fun t => Real.cos (2 * Real.pi * k * t)) using 1
-    rw [MeasureTheory.integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
-    have hc : (2 * Real.pi * (k : ℝ)) ≠ 0 := by simp [Real.pi_ne_zero, hk]
-    have hsin : Real.sin (2 * Real.pi * (k : ℝ)) = 0 := by
-      rw [Real.sin_eq_zero_iff]; exact ⟨2 * k, by push_cast; ring⟩
-    rw [intervalIntegral.integral_comp_mul_left (fun x => Real.cos x) hc, integral_cos]
-    simp [hsin]
-
-/-
-Product-to-sum expansion of a product of cosines over a `Finset`, indexed by a
-powerset of sign choices.
--/
-theorem prod_cos_sum_powerset {ι : Type*} [DecidableEq ι] (A : Finset ι) (θ : ι → ℝ) :
-    ∏ i ∈ A, Real.cos (θ i) =
-      (2 ^ A.card : ℝ)⁻¹ *
-        ∑ B ∈ A.powerset, Real.cos ((∑ i ∈ B, θ i) - ∑ i ∈ A \ B, θ i) := by
-  induction A using Finset.induction with
-  | empty => norm_num
-  | @insert a A ha ih =>
-    rw [Finset.card_insert_of_notMem ha, Finset.prod_insert ha, ih,
-      Finset.sum_powerset_insert ha, ← Finset.sum_add_distrib]
-    simp only [Finset.mul_sum]
-    rw [pow_succ]
-    refine Finset.sum_congr rfl fun B hB => ?_
-    have haB : a ∉ B := fun h => ha (Finset.mem_powerset.mp hB h)
-    have h1 : insert a A \ B = insert a (A \ B) := Finset.insert_sdiff_of_notMem A haB
-    have h2 : insert a A \ insert a B = A \ B := by
-      ext x; simp only [Finset.mem_sdiff, Finset.mem_insert]; constructor
-      · rintro ⟨(rfl | hx), hx2⟩
-        · exact absurd (Or.inl rfl) hx2
-        · exact ⟨hx, fun h => hx2 (Or.inr h)⟩
-      · rintro ⟨hx, hx2⟩
-        refine ⟨Or.inr hx, fun h => ?_⟩
-        rcases h with rfl | h
-        · exact ha hx
-        · exact hx2 h
-    have haAB : a ∉ A \ B := fun h => ha (Finset.mem_sdiff.mp h).1
-    rw [h1, Finset.sum_insert haAB, Finset.sum_insert haB, h2]
-    have key : ∀ s u : ℝ, Real.cos (s - (θ a + u)) + Real.cos (θ a + s - u)
-        = 2 * Real.cos (θ a) * Real.cos (s - u) := by
-      intro s u
-      have e1 : s - (θ a + u) = (s - u) - θ a := by ring
-      have e2 : θ a + s - u = θ a + (s - u) := by ring
-      rw [e1, e2, Real.cos_sub, Real.cos_add]; ring
-    rw [key]; ring
-
-/-
-Bridge lemma: the integral over the unit interval of a product of cosines with integer
-frequencies `g i` equals `(2 ^ A.card)⁻¹` times the number of sign patterns (subsets `B`) whose
-signed frequency sum vanishes.
--/
-theorem cos_freq_prod_integral {ι : Type*} [DecidableEq ι] (A : Finset ι) (g : ι → ℤ) :
-    ∫ t : X₀, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * (t : ℝ))) ∂μ₀ =
-      (2 ^ A.card : ℝ)⁻¹ *
-        ((A.powerset.filter (fun B => ∑ i ∈ B, g i = ∑ i ∈ A \ B, g i)).card : ℝ) := by
-  -- Apply the product-to-sum formula to the integral.
-  have h_prod_to_sum : ∫ t : X₀, ∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * t) ∂μ₀ = ∫ t : X₀, (2 ^ A.card : ℝ)⁻¹ * ∑ B ∈ A.powerset, Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * t) ∂μ₀ := by
-    congr with t
-    convert prod_cos_sum_powerset A ( fun i => 2 * Real.pi * ( g i : ℝ ) * t ) using 2 ; norm_num ; ring
-    simp +decide only [Finset.mul_sum _ _ _, mul_comm, mul_left_comm, mul_assoc]
-  rw [ h_prod_to_sum, MeasureTheory.integral_const_mul, MeasureTheory.integral_finsetSum ]
-  · rw [ Finset.sum_congr rfl fun B hB => ?_ ]
-    rotate_left
-    use fun B => if ( ∑ i ∈ B, g i - ∑ i ∈ A \ B, g i ) = 0 then 1 else 0
-    · convert base_cos_integral ( ∑ i ∈ B, g i - ∑ i ∈ A \ B, g i ) using 1
-      simp +decide [ mul_sub ]
-    · simp +decide [ sub_eq_zero ]
-  · exact fun _ _ => Continuous.integrable_of_hasCompactSupport ( Real.continuous_cos.comp <| by continuity ) ( HasCompactSupport.of_compactSpace _ )
-
-/-
-No-cancellation: if for each index `i ∈ A` there is a modulus `P i` dividing every *other*
-frequency `g j` (`j ∈ A`, `j ≠ i`) but not `g i`, then no signed sum of the frequencies vanishes,
-so the integral of the cosine product is `0`.
--/
-theorem cos_freq_prod_no_cancel {ι : Type*} [DecidableEq ι] (A : Finset ι) (g : ι → ℤ) (P : ι → ℤ)
-    (hAne : A.Nonempty)
-    (hself : ∀ i ∈ A, ¬ (P i ∣ g i))
-    (hcross : ∀ i ∈ A, ∀ j ∈ A, j ≠ i → P i ∣ g j) :
-    ∫ t : X₀, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * (t : ℝ))) ∂μ₀ = 0 := by
-  rw [ cos_freq_prod_integral, mul_eq_zero ]
-  obtain ⟨ i₀, hi₀ ⟩ := hAne
-  refine Or.inr ( Nat.cast_eq_zero.mpr ?_ )
-  rw [ Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem ]
-  intro B hB ; simp_all +decide [ Finset.subset_iff ]
-  -- Consider the sum $\sum_{i \in B} g_i - \sum_{i \in A \setminus B} g_i$.
-  have h_sum_diff : (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) ≡ (if i₀ ∈ B then g i₀ else -g i₀) [ZMOD P i₀] := by
-    have h_sum_diff : (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) ≡ (∑ i ∈ B, if i = i₀ then g i₀ else 0) - (∑ i ∈ A \ B, if i = i₀ then g i₀ else 0) [ZMOD P i₀] := by
-      gcongr; all_goals split_ifs <;> simp_all +decide [ Int.ModEq ]
-    by_cases hi₀B : i₀ ∈ B <;> simp_all +decide
-  split_ifs at h_sum_diff <;> simp_all +decide [ Int.modEq_iff_dvd ]
-
-/-
-For distinct indices `i ≠ k`, `p n i` divides `q n / p n k` (as `q n / p n k = ∏_{l ≠ k} p n l`
-contains the factor `p n i`).
--/
-lemma p_dvd_q_div (n : ℕ) (i k : Fin (w n)) (h : i ≠ k) :
-    (p n i : ℤ) ∣ ((q n / p n k : ℕ) : ℤ) := by
-  refine mod_cast Nat.dvd_div_of_mul_dvd ?_
-  have h_prod_div : (∏ l ∈ ({i, k} : Finset (Fin (w n))), (p n l : ℕ)) ∣ (∏ l, (p n l : ℕ)) := by
-    apply_rules [ Finset.prod_dvd_prod_of_subset, Finset.subset_univ ]
-  convert h_prod_div using 1 <;> norm_num [ mul_comm, Finset.prod_pair h ]
-  convert prod_p_eq_q n |> Eq.symm
-  norm_cast
-
-/-
-Rewrite `basisCos_cont` as a product of cosines with explicit integer frequencies
-`3 * (q n / p n i)`.
--/
-lemma basisCos_cont_eq (n : ℕ) (S : Finset (Fin (w n))) (t : X₀) :
-    basisCos_cont n S t =
-      ∏ i ∈ S, Real.cos (2 * Real.pi * (((3 * (q n / p n i) : ℕ) : ℤ) : ℝ) * (t : ℝ)) := by
-  refine Finset.prod_congr rfl fun i hi => congr_arg Real.cos ?_
-  push_cast; ring
-  rw [ Int.cast_div ( mod_cast p_dvd_q n i ) ( mod_cast p_ne_zero n i ) ] ; push_cast ; ring
-
-/-
-`p n i` does not divide `q n / p n i` (the primorial is squarefree).
--/
-lemma p_not_dvd_q_div_self (n : ℕ) (i : Fin (w n)) :
-    ¬ ((p n i : ℤ) ∣ ((q n / p n i : ℕ) : ℤ)) := by
-  -- Since $q_n$ is the product of all primes in the range, and each prime $p$ divides $q_n$ exactly once, $q_n / p$ cannot be divisible by $p$.
-  have h_div : q n = p n i * (∏ l ∈ Finset.univ.erase i, p n l) := by
-    have h_prod : q n = ∏ l : Fin (w n), p n l := by
-      exact_mod_cast prod_p_eq_q n |> Eq.symm
-    rw [ h_prod, ← Finset.mul_prod_erase _ _ ( Finset.mem_univ i ) ]
-  -- Since $p n i$ is coprime with each term in the product $\prod l ∈ Finset.univ.erase i, p n l$, it is coprime with the entire product.
-  have h_coprime : Nat.Coprime (p n i) (∏ l ∈ Finset.univ.erase i, p n l) := by
-    refine Nat.Coprime.prod_right fun j hj => ?_
-    have h_distinct : ∀ i j : Fin (w n), i ≠ j → p n i ≠ p n j := by
-      intro i j hij H; have := List.nodup_iff_injective_get.mp ( show List.Nodup ( primesList n ) from ?_ ) ; simp_all +decide [ funext_iff, Fin.ext_iff ]
-      · exact hij ( by simpa [ Fin.ext_iff ] using this H )
-      · exact Finset.sort_nodup _ _
-    simpa [ h_distinct i j ( Ne.symm ( Finset.ne_of_mem_erase hj ) ) ] using Nat.coprime_primes ( p_prime n i ) ( p_prime n j )
-  rw [ h_div, Nat.mul_div_cancel_left _ ( Nat.Prime.pos ( p_prime n i ) ) ]
-  exact_mod_cast fun h => Nat.Prime.not_dvd_one ( p_prime n i ) ( h_coprime.gcd_eq_one ▸ Nat.dvd_gcd ( dvd_refl _ ) h )
-
-/-
-If `p n i` (a prime `≥ 5`) does not divide `c`, it does not divide `c * (q n / p n i)`.
--/
-lemma p_not_dvd_mul_q_div (n : ℕ) (i : Fin (w n)) (c : ℤ) (hc : ¬ ((p n i : ℤ) ∣ c)) :
-    ¬ ((p n i : ℤ) ∣ (c * ((q n / p n i : ℕ) : ℤ))) := by
-  have h_prime : Prime (p n i : ℤ) := by
-    exact Nat.prime_iff_prime_int.mp ( KrafftSieve.p_prime n i )
-  exact fun h => hc <| h_prime.dvd_or_dvd h |> Or.resolve_right <| by simpa using p_not_dvd_q_div_self n i
-
-/-
-Diagonal continuous orthogonality: the squared L² norm of a single basis cosine.
--/
-lemma basisCos_cont_orthogonal_self (n : ℕ) (S : Finset (Fin (w n))) :
-    ∫ t, basisCos_cont n S t * basisCos_cont n S t ∂μ₀ = (1 / 2 ^ S.card : ℝ) := by
-  -- Apply the lemma `basisCos_cont_eq` to rewrite the integral.
-  have h_integral : ∫ t : X₀, (∏ i ∈ S, Real.cos (2 * Real.pi * (3 * (q n / p n i : ℕ) : ℤ) * (t : ℝ))) ^ 2 ∂μ₀ = 1 / 2 ^ S.card := by
-    have h_expand : ∫ t : X₀, (∏ i ∈ S, Real.cos (2 * Real.pi * (3 * (q n / p n i : ℕ) : ℤ) * t) ^ 2) ∂μ₀ = (1 / 2 ^ S.card : ℝ) * ∑ C ∈ S.powerset, ∫ t : X₀, (∏ i ∈ C, Real.cos (2 * Real.pi * (6 * (q n / p n i : ℕ) : ℤ) * t)) ∂μ₀ := by
-      have h_expand : ∀ t : X₀, (∏ i ∈ S, Real.cos (2 * Real.pi * (3 * (q n / p n i : ℕ) : ℤ) * t) ^ 2) = (1 / 2 ^ S.card : ℝ) * ∑ C ∈ S.powerset, (∏ i ∈ C, Real.cos (2 * Real.pi * (6 * (q n / p n i : ℕ) : ℤ) * t)) := by
-        intro t
-        have h_expand : ∀ i ∈ S, Real.cos (2 * Real.pi * (3 * (q n / p n i : ℕ) : ℤ) * t) ^ 2 = (1 / 2 : ℝ) * (1 + Real.cos (2 * Real.pi * (6 * (q n / p n i : ℕ) : ℤ) * t)) := by
-          intro i hi; rw [ Real.cos_sq ] ; push_cast; ring
-        rw [ Finset.prod_congr rfl h_expand, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_eq_sum_ones ]
-        simp +decide [ add_comm ( 1 : ℝ ), Finset.prod_add ]
-      rw [ funext h_expand, MeasureTheory.integral_const_mul, MeasureTheory.integral_finsetSum ]
-      exact fun _ _ => Continuous.integrable_of_hasCompactSupport ( by fun_prop ) ( HasCompactSupport.of_compactSpace _ )
-    -- Evaluate the integral for each subset $C$ of $S$.
-    have h_integral_subset : ∀ C ∈ S.powerset, C.Nonempty → ∫ t : X₀, (∏ i ∈ C, Real.cos (2 * Real.pi * (6 * (q n / p n i : ℕ) : ℤ) * t)) ∂μ₀ = 0 := by
-      intros C hC hC_nonempty
-      apply cos_freq_prod_no_cancel C (fun i => 6 * (q n / p n i : ℕ)) (fun i => (p n i : ℤ)) hC_nonempty
-      · exact fun i hi => p_not_dvd_mul_q_div n i 6 ( p_not_dvd_6 n i )
-      · exact fun i hi j hj hij => dvd_mul_of_dvd_right ( mod_cast p_dvd_q_div n i j ( by aesop ) ) _
-    convert h_expand using 1
-    · simp +decide only [Finset.prod_pow]
-    · rw [ Finset.sum_eq_single ∅ ] <;> simp_all +decide [ Finset.nonempty_iff_ne_empty ]
-  have hpt : ∀ t : X₀, basisCos_cont n S t * basisCos_cont n S t
-      = (∏ i ∈ S, Real.cos (2 * Real.pi * (3 * (q n / p n i : ℕ) : ℤ) * (t : ℝ))) ^ 2 := by
-    intro t; rw [basisCos_cont_eq n S t]; push_cast; ring
-  rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall hpt)]
-  exact h_integral
-
-/-
-Single-index no-cancellation: if there is *one* index `i₀ ∈ A` with a modulus `P` dividing
-every other frequency `g j` (`j ∈ A`, `j ≠ i₀`) but not `g i₀`, the cosine-product integral is `0`.
--/
-theorem cos_freq_prod_zero_of_index {ι : Type*} [DecidableEq ι] (A : Finset ι) (g : ι → ℤ) (P : ℤ)
-    (i₀ : ι) (hi₀ : i₀ ∈ A) (hself : ¬ (P ∣ g i₀))
-    (hcross : ∀ j ∈ A, j ≠ i₀ → P ∣ g j) :
-    ∫ t : X₀, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * (t : ℝ))) ∂μ₀ = 0 := by
-  rw [ cos_freq_prod_integral ]
-  simp_all +decide only [mul_eq_zero, inv_eq_zero, pow_eq_zero_iff', OfNat.ofNat_ne_zero, ne_eq,
-    Finset.card_eq_zero, false_and, Nat.cast_eq_zero, Finset.filter_eq_empty_iff,
-    Finset.mem_powerset, false_or]
-  intro a ha; by_contra h; have := congr_arg ( · % P ) h; norm_num [ Int.add_emod, Int.sub_emod, Finset.sum_int_mod, Int.emod_eq_zero_of_dvd, hcross, hi₀ ] at this
-  by_cases hi₀a : i₀ ∈ a <;> simp_all +decide [ Finset.sum_eq_single i₀, Int.emod_eq_zero_of_dvd ]
-  · rw [ Finset.sum_eq_single i₀ ] at this <;> simp_all +decide [ Int.emod_eq_zero_of_dvd, Finset.sum_eq_zero_iff_of_nonneg, Int.emod_nonneg ]
-    exact fun x hx hx' => hcross x ( ha hx ) hx'
-  · rw [ Finset.sum_eq_zero fun x hx => Int.emod_eq_zero_of_dvd <| hcross x ( ha hx ) <| by aesop ] at this ; simp_all +decide [ Int.emod_eq_emod_iff_emod_sub_eq_zero ]
-    exact hself ( Int.dvd_of_emod_eq_zero this.symm )
-
-/-
-Off-diagonal continuous orthogonality vanishes.
--/
-lemma basisCos_cont_orthogonal_ne (n : ℕ) (S T : Finset (Fin (w n))) (hST : S ≠ T) :
-    ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ = 0 := by
-  set G : Fin (w n) → ℤ := fun i => ((3 * (q n / p n i) : ℕ) : ℤ) with hG
-  have hGeq : ∀ i : Fin (w n), G i = 3 * ((q n / p n i : ℕ) : ℤ) := by
-    intro i; rw [hG]; push_cast; ring
-  -- Reindex the product over the disjoint sum `S.disjSum T`.
-  have hpt : ∀ t : X₀, basisCos_cont n S t * basisCos_cont n T t
-      = ∏ x ∈ S.disjSum T, Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * (t : ℝ)) := by
-    intro t
-    rw [basisCos_cont_eq n S t, basisCos_cont_eq n T t]
-    simp only [Finset.prod_disjSum, Sum.elim_inl, Sum.elim_inr, hG]
-  rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall hpt)]
-  -- Pick an index lying in exactly one of `S`, `T`.
-  obtain ⟨i₀, hi₀⟩ : ∃ i₀, (i₀ ∈ S ∧ i₀ ∉ T) ∨ (i₀ ∈ T ∧ i₀ ∉ S) := by
-    by_contra h; push_neg at h
-    exact hST (Finset.ext fun a => ⟨fun ha => (h a).1 ha, fun ha => (h a).2 ha⟩)
-  rcases hi₀ with ⟨hiS, hiT⟩ | ⟨hiT, hiS⟩
-  · refine cos_freq_prod_zero_of_index (S.disjSum T) (Sum.elim G G) (p n i₀) (Sum.inl i₀)
-      (Finset.inl_mem_disjSum.mpr hiS) ?_ ?_
-    · change ¬ (p n i₀ : ℤ) ∣ G i₀
-      rw [hGeq]; exact p_not_dvd_mul_q_div n i₀ 3 (p_not_dvd_3 n i₀)
-    · rintro y hy hyne
-      rw [Finset.mem_disjSum] at hy
-      rcases hy with ⟨i, himem, rfl⟩ | ⟨j, hjmem, rfl⟩
-      · have hne : i ≠ i₀ := fun h => hyne (by rw [h])
-        change (p n i₀ : ℤ) ∣ G i
-        rw [hGeq]; exact Dvd.dvd.mul_left (p_dvd_q_div n i₀ i (Ne.symm hne)) 3
-      · have hne : j ≠ i₀ := fun h => hiT (h ▸ hjmem)
-        change (p n i₀ : ℤ) ∣ G j
-        rw [hGeq]; exact Dvd.dvd.mul_left (p_dvd_q_div n i₀ j (Ne.symm hne)) 3
-  · refine cos_freq_prod_zero_of_index (S.disjSum T) (Sum.elim G G) (p n i₀) (Sum.inr i₀)
-      (Finset.inr_mem_disjSum.mpr hiT) ?_ ?_
-    · change ¬ (p n i₀ : ℤ) ∣ G i₀
-      rw [hGeq]; exact p_not_dvd_mul_q_div n i₀ 3 (p_not_dvd_3 n i₀)
-    · rintro y hy hyne
-      rw [Finset.mem_disjSum] at hy
-      rcases hy with ⟨i, himem, rfl⟩ | ⟨j, hjmem, rfl⟩
-      · have hne : i ≠ i₀ := fun h => hiS (h ▸ himem)
-        change (p n i₀ : ℤ) ∣ G i
-        rw [hGeq]; exact Dvd.dvd.mul_left (p_dvd_q_div n i₀ i (Ne.symm hne)) 3
-      · have hne : j ≠ i₀ := fun h => hyne (by rw [h])
-        change (p n i₀ : ℤ) ∣ G j
-        rw [hGeq]; exact Dvd.dvd.mul_left (p_dvd_q_div n i₀ j (Ne.symm hne)) 3
-
-
-/-
-Odd-count no-cancellation: if there is a prime modulus `P` such that the frequencies `g x`
-split into a set of `on`-elements all equal to `D` (with `¬ P ∣ D`) and `off`-elements divisible
-by `P`, and the number of `on`-elements is odd and `< P`, then the integral vanishes.
--/
-theorem cos_freq_prod_zero_of_odd {ι : Type*} [DecidableEq ι] (A : Finset ι) (g : ι → ℤ)
-    (P D : ℤ) (hP : Prime P) (on : ι → Prop) [DecidablePred on]
-    (hon : ∀ x ∈ A, on x → g x = D) (hoff : ∀ x ∈ A, ¬ on x → P ∣ g x)
-    (hPD : ¬ (P ∣ D)) (hodd : Odd (A.filter on).card)
-    (hlt : ((A.filter on).card : ℤ) < P) :
-    ∫ t : X₀, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * (t : ℝ))) ∂μ₀ = 0 := by
-  revert hodd hlt hon hoff hPD
-  intro h1 h2 h3 h4 h5
-  rw [ cos_freq_prod_integral ]
-  simp +zetaDelta only [mul_eq_zero, inv_eq_zero, pow_eq_zero_iff', OfNat.ofNat_ne_zero, ne_eq,
-    Finset.card_eq_zero, false_and, Nat.cast_eq_zero, Finset.filter_eq_empty_iff,
-    Finset.mem_powerset, false_or] at *
-  intro B hB hsum
-  have h_div : P ∣ (∑ i ∈ Finset.filter on A, (if i ∈ B then 1 else -1)) * D := by
-    have h_div : P ∣ (∑ i ∈ B, g i) - (∑ i ∈ A \ B, g i) := by
-      simp +decide [ hsum ]
-    have h_div : P ∣ (∑ i ∈ B, (if on i then D else 0)) - (∑ i ∈ A \ B, (if on i then D else 0)) := by
-      have h_div : P ∣ (∑ i ∈ B, (g i - if on i then D else 0)) - (∑ i ∈ A \ B, (g i - if on i then D else 0)) := by
-        refine dvd_sub ( Finset.dvd_sum fun i hi => ?_ ) ( Finset.dvd_sum fun i hi => ?_ )
-        · grind +extAll
-        · grind
-      have hsub := dvd_sub ‹P ∣ ∑ i ∈ B, g i - ∑ i ∈ A \ B, g i› h_div
-      have hXY : (∑ i ∈ B, (if on i then D else 0)) - (∑ i ∈ A \ B, (if on i then D else 0))
-          = (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i)
-            - ((∑ i ∈ B, (g i - if on i then D else 0))
-              - ∑ i ∈ A \ B, (g i - if on i then D else 0)) := by
-        simp only [Finset.sum_sub_distrib]; ring
-      rw [hXY]; exact hsub
-    convert h_div using 1
-    simp +decide only [Int.reduceNeg, Finset.sum_ite, Finset.filter_mem_eq_inter, Finset.sum_const,
-      Int.nsmul_eq_mul, mul_one, Finset.filter_not, Finset.sdiff_inter_self_left]
-    rw [ show ( Finset.filter on A ∩ B ) = Finset.filter on B from ?_, show ( Finset.filter on A \ B ) = Finset.filter on ( A \ B ) from ?_ ] ; ring; all_goals grind
-  have h_div : P ∣ (∑ i ∈ Finset.filter on A, (if i ∈ B then 1 else -1)) := by
-    exact hP.dvd_or_dvd h_div |> Or.resolve_right <| by simpa using h3
-  have h_abs : |∑ i ∈ Finset.filter on A, (if i ∈ B then 1 else -1)| < P := by
-    refine lt_of_le_of_lt ?_ h5
-    exact le_trans ( Finset.abs_sum_le_sum_abs _ _ ) ( le_trans ( Finset.sum_le_sum fun _ _ => show |if _ ∈ B then ( 1 : ℤ ) else -1| ≤ 1 by split_ifs <;> norm_num ) ( by norm_num ) )
-  have h_abs : ∑ i ∈ Finset.filter on A, (if i ∈ B then 1 else -1) = 0 := by
-    exact Classical.not_not.1 fun h => h_abs.not_ge <| Int.le_of_dvd ( abs_pos.2 h ) <| by simpa using h_div
-  simp_all +decide [ Finset.sum_ite ]
-  simp_all +decide [ Finset.filter_mem_eq_inter, Finset.filter_not ]
-  grind
-
-/-
-Product identity: with `T = R ∆ S`, the triple product equals the square of the product over
-`R ∪ S`.
--/
-lemma prod_triple_symmDiff_sq {ι : Type*} [DecidableEq ι] (R S : Finset ι) (f : ι → ℝ) :
-    (∏ i ∈ R, f i) * (∏ i ∈ S, f i) * (∏ i ∈ symmDiff R S, f i) = (∏ i ∈ R ∪ S, f i) ^ 2 := by
-  -- By definition of symmetric difference, we have R ∪ S = (R ∆ S) ∪ (R ∩ S).
-  have h_union : R ∪ S = (symmDiff R S) ∪ (R ∩ S) := by
-    ext x; by_cases hx : x ∈ R <;> by_cases hx' : x ∈ S <;> simp +decide [ hx, hx', symmDiff ]
-  rw [ ← Finset.prod_union_inter, h_union ] ; ring!
-  rw [ sq, Finset.prod_union ( Finset.disjoint_right.mpr fun x => by simp +contextual [ symmDiff ] ) ] ; ring!
-
-/-
-Triple continuous orthogonality, diagonal (`R ∆ S ∆ T = ∅`) case.
--/
-lemma basisCos_triple_cont_then (n : ℕ) (R S T : Finset (Fin (w n)))
-    (h : symmDiff R (symmDiff S T) = ∅) :
-    ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
-      (1 / 2 ^ (R ∪ S ∪ T).card : ℝ) := by
-  revert h
-  intro hT
-  have hT_eq : T = symmDiff R S := by
-    simp_all +decide [ Finset.ext_iff, symmDiff ]
-    grind
-  convert basisCos_cont_orthogonal_self n ( R ∪ S ) using 1
-  · convert congr_arg _ ( funext fun t => prod_triple_symmDiff_sq R S ( fun i => Real.cos ( 2 * Real.pi * 3 * ( t : ℝ ) * ( q n : ℝ ) / ( p n i : ℝ ) ) ) ) using 2
-    any_goals exact fun f => ∫ t : X₀, f t ∂μ₀
-    · simp +decide [ basisCos_cont, hT_eq ]
-    · simp +decide [ sq, basisCos_cont ]
-  · rw [ hT_eq, Finset.union_eq_left.mpr ( Finset.symmDiff_subset_union ) ]
-
-/-
-Triple continuous orthogonality, off-diagonal (`R ∆ S ∆ T ≠ ∅`) case.
--/
-lemma basisCos_triple_cont_else (n : ℕ) (R S T : Finset (Fin (w n)))
-    (h : symmDiff R (symmDiff S T) ≠ ∅) :
-    ∫ t, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t ∂μ₀ = 0 := by
-  classical
-  obtain ⟨i₀, hi₀⟩ := Finset.nonempty_of_ne_empty h
-  set π : (Fin (w n) ⊕ Fin (w n)) ⊕ Fin (w n) → Fin (w n) :=
-    Sum.elim (Sum.elim id id) id with hπ
-  set G : ((Fin (w n) ⊕ Fin (w n)) ⊕ Fin (w n)) → ℤ :=
-    fun x => ((3 * (q n / p n (π x)) : ℕ) : ℤ) with hG
-  have hGval : ∀ x, G x = 3 * ((q n / p n (π x) : ℕ) : ℤ) := by
-    intro x; rw [hG]; push_cast; ring
-  have h_reindex : ∀ t : X₀, basisCos_cont n R t * basisCos_cont n S t * basisCos_cont n T t
-      = ∏ x ∈ (R.disjSum S).disjSum T, Real.cos (2 * Real.pi * ((G x : ℤ) : ℝ) * (t : ℝ)) := by
-    intro t
-    rw [basisCos_cont_eq n R t, basisCos_cont_eq n S t, basisCos_cont_eq n T t]
-    rw [Finset.prod_disjSum, Finset.prod_disjSum]
-    simp only [hG, hπ, Sum.elim_inl, Sum.elim_inr, id_eq]
-  rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall h_reindex)]
-  have h5 : (5 : ℤ) ≤ (p n i₀ : ℤ) := by exact_mod_cast p_ge_5 n i₀
-  have hcard : ((((R.disjSum S).disjSum T).filter (fun x => π x = i₀)).card)
-      = (if i₀ ∈ R then 1 else 0) + (if i₀ ∈ S then 1 else 0) + (if i₀ ∈ T then 1 else 0) := by
-    rw [Finset.card_filter, Finset.sum_disjSum, Finset.sum_disjSum]
-    simp only [hπ, Sum.elim_inl, Sum.elim_inr, id_eq]
-    rw [Finset.sum_ite_eq' R i₀ (fun _ => 1), Finset.sum_ite_eq' S i₀ (fun _ => 1),
-      Finset.sum_ite_eq' T i₀ (fun _ => 1)]
-  refine cos_freq_prod_zero_of_odd ((R.disjSum S).disjSum T) G (p n i₀)
-    (3 * ((q n / p n i₀ : ℕ) : ℤ)) (Nat.prime_iff_prime_int.mp (p_prime n i₀))
-    (fun x => π x = i₀) ?_ ?_ ?_ ?_ ?_
-  · intro x _ hox; rw [hGval, hox]
-  · intro x _ hox
-    rw [hGval]
-    exact Dvd.dvd.mul_left (p_dvd_q_div n i₀ (π x) (fun he => hox he.symm)) 3
-  · exact p_not_dvd_mul_q_div n i₀ 3 (p_not_dvd_3 n i₀)
-  · rw [hcard]
-    rw [Finset.mem_symmDiff, Finset.mem_symmDiff] at hi₀
-    by_cases hR : i₀ ∈ R <;> by_cases hS : i₀ ∈ S <;> by_cases hT : i₀ ∈ T <;>
-      simp_all? <;> decide
-  · rw [hcard]
-    have : ((if i₀ ∈ R then 1 else 0) + (if i₀ ∈ S then 1 else 0)
-        + (if i₀ ∈ T then 1 else 0) : ℤ) ≤ 3 := by
-      split_ifs <;> norm_num
-    push_cast
-    linarith
-
-/-- The continuous basis cosines are orthogonal under the L² inner product. -/
-theorem basisCos_cont_orthogonal (n : ℕ) (S T : Finset (Fin (w n))) :
-    ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀ =
-      if S = T then (1 / 2 ^ S.card : ℝ) else 0 := by
-  split_ifs with h
-  · subst h; exact basisCos_cont_orthogonal_self n S
-  · exact basisCos_cont_orthogonal_ne n S T h
-
-/-- The continuous basis cosines are linearly independent. -/
-theorem basisCos_cont_linear_independent (n : ℕ) :
-    LinearIndependent ℝ (fun S : Finset (Fin (w n)) ↦ basisCos_cont n S) := by
-  rw [Fintype.linearIndependent_iff]
-  intro l hl T
-  -- The linear combination vanishes pointwise on the interval.
-  have hfun : ∀ t, (∑ S, l S * basisCos_cont n S t) = 0 := by
-    intro t
-    have h := congrFun hl t
-    simpa [Finset.sum_apply, Pi.smul_apply, smul_eq_mul] using h
-  -- The integral of the vanishing combination times `basisCos_cont n T` is `0`.
-  have hI : (∑ S, l S * ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀) = 0 := by
-    have key : (∑ S, l S * ∫ t, basisCos_cont n S t * basisCos_cont n T t ∂μ₀)
-        = ∫ t, (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t ∂μ₀ := by
-      have hpt : (fun t => (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t)
-          = fun t => ∑ S, l S * (basisCos_cont n S t * basisCos_cont n T t) := by
-        funext t
-        rw [Finset.sum_mul]
-        exact Finset.sum_congr rfl fun S _ => by ring
-      rw [hpt, integral_finsetSum _ (fun S _ => (integrable_basisCos_prod n S T).const_mul (l S))]
-      exact Finset.sum_congr rfl fun S _ => (integral_const_mul (l S) _).symm
-    rw [key]
-    have hz : (fun t => (∑ S, l S * basisCos_cont n S t) * basisCos_cont n T t)
-        = fun _ => (0 : ℝ) := by
-      funext t; rw [hfun t]; ring
-    rw [hz, integral_zero]
-  -- Orthogonality collapses the sum to the single `S = T` term.
-  simp only [basisCos_cont_orthogonal] at hI
-  have hcollapse : (∑ S, l S * (if S = T then (1 / 2 ^ S.card : ℝ) else 0))
-      = l T * (1 / 2 ^ T.card : ℝ) := by
-    rw [Finset.sum_eq_single T]
-    · simp
-    · intro S _ hST; simp [hST]
-    · intro hT; exact absurd (Finset.mem_univ T) hT
-  rw [hcollapse] at hI
-  have hc : (1 / 2 ^ T.card : ℝ) ≠ 0 := by positivity
-  rcases mul_eq_zero.mp hI with h | h
-  · exact h
-  · exact absurd h hc
-
--- We declare that H₀ n has an RKHS instance
-noncomputable instance (n : ℕ) : RKHS ℝ (H₀ n) X₀ ℝ where
-  coeCLM := coeCLM_H₀ n
-  coeCLM_injective := by
-    intro h1 h2 heq
-    -- The difference of coefficient vectors gives a vanishing linear combination.
-    have hfun : (∑ S : Finset (Fin (w n)),
-        ((h1 : Finset (Fin (w n)) → ℝ) S - (h2 : Finset (Fin (w n)) → ℝ) S)
-          • basisCos_cont n S) = 0 := by
-      funext t
-      have ht := congrFun heq t
-      simp only [coeCLM_H₀_apply, coeFun_H₀, Finset.powerset_univ] at ht
-      simp only [Finset.sum_apply, Pi.zero_apply, Pi.smul_apply, smul_eq_mul, sub_mul]
-      rw [Finset.sum_sub_distrib, ht, sub_self]
-    -- Linear independence forces all coefficients of the difference to vanish.
-    have hcoef := Fintype.linearIndependent_iff.mp (basisCos_cont_linear_independent n) _ hfun
-    -- Conclude the two coefficient vectors are equal.
-    refine PiLp.ext fun S => ?_
-    have := hcoef S
-    linarith [this]
-
-/-- The continuous polynomial evaluation function `coeFun_H₀ n h` is continuous. -/
-lemma coeFun_H₀_continuous (n : ℕ) (h : H₀ n) : Continuous (coeFun_H₀ n h) := by
-  unfold coeFun_H₀ basisCos_cont
-  fun_prop
-
-/-- Evaluation as an L² class (linear map). -/
-noncomputable def coeLM₀ (n : ℕ) : H₀ n →ₗ[ℝ] Lp ℝ 2 μ₀ where
-  toFun h := ContinuousMap.toLp 2 μ₀ ℝ ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩
-  map_add' h1 h2 := by
-    have hcm : (⟨coeFun_H₀ n (h1 + h2), coeFun_H₀_continuous n (h1 + h2)⟩ : C(X₀, ℝ))
-        = ⟨coeFun_H₀ n h1, coeFun_H₀_continuous n h1⟩
-          + ⟨coeFun_H₀ n h2, coeFun_H₀_continuous n h2⟩ := by
-      ext t
-      exact congrFun ((coeLM_H₀ n).map_add h1 h2) t
-    simp only [hcm, map_add]
-  map_smul' c h := by
-    have hcm : (⟨coeFun_H₀ n (c • h), coeFun_H₀_continuous n (c • h)⟩ : C(X₀, ℝ))
-        = c • ⟨coeFun_H₀ n h, coeFun_H₀_continuous n h⟩ := by
-      ext t
-      exact congrFun ((coeLM_H₀ n).map_smul c h) t
-    simp only [hcm, map_smul, RingHom.id_apply]
-
--- coeCLM₀ maps a coefficient vector to its L² class of the spatialVector
-noncomputable def coeCLM₀ (n : ℕ) : H₀ n →L[ℝ] Lp ℝ 2 μ₀ :=
-  (coeLM₀ n).toContinuousLinearMap
-
-/-- Fourier coefficients of the symmetric indicator step function g_i. -/
-noncomputable def g_coef (n : ℕ) (i : Fin (w n)) (k : ℕ) : ℝ :=
-  if k = 0 then 2 / (p n i : ℝ)
-  else if k ≤ (p n i - 1) / 2 then
-    4 / (p n i : ℝ) * Real.cos (2 * Real.pi * k * (krafftResidue n i : ℝ) / (p n i : ℝ))
-  else 0
-
-set_option maxHeartbeats 1600000 in
-/-- The Fourier coefficients reconstruct the local hit function g_i exactly. -/
-theorem g_coef_spec (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) :
-    ∑ k ∈ Finset.range ((p n i + 1) / 2),
-      g_coef n i k * Real.cos (2 * Real.pi * k * (x.val : ℝ) / (p n i : ℝ)) = g n i x := by
-  by_contra h_contra;
-  have h_g_i : g n i x = (1 / (p n i : ℝ)) * (∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ)))) := by
-    have h_g_i : ∀ m : ℤ, (∑ k ∈ Finset.range (p n i), Real.cos (2 * Real.pi * k * m / (p n i : ℝ))) = if (p n i : ℤ) ∣ m then (p n i : ℝ) else 0 := by
-      intro m
-      have h_cos_sum : ∑ k ∈ Finset.range (p n i), Complex.exp (2 * Real.pi * Complex.I * k * m / (p n i : ℝ)) = if (p n i : ℤ) ∣ m then (p n i : ℂ) else 0 := by
-        split_ifs with h;
-        · obtain ⟨ k, rfl ⟩ := h;
-          convert Finset.sum_const ( 1 : ℂ ) using 2 ; norm_num [ mul_assoc, mul_comm, mul_left_comm, div_eq_mul_inv ];
-          · exact Complex.exp_eq_one_iff.mpr ⟨ k * ‹ℕ› * 1, by push_cast; ring_nf; norm_num [ show p n i ≠ 0 from Nat.Prime.ne_zero ( p_prime n i ) ] ⟩;
-          · norm_num;
-        · have h_geom_sum : ∑ k ∈ Finset.range (p n i), (Complex.exp (2 * Real.pi * Complex.I * m / (p n i : ℝ))) ^ k = 0 := by
-            rw [ geom_sum_eq ];
-            · rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff.mpr ⟨ m, by push_cast; ring_nf; norm_num [ show p n i ≠ 0 from Nat.Prime.ne_zero ( p_prime n i ) ] ⟩ ] ; norm_num;
-            · rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
-              field_simp;
-              exact fun ⟨ k, hk ⟩ => h <| by rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] at hk; norm_cast at hk; exact ⟨ k, by linarith ⟩ ;
-          exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by rw [ ← Complex.exp_nat_mul ] ; ring ) h_geom_sum;
-      convert congr_arg Complex.re h_cos_sum using 2 ; norm_num [ Complex.exp_re ];
-      split_ifs <;> norm_num;
-    have h_g_i : g n i x = if (p n i : ℤ) ∣ (x.val - krafftResidue n i) ∨ (p n i : ℤ) ∣ (x.val + krafftResidue n i) then 1 else 0 := by
-      unfold g; simp +decide [ ← ZMod.intCast_zmod_eq_zero_iff_dvd ] ;
-      grind;
-    split_ifs at h_g_i <;> simp_all +decide [ Finset.sum_add_distrib ];
-    · rename_i h₁ h₂; have := h₁ ( x.cast - krafftResidue n i ) ; have := h₁ ( x.cast + krafftResidue n i ) ; simp_all +decide [ mul_div_assoc ] ;
-      split_ifs <;> simp_all +decide [ ne_of_gt ( show 0 < p n i from p_pos n i ) ];
-      rename_i h₁ h₂;
-      have := dvd_sub h₂ h₁; norm_num at this;
-      norm_cast at this; simp_all +decide [ ← two_mul, Nat.Prime.dvd_mul ] ;
-      have h_contra : p n i ∣ 2 := by
-        refine' Nat.Coprime.dvd_of_dvd_mul_right _ this;
-        refine' Nat.Coprime.symm _;
-        refine' Nat.Coprime.symm ( Nat.Prime.coprime_iff_not_dvd ( p_prime n i ) |>.2 _ );
-        intro h; have := Nat.le_of_dvd ( Nat.div_pos ( show p n i + 1 ≥ 6 by linarith [ p_ge_5 n i ] ) ( by norm_num ) ) h; simp_all +decide [ krafftResidue ] ;
-        linarith [ Nat.div_mul_le_self ( p n i + 1 ) 6, p_ge_5 n i ];
-      have := Nat.le_of_dvd ( by decide ) h_contra; linarith [ p_ge_5 n i ] ;
-    · rename_i h₁ h₂; have := h₁ ( x.cast - krafftResidue n i ) ; have := h₁ ( x.cast + krafftResidue n i ) ; simp_all +decide [ mul_div_assoc ] ;
-  have h_cos_sum : ∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ))) = 2 * (∑ k ∈ Finset.range ((p n i + 1) / 2), (if k = 0 then 1 else 2 * Real.cos (2 * Real.pi * k * (krafftResidue n i : ℝ) / (p n i : ℝ))) * Real.cos (2 * Real.pi * k * x.val / (p n i : ℝ))) := by
-    have h_cos_sum : ∑ k ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ))) = ∑ k ∈ Finset.range ((p n i + 1) / 2), (Real.cos (2 * Real.pi * k * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * k * (x.val + krafftResidue n i) / (p n i : ℝ)) + if k ≠ 0 then Real.cos (2 * Real.pi * (p n i - k) * (x.val - krafftResidue n i) / (p n i : ℝ)) + Real.cos (2 * Real.pi * (p n i - k) * (x.val + krafftResidue n i) / (p n i : ℝ)) else 0) := by
-      have h_cos_sum : Finset.range (p n i) = Finset.image (fun k => k) (Finset.range ((p n i + 1) / 2)) ∪ Finset.image (fun k => p n i - k) (Finset.Ico 1 ((p n i + 1) / 2)) := by
-        ext k
-        simp [Finset.mem_range, Finset.mem_image];
-        constructor;
-        · cases Nat.Prime.eq_two_or_odd ( p_prime n i ) <;> simp_all +decide;
-          · linarith [ p_ge_5 n i ];
-          · exact fun hk => Classical.or_iff_not_imp_left.2 fun hk' => ⟨ p n i - k, ⟨ Nat.sub_pos_of_lt hk, by omega ⟩, Nat.sub_sub_self hk.le ⟩;
-        · rintro ( hk | ⟨ a, ⟨ ha₁, ha₂ ⟩, rfl ⟩ ) <;> [ exact lt_of_lt_of_le hk ( Nat.div_le_of_le_mul <| by linarith [ p_ge_5 n i ] ) ; exact Nat.lt_of_lt_of_le ( Nat.sub_lt ( Nat.Prime.pos ( p_prime n i ) ) ha₁ ) ( by linarith [ p_ge_5 n i ] ) ];
-      rw [ h_cos_sum, Finset.sum_union ];
-      · norm_num [ Finset.sum_add_distrib ];
-        rw [ Finset.sum_image, Finset.sum_image ] <;> norm_num;
-        · rw [ Finset.sum_Ico_eq_sub _ ] <;> norm_num [ Finset.sum_range_succ' ];
-          · rw [ Finset.sum_Ico_eq_sub _ ] <;> norm_num [ Finset.sum_range_succ' ];
-            · rcases k : ( p n i + 1 ) / 2 with ( _ | k ) <;> simp_all +decide [ Finset.sum_range_succ' ];
-              rw [ ← Finset.sum_add_distrib ] ; refine' Finset.sum_congr rfl fun _ _ => _ ; rw [ Nat.cast_sub ] <;> push_cast <;> ring ; linarith [ Finset.mem_range.mp ‹_›, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
-            · exact Nat.div_pos ( by linarith [ p_ge_5 n i ] ) zero_lt_two;
-          · exact Nat.div_pos ( by linarith [ p_ge_5 n i ] ) zero_lt_two;
-        · exact fun a ha b hb hab => by rw [ tsub_right_inj ] at hab <;> linarith [ ha.1, ha.2, hb.1, hb.2, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
-        · exact fun a ha b hb hab => by rw [ tsub_right_inj ] at hab <;> linarith [ ha.1, ha.2, hb.1, hb.2, Nat.div_mul_le_self ( p n i + 1 ) 2 ] ;
-      · norm_num [ Finset.disjoint_right ];
-        intros; omega;
-    rw [ h_cos_sum, Finset.mul_sum _ _ _ ];
-    refine Finset.sum_congr rfl fun k hk => ?_ ; split_ifs <;> ring;
-    · norm_num [ Real.sin_add, Real.sin_sub, Real.cos_add, Real.cos_sub, mul_assoc, mul_comm Real.pi _, ne_of_gt ( show 0 < p n i from Nat.Prime.pos ( p_prime n i ) ) ] ; ring;
-      norm_num [ mul_two, Real.sin_add, Real.cos_add ] ; ring;
-      norm_num [ Real.sin_sq, Real.cos_sq ] ; ring;
-      norm_num [ mul_assoc, mul_comm Real.pi ];
-      norm_num [ show Real.cos ( x.cast * Real.pi ) = ( -1 : ℝ ) ^ x.val by
-                  rw [ ← Real.rpow_natCast, Real.rpow_def_of_neg ] <;> norm_num, show Real.sin ( x.cast * Real.pi ) = 0 by
-                                                                                    exact Real.sin_eq_zero_iff.mpr ⟨ x.val, by simp +decide [ ZMod.cast_id ] ⟩, show Real.cos ( x.cast * ( 2 * Real.pi ) ) = 1 by
-                                                                                                                                      convert Real.cos_nat_mul_two_pi x.val using 2 ; ring;
-                                                                                                                                      norm_num [ mul_assoc, mul_comm, mul_left_comm ] ] ; ring;
-    · norm_num [ ‹k = 0› ];
-    · tauto;
-  refine' h_contra _;
-  rw [ h_g_i, h_cos_sum ];
-  rw [ Finset.mul_sum _ _ _ ] ; rw [ Finset.mul_sum ] ; refine' Finset.sum_congr rfl fun k hk => _ ; unfold g_coef ; split_ifs <;> ring;
-  grind
-
-/-- The continuous weight `c_cont₀`, a trigonometric polynomial interpolating the discrete weight `c n`
-using the single-prime Fourier cosine coefficients. -/
+/-- The continuous weight `c_cont₀`, a trigonometric polynomial interpolating
+the discrete weight `c n` using the single-prime Fourier cosine coefficients. -/
 noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
   fun t => ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
     g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
 
-/-- The continuous window function Psi_cont, a band-limited continuous majorant of the discrete window Psi. -/
-noncomputable def Psi_cont (n : ℕ) : X₀ → ℝ :=
+/-- The continuous window function Psi_cont, a band-limited continuous majorant
+of the discrete window Psi. -/
+noncomputable def Psi_cont (_n : ℕ) : X₀ → ℝ :=
   fun _ => 1
 
 /-- Psi_cont is continuous. -/
@@ -774,10 +56,10 @@ lemma Psi_cont_continuous (n : ℕ) : Continuous (Psi_cont n) := by
   fun_prop
 
 /-- The error bound for the approximate denominator quadrature. -/
-noncomputable def denominator_error (n : ℕ) : ℝ := 0
+noncomputable def denominator_error (_n : ℕ) : ℝ := 0
 
 /-- The error bound for the approximate numerator quadrature. -/
-noncomputable def numerator_error (n : ℕ) : ℝ := 0
+noncomputable def numerator_error (_n : ℕ) : ℝ := 0
 
 /-- The error bound for the denominator quadrature converges to 0. -/
 lemma denominator_error_tendsto_zero : Filter.Tendsto denominator_error Filter.atTop (nhds 0) := by
@@ -809,7 +91,8 @@ theorem c_cont₀_eq_c (n : ℕ) (x : ℕ) :
     c_cont₀ n (gridPt n x) = c n (x : ZMod (q n)) := by
   unfold c_cont₀ c
   have h_eq : ∀ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
-        g_coef n i k * Real.cos (2 * Real.pi * k * ((gridPt n x : X₀) : ℝ) * (q n : ℝ) / (p n i : ℝ))
+        g_coef n i k * Real.cos
+          (2 * Real.pi * k * ((gridPt n x : X₀) : ℝ) * (q n : ℝ) / (p n i : ℝ))
         = ∑ k ∈ Finset.range ((p n i + 1) / 2),
           g_coef n i k * Real.cos (2 * Real.pi * k * ((x : ZMod (q n)).val : ℝ) / (p n i : ℝ)) := by
     intro i
@@ -884,7 +167,15 @@ theorem basisCos_triple_orthogonal_discrete (n : ℕ) (R S T : Finset (Fin (w n)
   unfold basisCos
   split_ifs <;> simp_all +decide only [Finset.symmDiff_eq_empty, ZMod.val_natCast,
     Finset.union_assoc]
-  · have h_crt : ∀ i : Fin (w n), ∑ x ∈ Finset.range (p n i), Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^ (if i ∈ symmDiff S T then 1 else 0) * Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^ (if i ∈ S then 1 else 0) * Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^ (if i ∈ T then 1 else 0) = if i ∈ (symmDiff S T) ∪ (S ∪ T) then (p n i : ℝ) / 2 else (p n i : ℝ) := by
+  · have h_crt : ∀ i : Fin (w n),
+        ∑ x ∈ Finset.range (p n i),
+          Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^
+            (if i ∈ symmDiff S T then 1 else 0) *
+          Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^
+            (if i ∈ S then 1 else 0) *
+          Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^
+            (if i ∈ T then 1 else 0)
+        = if i ∈ (symmDiff S T) ∪ (S ∪ T) then (p n i : ℝ) / 2 else (p n i : ℝ) := by
       intro i
       split_ifs <;> simp_all +decide only [symmDiff, Finset.sup_eq_union', Finset.mem_union,
         Finset.mem_sdiff, not_false_eq_true, and_true, or_self, Finset.union_assoc, pow_zero,
@@ -894,19 +185,27 @@ theorem basisCos_triple_orthogonal_discrete (n : ℕ) (R S T : Finset (Fin (w n)
         · exact_mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith [ p_ge_5 n i ] )
         · have h_prime_ge_5 : 5 ≤ p n i := by
             exact KrafftSieve.p_ge_5 n i
-          norm_cast; intro h; have := Nat.le_of_dvd ( by decide ) h; interval_cases _ : p n i <;> simp_all +decide
+          norm_cast; intro h; have := Nat.le_of_dvd ( by decide ) h
+          interval_cases _ : p n i <;> simp_all +decide only
           exact absurd ( p_prime n i ) ( by norm_num [ * ] )
       · convert cos_sq_prime_sum n i 3 _ _ using 1 <;> norm_num
         · exact Finset.sum_congr rfl fun _ _ => by ring
         · exact_mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith [ p_ge_5 n i ] )
         · have := p_prime n i; ( have := p_ge_5 n i; ( norm_cast at *; ) )
-          exact fun h => by have := Nat.le_of_dvd ( by decide ) h; interval_cases p n i <;> trivial
+          exact fun h => by
+            have := Nat.le_of_dvd ( by decide ) h; interval_cases p n i <;> trivial
       · convert cos_sq_prime_sum n i 3 _ _ using 1 <;> norm_num
         · exact Finset.sum_congr rfl fun _ _ => by ring
         · exact_mod_cast Nat.not_dvd_of_pos_of_lt ( by norm_num ) ( by linarith [ p_ge_5 n i ] )
         · have := p_ge_5 n i; ( have := p_prime n i; ( norm_cast at *; ) )
-          exact fun h => by have := Nat.le_of_dvd ( by decide ) h; interval_cases p n i <;> trivial
-    convert crt_product_sum_factorization n ( fun i x => ( Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^ ( if i ∈ symmDiff S T then 1 else 0 ) ) * Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^ ( if i ∈ S then 1 else 0 ) * Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^ ( if i ∈ T then 1 else 0 ) ) _ using 1
+          exact fun h => by
+            have := Nat.le_of_dvd ( by decide ) h; interval_cases p n i <;> trivial
+    convert crt_product_sum_factorization n
+      ( fun i x =>
+        ( Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^
+          ( if i ∈ symmDiff S T then 1 else 0 ) ) *
+        Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^ ( if i ∈ S then 1 else 0 ) *
+        Real.cos ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) ^ ( if i ∈ T then 1 else 0 ) ) _ using 1
     · refine Finset.sum_congr rfl fun x hx => ?_
       rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp hx ) ]
       rw [ Finset.prod_mul_distrib, Finset.prod_mul_distrib ]
@@ -923,19 +222,39 @@ theorem basisCos_triple_orthogonal_discrete (n : ℕ) (R S T : Finset (Fin (w n)
           grind
       · exact Finset.disjoint_left.mpr ( by aesop )
     · intro i x; simp +decide [mul_add, add_div, ne_of_gt (Nat.Prime.pos (p_prime n i))]
-      norm_num [ show 2 * Real.pi * 3 = 2 * Real.pi + 2 * Real.pi + 2 * Real.pi by ring, Real.cos_add ]
-  · -- Since the symmetric difference is non-empty, there exists an index $i$ such that $i$ is in an odd number of the sets $R$, $S$, and $T$.
-    obtain ⟨i, hi⟩ : ∃ i : Fin (w n), (if i ∈ R then 1 else 0) + (if i ∈ S then 1 else 0) + (if i ∈ T then 1 else 0) ≡ 1 [MOD 2] := by
-      simp_all +decide [ Finset.ext_iff, symmDiff ]
+      norm_num [ show 2 * Real.pi * 3 =
+        2 * Real.pi + 2 * Real.pi + 2 * Real.pi by ring, Real.cos_add ]
+  · -- Since the symmetric difference is non-empty, there exists an index $i$
+    -- such that $i$ is in an odd number of the sets $R$, $S$, and $T$.
+    obtain ⟨i, hi⟩ : ∃ i : Fin (w n),
+        (if i ∈ R then 1 else 0) + (if i ∈ S then 1 else 0) + (if i ∈ T then 1 else 0)
+          ≡ 1 [MOD 2] := by
+      simp_all +decide only [symmDiff, Finset.sup_eq_union', Finset.ext_iff, Finset.mem_union,
+        Finset.mem_sdiff, not_forall]
       obtain ⟨ i, hi ⟩ := ‹_›; use i; split_ifs <;> simp_all +decide
     -- Since the sum of cosines is zero, the product sum is also zero.
-    have h_cos_sum_zero : ∑ x ∈ Finset.range (p n i), (if i ∈ R then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) * (if i ∈ S then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) * (if i ∈ T then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) = 0 := by
-      split_ifs at hi ⊢ <;> simp_all +decide
-      · -- Using the identity $\cos^3(\theta) = \frac{3\cos(\theta) + \cos(3\theta)}{4}$, we can rewrite the sum.
-        have h_cos3 : ∀ x : ℕ, Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^ 3 = (3 * Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) + Real.cos (2 * Real.pi * 9 * (x : ℝ) / (p n i : ℝ))) / 4 := by
-          intro x; rw [ show 2 * Real.pi * 9 * x / ( p n i : ℝ ) = 3 * ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) by ring ] ; rw [ Real.cos_three_mul ] ; ring
-        -- Using the fact that the sum of cosines of the form $\cos(2\pi kx/p)$ over a complete residue system modulo $p$ is zero for any integer $k$ not divisible by $p$, we can simplify the expression.
-        have h_cos_sum_zero : ∑ x ∈ Finset.range (p n i), Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) = 0 ∧ ∑ x ∈ Finset.range (p n i), Real.cos (2 * Real.pi * 9 * (x : ℝ) / (p n i : ℝ)) = 0 :=
+    have h_cos_sum_zero : ∑ x ∈ Finset.range (p n i),
+        (if i ∈ R then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) *
+        (if i ∈ S then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) *
+        (if i ∈ T then Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) else 1) = 0 := by
+      split_ifs at hi ⊢ <;> simp_all +decide only
+      · -- Using the identity $\cos^3(\theta) = \frac{3\cos(\theta) + \cos(3\theta)}{4}$,
+        -- we can rewrite the sum.
+        have h_cos3 : ∀ x : ℕ, Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) ^ 3 =
+            (3 * Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) +
+             Real.cos (2 * Real.pi * 9 * (x : ℝ) / (p n i : ℝ))) / 4 := by
+          intro x
+          rw [ show 2 * Real.pi * 9 * x / ( p n i : ℝ ) =
+            3 * ( 2 * Real.pi * 3 * x / ( p n i : ℝ ) ) by ring ]
+          rw [ Real.cos_three_mul ] ; ring
+        -- Using the fact that the sum of cosines of the form $\cos(2\pi kx/p)$
+        -- over a complete residue system modulo $p$ is zero for any integer
+        -- $k$ not divisible by $p$, we can simplify the expression.
+        have h_cos_sum_zero :
+            ∑ x ∈ Finset.range (p n i),
+              Real.cos (2 * Real.pi * 3 * (x : ℝ) / (p n i : ℝ)) = 0 ∧
+            ∑ x ∈ Finset.range (p n i),
+              Real.cos (2 * Real.pi * 9 * (x : ℝ) / (p n i : ℝ)) = 0 :=
           ⟨by simpa using cos_prime_sum_zero n i 3 (p_mod3_ne n i),
            by simpa using cos_prime_sum_zero n i 9 (p_mod9_ne n i)⟩
         simp_all +decide [← pow_two]
@@ -944,16 +263,30 @@ theorem basisCos_triple_orthogonal_discrete (n : ℕ) (R S T : Finset (Fin (w n)
       · simpa using cos_prime_sum_zero n i 3 (p_mod3_ne n i)
       · simpa using cos_prime_sum_zero n i 3 (p_mod3_ne n i)
       · simpa using cos_prime_sum_zero n i 3 (p_mod3_ne n i)
-    convert mul_eq_zero_of_right ( ∏ j ∈ Finset.univ.erase i, ∑ y ∈ Finset.range ( p n j ), ( if j ∈ R then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) * ( if j ∈ S then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) * ( if j ∈ T then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) ) h_cos_sum_zero using 1
-    convert crt_product_sum_factorization n ( fun j x => ( if j ∈ R then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) * ( if j ∈ S then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) * ( if j ∈ T then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) ) _ using 1
+    convert mul_eq_zero_of_right
+      ( ∏ j ∈ Finset.univ.erase i, ∑ y ∈ Finset.range ( p n j ),
+        ( if j ∈ R then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) *
+        ( if j ∈ S then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) *
+        ( if j ∈ T then Real.cos ( 2 * Real.pi * 3 * ( y : ℝ ) / ( p n j : ℝ ) ) else 1 ) )
+      h_cos_sum_zero using 1
+    convert crt_product_sum_factorization n
+      ( fun j x =>
+        ( if j ∈ R then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) *
+        ( if j ∈ S then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) *
+        ( if j ∈ T then Real.cos ( 2 * Real.pi * 3 * ( x : ℝ ) / ( p n j : ℝ ) ) else 1 ) )
+      _ using 1
     · refine Finset.sum_congr rfl fun x hx => ?_
       rw [ Nat.mod_eq_of_lt ( Finset.mem_range.mp hx ) ]
       rw [ Finset.prod_mul_distrib, Finset.prod_mul_distrib ]
       simp +decide
     · rw [ Finset.prod_erase_mul _ _ ( Finset.mem_univ _ ) ]
-    · intro j x; by_cases hjR : j ∈ R <;> by_cases hjS : j ∈ S <;> by_cases hjT : j ∈ T <;> simp +decide only [Nat.cast_add,
-      mul_ite, ite_mul, one_mul, mul_one]
-      all_goals rw [ ← Real.cos_sub_int_mul_two_pi _ 3 ] ; ring_nf; norm_num [ ne_of_gt ( show 0 < p n j from Nat.Prime.pos ( p_prime n j ) ) ]
+    · intro j x
+      by_cases hjR : j ∈ R <;> by_cases hjS : j ∈ S <;> by_cases hjT : j ∈ T <;>
+        simp +decide only [Nat.cast_add, mul_ite, ite_mul, one_mul, mul_one]
+      all_goals
+        rw [ ← Real.cos_sub_int_mul_two_pi _ 3 ]
+        ring_nf
+        norm_num [ ne_of_gt ( show 0 < p n j from Nat.Prime.pos ( p_prime n j ) ) ]
 
 /-- Exact Riemann sum quadrature for products of two basis cosines. -/
 theorem basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -1041,9 +374,10 @@ theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
       ≤ numerator_error n * ‖coeCLM₀ n h‖ ^ 2 := by
   sorry
 
-/-- The `L²` norm-squared of `coeCLM₀ n h` against `Psi_cont`, expressed as an integral, is strictly positive
-whenever its norm is positive. -/
-theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
+/-- The `L²` norm-squared of `coeCLM₀ n h` against `Psi_cont`, expressed as an integral,
+is strictly positive whenever its norm is positive. -/
+theorem denominator_pos (n : ℕ) (h : H₀ n)
+    (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
     (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ := by
   exact hn
 
@@ -1114,7 +448,8 @@ lemma muMin_mul_denom_le_numer (n : ℕ) (h : H₀ n) :
             ∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x :=
             mul_le_mul_of_nonneg_left hle hqinv
 
-theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
+theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n)
+    (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
     muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) +
       (numerator_error n + muMin n * denominator_error n) * ‖coeCLM₀ n h‖ ^ 2 /
         (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) := by
