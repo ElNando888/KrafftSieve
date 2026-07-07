@@ -1047,10 +1047,127 @@ theorem denominator_pos (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X
     (0 : ℝ) < ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ := by
   exact hn
 
+/-- The minimal sieve quotient `muMin n` is non-negative. -/
+lemma muMin_nonneg (n : ℕ) : 0 ≤ muMin n := by
+  unfold muMin
+  apply le_csInf
+  · exact ⟨_, lambdaOpt n, (lambda_opt_spec n).1, rfl⟩
+  · rintro _ ⟨lambda, hlambda_pos, rfl⟩
+    unfold Ratio
+    split_ifs with hq
+    · exact le_refl 0
+    · apply div_nonneg _ hlambda_pos.le
+      rw [q2_eq_spatialVector_weighted_norm]
+      refine Finset.sum_nonneg fun x _ => ?_
+      refine mul_nonneg (mul_nonneg (c_nonneg n _) (sq_nonneg _)) ?_
+      unfold Psi; split_ifs <;> norm_num
+
+/-- Discrete sieve quotient bound: `muMin n` times the discrete windowed denominator is at most
+the discrete windowed numerator (using the discrete weight `c`). -/
+lemma muMin_mul_denom_le_numer (n : ℕ) (h : H₀ n) :
+    muMin n * ((1 / (q n : ℝ)) *
+        ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x)
+      ≤ (1 / (q n : ℝ)) *
+        ∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x := by
+  have hq0 : (0 : ℝ) < (q n : ℝ) := by
+    have : q n ≠ 0 := NeZero.ne (q n)
+    positivity
+  have hqinv : (0 : ℝ) ≤ 1 / (q n : ℝ) := by positivity
+  -- Non-negativity of the (windowed) denominator sum.
+  have hA_nonneg : (0 : ℝ) ≤ ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x := by
+    refine Finset.sum_nonneg fun x _ => ?_
+    refine mul_nonneg (sq_nonneg _) ?_
+    unfold Psi; split_ifs <;> norm_num
+  rcases eq_or_lt_of_le hA_nonneg with hA0 | hApos
+  · -- Denominator sum is zero, hence so is the numerator sum.
+    have hterm : ∀ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x = 0 := by
+      intro x hx
+      refine (Finset.sum_eq_zero_iff_of_nonneg ?_).1 hA0.symm x hx
+      intro y _
+      refine mul_nonneg (sq_nonneg _) ?_
+      unfold Psi; split_ifs <;> norm_num
+    have hB0 : (∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x) = 0 := by
+      refine Finset.sum_eq_zero fun x hx => ?_
+      have := hterm x hx
+      rw [mul_assoc]
+      rw [this, mul_zero]
+    rw [← hA0, hB0]
+    ring_nf
+    simp
+  · -- Denominator sum is positive: use the discrete Rayleigh quotient bound.
+    have hApos' : (∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x) ≠ 0 :=
+      ne_of_gt hApos
+    have hle := muMin_le_discreteRatio n h hApos
+    have hsr : spatialRatio n (evalOnGrid n h)
+        = (∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x)
+          / (∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x) := by
+      unfold spatialRatio
+      simp only [hApos', if_false]
+    rw [hsr] at hle
+    rw [le_div_iff₀ hApos] at hle
+    -- hle : muMin n * A ≤ B
+    calc muMin n * ((1 / (q n : ℝ)) *
+            ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x)
+        = (1 / (q n : ℝ)) * (muMin n *
+            ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x) := by ring
+      _ ≤ (1 / (q n : ℝ)) *
+            ∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x :=
+            mul_le_mul_of_nonneg_left hle hqinv
+
 theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n) (hn : (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0) :
     muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) +
       (numerator_error n + muMin n * denominator_error n) * ‖coeCLM₀ n h‖ ^ 2 /
         (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) := by
-  sorry
+  -- Basic facts / building blocks (raw form, before abbreviating).
+  have hmu := muMin_nonneg n
+  have hsieve := muMin_mul_denom_le_numer n h
+  have hnum := numerator_quadrature n h
+  have hden := denominator_quadrature n h
+  -- The discrete numerator with the true weight `c` is ≤ the one with the majorant `c_cont₀`.
+  have hSc_le_Scc :
+      (1 / (q n : ℝ)) *
+          ∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x
+        ≤ (1 / (q n : ℝ)) *
+          ∑ x ∈ Finset.range (q n),
+            c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x := by
+    apply mul_le_mul_of_nonneg_left _ (by positivity)
+    apply Finset.sum_le_sum
+    intro x _
+    have hPsi : (0 : ℝ) ≤ Psi n ↑x := by unfold Psi; split_ifs <;> norm_num
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_mul_of_nonneg_right (c_le_c_cont₀ n x) (sq_nonneg _)) hPsi
+  -- Rewrite the continuous Rayleigh quotient as a plain quotient of integrals.
+  have hcr : continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h)
+      = (∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀)
+        / (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) := by
+    unfold continuousRatio
+    rw [if_neg (ne_of_gt hn)]
+  rw [hcr, ← add_div, le_div_iff₀ hn]
+  -- Abbreviate the recurring integrals / sums / norm.
+  set Dcont := ∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ with hDcont
+  set Ncont := ∫ x, c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ with hNcont
+  set normsq := ‖coeCLM₀ n h‖ ^ 2 with hnormsq
+  set Dd := (1 / (q n : ℝ)) *
+      ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x with hDd
+  set Sc := (1 / (q n : ℝ)) *
+      ∑ x ∈ Finset.range (q n), c n ↑x * (evalOnGrid n h x) ^ 2 * Psi n ↑x with hSc
+  set Scc := (1 / (q n : ℝ)) *
+      ∑ x ∈ Finset.range (q n),
+        c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x with hScc
+  -- Turn the quadrature error bounds into one-sided inequalities.
+  have hnum_le : Scc ≤ Ncont + numerator_error n * normsq := by
+    have := (abs_le.1 hnum).1
+    linarith
+  have hden_le : Dcont - denominator_error n * normsq ≤ Dd := by
+    have := (abs_le.1 hden).2
+    linarith
+  -- Multiply the denominator bound by the non-negative `muMin n`.
+  have hstep : muMin n * (Dcont - denominator_error n * normsq) ≤ muMin n * Dd :=
+    mul_le_mul_of_nonneg_left hden_le hmu
+  -- Chain everything together.
+  have hbig : muMin n * (Dcont - denominator_error n * normsq)
+      ≤ Ncont + numerator_error n * normsq :=
+    le_trans hstep (le_trans hsieve (le_trans hSc_le_Scc hnum_le))
+  nlinarith [hbig]
 
 end KrafftSieve
