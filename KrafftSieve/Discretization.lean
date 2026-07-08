@@ -25,6 +25,7 @@ import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
 import KrafftSieve.DiscreteOrthoCore
 import KrafftSieve.FourierInterpolation
+import KrafftSieve.DirichletQuadrature
 
 /-!
 # Sieve Discretization and Approximate Quadratures
@@ -45,15 +46,29 @@ noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
   fun t => ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
     g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
 
-/-- The continuous window function Psi_cont, a band-limited continuous majorant
-of the discrete window Psi. -/
-noncomputable def Psi_cont (_n : ℕ) : X₀ → ℝ :=
-  fun _ => 1
+/-- The reproducing degree of the continuous window: chosen large enough that every product of
+cosines appearing in the numerator/denominator quadratures has total (absolute) frequency at most
+`kernelDegree n`, so that the Dirichlet kernel reproduces it exactly. -/
+noncomputable def kernelDegree (n : ℕ) : ℕ := q n * (6 * w n + 1)
+
+/-- The continuous window function `Psi_cont`.
+
+Rather than a band-limited majorant (which, being analytic, could not agree with the compactly
+supported discrete window `Psi` on the grid — the "analyticity wall"), we use the exact
+trigonometric *reproducing* window built from the Dirichlet kernel:
+`Psi_cont n t = (1/q) ∑_{y<q} Psi(y) · D_M(t - y/q)` with `M = kernelDegree n`.
+
+This window is a genuine (non band-limited) trigonometric polynomial. Its defining property is that
+for every product of cosines with total absolute frequency `≤ M`, integrating against `Psi_cont`
+reproduces *exactly* the corresponding windowed Riemann sum over the grid. Consequently the
+numerator/denominator quadratures below hold with **zero** error. -/
+noncomputable def Psi_cont (n : ℕ) : X₀ → ℝ :=
+  fun t => reproWindow (q n) (kernelDegree n) (fun y => Psi n (y : ZMod (q n))) (t : ℝ)
 
 /-- Psi_cont is continuous. -/
 lemma Psi_cont_continuous (n : ℕ) : Continuous (Psi_cont n) := by
   unfold Psi_cont
-  fun_prop
+  exact (reproWindow_continuous _ _ _).comp (by fun_prop)
 
 /-- The error bound for the approximate denominator quadrature. -/
 noncomputable def denominator_error (_n : ℕ) : ℝ := 0
@@ -341,12 +356,160 @@ lemma evalOnGrid_mem_eq (n : ℕ) (h : H₀ n) (x : ℕ) :
   refine Finset.sum_congr rfl fun S _ => ?_
   rw [basisCos_cont_gridPt]
 
+/-- Exact reproducing quadrature for a product of cosines against the continuous window
+`Psi_cont`, provided the total absolute frequency is at most `kernelDegree n`. This is the
+key property of the Dirichlet-kernel window: the continuous integral against `Psi_cont`
+equals the corresponding windowed grid sum, with no error. -/
+lemma prod_cos_Psi_cont_repro (n : ℕ) {ι : Type*} (A : Finset ι) (g : ι → ℤ)
+    (hM : ∑ i ∈ A, (g i).natAbs ≤ kernelDegree n) :
+    ∫ t : X₀, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * (t : ℝ))) * Psi_cont n t ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ y ∈ Finset.range (q n),
+        Psi n (y : ZMod (q n)) *
+          ∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * ((y : ℝ) / (q n : ℝ))) := by
+  exact prod_cos_reproWindow (q n) (kernelDegree n) (fun y => Psi n (y : ZMod (q n))) A g hM
+
+/-- The cardinality of any `S : Finset (Fin (w n))` is at most `w n`. -/
+lemma card_finset_fin_w_le (n : ℕ) (S : Finset (Fin (w n))) : S.card ≤ w n := by
+  simpa using (Finset.card_le_card (Finset.subset_univ S)).trans_eq (by simp)
+
+/-- Frequency bound: the total absolute frequency of the pair product
+`basisCos_cont S · basisCos_cont T` is at most `kernelDegree n`. -/
+lemma basisCos_pair_freq_bound (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∑ x ∈ S.disjSum T,
+        (Sum.elim (fun i => ((3 * (q n / p n i) : ℕ) : ℤ))
+          (fun i => ((3 * (q n / p n i) : ℕ) : ℤ)) x).natAbs
+      ≤ kernelDegree n := by
+  rw [Finset.sum_disjSum]
+  simp only [Sum.elim_inl, Sum.elim_inr, Int.natAbs_natCast]
+  have hbound : ∀ (U : Finset (Fin (w n))), ∑ i ∈ U, (3 * (q n / p n i)) ≤ 3 * (w n * q n) := by
+    intro U
+    calc ∑ i ∈ U, (3 * (q n / p n i)) ≤ ∑ _i ∈ U, (3 * q n) := by
+            apply Finset.sum_le_sum; intro i _
+            exact Nat.mul_le_mul_left 3 (Nat.div_le_self _ _)
+      _ = U.card * (3 * q n) := by rw [Finset.sum_const, smul_eq_mul]
+      _ ≤ w n * (3 * q n) := Nat.mul_le_mul_right _ (card_finset_fin_w_le n U)
+      _ = 3 * (w n * q n) := by ring
+  have h1 := hbound S
+  have h2 := hbound T
+  have hk : kernelDegree n = 6 * (w n * q n) + q n := by unfold kernelDegree; ring
+  omega
+
+/-- **Key windowed quadrature (denominator).** The continuous integral of a product of two basis
+cosines against `Psi_cont` equals the windowed discrete grid sum, exactly. -/
+lemma basisCos_pair_Psi_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∫ t, basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀ =
+      (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n),
+        basisCos n S ↑x * basisCos n T ↑x * Psi n ↑x := by
+  classical
+  set G : Fin (w n) → ℤ := fun i => ((3 * (q n / p n i) : ℕ) : ℤ) with hG
+  have hpt : ∀ t : X₀, basisCos_cont n S t * basisCos_cont n T t
+      = ∏ x ∈ S.disjSum T, Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * (t : ℝ)) := by
+    intro t
+    rw [basisCos_cont_eq n S t, basisCos_cont_eq n T t]
+    simp only [Finset.prod_disjSum, Sum.elim_inl, Sum.elim_inr, hG]
+  have hint : (∫ t, basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀)
+      = ∫ t : X₀, (∏ x ∈ S.disjSum T,
+          Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * (t : ℝ))) * Psi_cont n t ∂μ₀ := by
+    apply MeasureTheory.integral_congr_ae
+    filter_upwards with t
+    rw [hpt t]
+  rw [hint, prod_cos_Psi_cont_repro n (S.disjSum T) (Sum.elim G G) (basisCos_pair_freq_bound n S T)]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro y hy
+  have hgrid : ((y : ℝ) / (q n : ℝ)) = ((gridPt n y : X₀) : ℝ) := by
+    rw [show ((gridPt n y : X₀) : ℝ) = ((y % q n : ℕ) : ℝ) / (q n : ℝ) from rfl,
+        Nat.mod_eq_of_lt (Finset.mem_range.mp hy)]
+  rw [hgrid]
+  have hprod : (∏ x ∈ S.disjSum T,
+        Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * ((gridPt n y : X₀) : ℝ)))
+      = basisCos_cont n S (gridPt n y) * basisCos_cont n T (gridPt n y) := (hpt (gridPt n y)).symm
+  rw [hprod, basisCos_cont_gridPt, basisCos_cont_gridPt]
+  ring
+
+/-- Pure algebraic rearrangement underlying the L² quadrature: a double sum of pairwise windowed
+inner products equals the windowed norm of the linear combination. -/
+private lemma sq_sum_swap {ι κ : Type*} (P : Finset ι) (R : Finset κ) (c : ι → ℝ)
+    (f : ι → κ → ℝ) (ψ : κ → ℝ) (r : ℝ) :
+    ∑ S ∈ P, ∑ T ∈ P, c S * c T * (r * ∑ x ∈ R, f S x * f T x * ψ x)
+      = r * ∑ x ∈ R, (∑ S ∈ P, c S * f S x) ^ 2 * ψ x := by
+  have hL : ∑ S ∈ P, ∑ T ∈ P, c S * c T * (r * ∑ x ∈ R, f S x * f T x * ψ x)
+      = ∑ x ∈ R, ∑ S ∈ P, ∑ T ∈ P, r * ((c S * f S x) * (c T * f T x) * ψ x) := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_congr rfl (fun S _ => Finset.sum_comm)]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl (fun x _ => Finset.sum_congr rfl
+      (fun S _ => Finset.sum_congr rfl (fun T _ => by ring)))
+  rw [hL, Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun x _ => ?_)
+  rw [sq, Finset.sum_mul_sum, Finset.sum_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun S _ => ?_)
+  rw [Finset.sum_mul, Finset.mul_sum]
+
+/-- The windowed L² quadrature for a linear combination of continuous basis cosines: the continuous
+integral against `Psi_cont` equals the windowed discrete grid sum, exactly. -/
+lemma sq_sum_Psi_quadrature (n : ℕ) (c : Finset (Fin (w n)) → ℝ) :
+    ∫ t : X₀, (∑ S ∈ Finset.univ.powerset, c S * basisCos_cont n S t) ^ 2 * Psi_cont n t ∂μ₀
+      = (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n),
+          (∑ S ∈ Finset.univ.powerset, c S * basisCos n S ↑x) ^ 2 * Psi n ↑x := by
+  classical
+  have hcont : ∀ S T : Finset (Fin (w n)),
+      Continuous (fun t : X₀ => basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) :=
+    fun S T => ((basisCos_cont_continuous n S).mul (basisCos_cont_continuous n T)).mul
+      (Psi_cont_continuous n)
+  have hexp : ∀ t : X₀,
+      (∑ S ∈ Finset.univ.powerset, c S * basisCos_cont n S t) ^ 2 * Psi_cont n t
+      = ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset,
+          (c S * c T) * (basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) := by
+    intro t
+    rw [sq, Finset.sum_mul_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl (fun S _ => ?_)
+    rw [Finset.sum_mul]
+    exact Finset.sum_congr rfl (fun T _ => by ring)
+  have hintegrable : ∀ S ∈ Finset.univ.powerset,
+      Integrable (fun t : X₀ => ∑ T ∈ Finset.univ.powerset,
+        (c S * c T) * (basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ := by
+    intro S _
+    exact (continuous_finsetSum _ (fun T _ => continuous_const.mul
+      (hcont S T))).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hintegrable2 : ∀ (S : Finset (Fin (w n))), ∀ T ∈ Finset.univ.powerset,
+      Integrable (fun t : X₀ =>
+        (c S * c T) * (basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ := by
+    intro S T _
+    exact (continuous_const.mul (hcont S T)).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall hexp)]
+  rw [MeasureTheory.integral_finsetSum _ hintegrable]
+  have hinner : ∀ S ∈ Finset.univ.powerset,
+      (∫ t : X₀, ∑ T ∈ Finset.univ.powerset,
+          (c S * c T) * (basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) ∂μ₀)
+        = ∑ T ∈ Finset.univ.powerset,
+          (c S * c T) * ((1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n),
+            basisCos n S ↑x * basisCos n T ↑x * Psi n ↑x) := by
+    intro S _
+    rw [MeasureTheory.integral_finsetSum _ (hintegrable2 S)]
+    refine Finset.sum_congr rfl (fun T _ => ?_)
+    rw [MeasureTheory.integral_const_mul, basisCos_pair_Psi_quadrature]
+  rw [Finset.sum_congr rfl hinner]
+  exact sq_sum_swap Finset.univ.powerset (Finset.range (q n)) c
+    (fun S x => basisCos n S ↑x) (fun x => Psi n ↑x) (1 / (q n : ℝ))
+
 /-- Denominator Quadrature (L² Norm Equivalence) -/
 theorem denominator_quadrature (n : ℕ) (h : H₀ n) :
     |∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀ -
       (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n), (evalOnGrid n h x) ^ 2 * Psi n ↑x|
       ≤ denominator_error n * ‖coeCLM₀ n h‖ ^ 2 := by
-  sorry
+  rw [denominator_error, zero_mul, abs_nonpos_iff, sub_eq_zero]
+  have hae : (fun x => ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x)
+      =ᵐ[μ₀] (fun t => (∑ S ∈ Finset.univ.powerset,
+          (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t) ^ 2 * Psi_cont n t) := by
+    filter_upwards [coeCLM₀_coeFn_ae n h] with x hx
+    rw [hx]; rfl
+  rw [MeasureTheory.integral_congr_ae hae,
+    sq_sum_Psi_quadrature n (h : Finset (Fin (w n)) → ℝ)]
+  congr 1
+  refine Finset.sum_congr rfl (fun x _ => ?_)
+  rw [evalOnGrid_mem_eq, Finset.powerset_univ]
 
 /-- Products of `c_cont₀` with two continuous basis cosines are integrable. -/
 lemma integrable_c_cont₀_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -356,6 +519,126 @@ lemma integrable_c_cont₀_basisCos_prod (n : ℕ) (S T : Finset (Fin (w n))) :
     (basisCos_cont_continuous n T)).integrable_of_hasCompactSupport
     (HasCompactSupport.of_compactSpace _))
 
+/-- Rewrite a single cosine term of `c_cont₀` with its explicit integer frequency `k * (q / p i)`.
+-/
+lemma c_cont_cos_eq (n : ℕ) (i : Fin (w n)) (k : ℕ) (t : X₀) :
+    Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
+      = Real.cos (2 * Real.pi * (((k * (q n / p n i) : ℕ) : ℤ) : ℝ) * (t : ℝ)) := by
+  congr 1
+  have hpi : (p n i : ℝ) ≠ 0 := by exact_mod_cast p_ne_zero n i
+  rw [Int.cast_natCast, Nat.cast_mul, Nat.cast_div (p_dvd_q n i) hpi]
+  field_simp
+
+/-- The absolute frequency of a `c_cont₀` cosine term is at most `q n` (for the summation range). -/
+lemma c_cont_term_natAbs_le (n : ℕ) (i : Fin (w n)) (k : ℕ)
+    (hk : k ∈ Finset.range ((p n i + 1) / 2)) :
+    (((k * (q n / p n i) : ℕ) : ℤ)).natAbs ≤ q n := by
+  rw [Int.natAbs_natCast]
+  have hkp : k ≤ p n i := by
+    rw [Finset.mem_range] at hk; omega
+  calc k * (q n / p n i) ≤ p n i * (q n / p n i) := Nat.mul_le_mul_right _ hkp
+    _ = q n := Nat.mul_div_cancel' (p_dvd_q n i)
+
+/-- Tighter frequency bound for a pair product: total absolute frequency is at most
+`6 * (w * q)`. -/
+lemma basisCos_pair_freq_bound_tight (n : ℕ) (S T : Finset (Fin (w n))) :
+    ∑ x ∈ S.disjSum T,
+        (Sum.elim (fun i => ((3 * (q n / p n i) : ℕ) : ℤ))
+          (fun i => ((3 * (q n / p n i) : ℕ) : ℤ)) x).natAbs
+      ≤ 6 * (w n * q n) := by
+  rw [Finset.sum_disjSum]
+  simp only [Sum.elim_inl, Sum.elim_inr, Int.natAbs_natCast]
+  have hbound : ∀ (U : Finset (Fin (w n))), ∑ i ∈ U, (3 * (q n / p n i)) ≤ 3 * (w n * q n) := by
+    intro U
+    calc ∑ i ∈ U, (3 * (q n / p n i)) ≤ ∑ _i ∈ U, (3 * q n) := by
+            apply Finset.sum_le_sum; intro i _
+            exact Nat.mul_le_mul_left 3 (Nat.div_le_self _ _)
+      _ = U.card * (3 * q n) := by rw [Finset.sum_const, smul_eq_mul]
+      _ ≤ w n * (3 * q n) := Nat.mul_le_mul_right _ (card_finset_fin_w_le n U)
+      _ = 3 * (w n * q n) := by ring
+  have h1 := hbound S
+  have h2 := hbound T
+  omega
+
+open scoped Classical in
+/-- **Key windowed quadrature with an extra cosine factor.** Integrating `cos(2π m t)` times a pair
+of basis cosines against `Psi_cont` reproduces exactly the corresponding windowed grid sum, provided
+the total absolute frequency (including `m`) is at most `kernelDegree n`. -/
+lemma cos_basisCos_pair_Psi_quadrature (n : ℕ) (m : ℤ) (S T : Finset (Fin (w n)))
+    (hm : m.natAbs + ∑ x ∈ S.disjSum T,
+        (Sum.elim (fun i => ((3 * (q n / p n i) : ℕ) : ℤ))
+          (fun i => ((3 * (q n / p n i) : ℕ) : ℤ)) x).natAbs ≤ kernelDegree n) :
+    ∫ t, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) *
+        basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀
+      = (1 / (q n : ℝ)) * ∑ y ∈ Finset.range (q n),
+          Real.cos (2 * Real.pi * (m : ℝ) * ((gridPt n y : X₀) : ℝ)) *
+            basisCos n S ↑y * basisCos n T ↑y * Psi n ↑y := by
+  classical
+  set G : Fin (w n) → ℤ := fun i => ((3 * (q n / p n i) : ℕ) : ℤ) with hG
+  set g : Option (Fin (w n) ⊕ Fin (w n)) → ℤ :=
+    fun o => o.elim m (Sum.elim G G) with hg
+  set A : Finset (Option (Fin (w n) ⊕ Fin (w n))) :=
+    insert none ((S.disjSum T).map Function.Embedding.some) with hA
+  have hnone : none ∉ (S.disjSum T).map Function.Embedding.some := by simp
+  have hprodpt : ∀ t : X₀,
+      Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) * basisCos_cont n S t * basisCos_cont n T t
+        = ∏ x ∈ A, Real.cos (2 * Real.pi * ((g x : ℤ) : ℝ) * (t : ℝ)) := by
+    intro t
+    have hbc : basisCos_cont n S t * basisCos_cont n T t
+        = ∏ x ∈ S.disjSum T, Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * (t : ℝ)) := by
+      rw [basisCos_cont_eq n S t, basisCos_cont_eq n T t]
+      simp only [Finset.prod_disjSum, Sum.elim_inl, Sum.elim_inr, hG]
+    rw [hA, Finset.prod_insert hnone, Finset.prod_map]
+    have hmap : ∀ x ∈ S.disjSum T,
+        Real.cos (2 * Real.pi * ((g (Function.Embedding.some x) : ℤ) : ℝ) * (t : ℝ))
+          = Real.cos (2 * Real.pi * ((Sum.elim G G x : ℤ) : ℝ) * (t : ℝ)) := by
+      intro x _; simp [hg]
+    rw [Finset.prod_congr rfl hmap, ← hbc]
+    simp only [hg, Option.elim_none]
+    ring
+  have hfreq : ∑ x ∈ A, (g x).natAbs ≤ kernelDegree n := by
+    rw [hA, Finset.sum_insert hnone, Finset.sum_map]
+    have hmap : ∀ x ∈ S.disjSum T,
+        (g (Function.Embedding.some x)).natAbs = (Sum.elim G G x).natAbs := by
+      intro x _; simp [hg]
+    rw [Finset.sum_congr rfl hmap]
+    simpa [hg, hG] using hm
+  have hint : (∫ t, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) *
+        basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀)
+      = ∫ t : X₀, (∏ x ∈ A, Real.cos (2 * Real.pi * ((g x : ℤ) : ℝ) * (t : ℝ)))
+      * Psi_cont n t ∂μ₀ := by
+    apply MeasureTheory.integral_congr_ae
+    filter_upwards with t
+    rw [← hprodpt t]
+  rw [hint, prod_cos_Psi_cont_repro n A g hfreq]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro y hy
+  have hgrid : ((y : ℝ) / (q n : ℝ)) = ((gridPt n y : X₀) : ℝ) := by
+    rw [show ((gridPt n y : X₀) : ℝ) = ((y % q n : ℕ) : ℝ) / (q n : ℝ) from rfl,
+        Nat.mod_eq_of_lt (Finset.mem_range.mp hy)]
+  rw [hgrid, ← hprodpt (gridPt n y), basisCos_cont_gridPt, basisCos_cont_gridPt]
+  ring
+
+/-- Pure algebraic rearrangement for the numerator quadrature: a double sum of per-frequency
+weighted grid sums equals the grid sum of the assembled weight. -/
+private lemma triple_sum_swap {ι1 ι2 κ : Type*} (Ii : Finset ι1) (Ki : ι1 → Finset ι2)
+    (R : Finset κ) (a : ι1 → ι2 → ℝ) (Gg : ι1 → ι2 → κ → ℝ) (Hh : κ → ℝ) (r : ℝ) :
+    ∑ i ∈ Ii, ∑ k ∈ Ki i, a i k * (r * ∑ y ∈ R, Gg i k y * Hh y)
+      = r * ∑ y ∈ R, (∑ i ∈ Ii, ∑ k ∈ Ki i, a i k * Gg i k y) * Hh y := by
+  have hL : ∑ i ∈ Ii, ∑ k ∈ Ki i, a i k * (r * ∑ y ∈ R, Gg i k y * Hh y)
+      = ∑ y ∈ R, ∑ i ∈ Ii, ∑ k ∈ Ki i, r * (a i k * Gg i k y * Hh y) := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_congr rfl (fun i _ => Finset.sum_comm)]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl (fun y _ => Finset.sum_congr rfl
+      (fun i _ => Finset.sum_congr rfl (fun k _ => by ring)))
+  rw [hL, Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun y _ => ?_)
+  rw [Finset.sum_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl (fun i _ => ?_)
+  rw [Finset.sum_mul, Finset.mul_sum]
+
 /-- Approximate Riemann sum quadrature for the majorant weight `c_cont₀` times a product of two
 basis cosines. -/
 theorem c_cont₀_basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n))) :
@@ -364,7 +647,149 @@ theorem c_cont₀_basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n)
         ∑ x ∈ Finset.range (q n),
           c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x * Psi n ↑x|
       ≤ numerator_error n := by
-  sorry
+  classical
+  rw [numerator_error, abs_nonpos_iff, sub_eq_zero]
+  -- continuity of a single c_cont₀-frequency term times the pair and window
+  have hcont_term : ∀ (i : Fin (w n)) (k : ℕ),
+      Continuous (fun t : X₀ => Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ)
+        / (p n i : ℝ)) *
+        basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) := by
+    intro i k
+    exact ((((by fun_prop : Continuous (fun t : X₀ =>
+      Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)))).mul
+      (basisCos_cont_continuous n S)).mul (basisCos_cont_continuous n T)).mul
+        (Psi_cont_continuous n))
+  -- the per-frequency exact quadrature
+  have hterm : ∀ (i : Fin (w n)) (k : ℕ), k ∈ Finset.range ((p n i + 1) / 2) →
+      (∫ t : X₀, Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+          basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀)
+        = (1 / (q n : ℝ)) * ∑ y ∈ Finset.range (q n),
+            Real.cos (2 * Real.pi * (k : ℝ) * ((gridPt n y : X₀) : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+              (basisCos n S ↑y * basisCos n T ↑y * Psi n ↑y) := by
+    intro i k hk
+    have hfreqbound : (((k * (q n / p n i) : ℕ) : ℤ)).natAbs +
+        ∑ x ∈ S.disjSum T, (Sum.elim (fun i => ((3 * (q n / p n i) : ℕ) : ℤ))
+          (fun i => ((3 * (q n / p n i) : ℕ) : ℤ)) x).natAbs ≤ kernelDegree n := by
+      have h1 := c_cont_term_natAbs_le n i k hk
+      have h2 := basisCos_pair_freq_bound_tight n S T
+      have hk2 : kernelDegree n = 6 * (w n * q n) + q n := by unfold kernelDegree; ring
+      omega
+    have he1 : (fun t : X₀ => Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+          basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)
+        = fun t : X₀ => Real.cos (2 * Real.pi * (((k * (q n / p n i) : ℕ) : ℤ) : ℝ) * (t : ℝ)) *
+            basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t := by
+      funext t; rw [c_cont_cos_eq]
+    rw [he1, cos_basisCos_pair_Psi_quadrature n ((k * (q n / p n i) : ℕ) : ℤ) S T hfreqbound]
+    congr 1
+    refine Finset.sum_congr rfl (fun y _ => ?_)
+    rw [← c_cont_cos_eq]
+    ring
+  -- expand c_cont₀ and pull the sums out of the integral
+  have hInt2 : ∀ (i : Fin (w n)), ∀ k ∈ Finset.range ((p n i + 1) / 2),
+      Integrable (fun t : X₀ => g_coef n i k *
+        (Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+          basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ := by
+    intro i k _
+    exact (continuous_const.mul (hcont_term i k)).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  have hInt1 : ∀ i ∈ (Finset.univ : Finset (Fin (w n))),
+      Integrable (fun t : X₀ => ∑ k ∈ Finset.range ((p n i + 1) / 2), g_coef n i k *
+        (Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+          basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ := by
+    intro i _
+    exact (continuous_finsetSum _ (fun k _ => continuous_const.mul
+      (hcont_term i k))).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  have hLHS : (∫ t : X₀, c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀)
+      = ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
+          g_coef n i k * (∫ t : X₀, Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ)
+          / (p n i : ℝ)) *
+            basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t ∂μ₀) := by
+    have he : (fun t : X₀ => c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)
+        = fun t : X₀ => ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
+            g_coef n i k * (Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
+              basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) := by
+      funext t
+      simp only [c_cont₀, Finset.sum_mul]
+      exact Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun k _ => by ring))
+    rw [he, MeasureTheory.integral_finsetSum _ hInt1]
+    refine Finset.sum_congr rfl (fun i _ => ?_)
+    rw [MeasureTheory.integral_finsetSum _ (hInt2 i)]
+    exact Finset.sum_congr rfl (fun k _ => by rw [MeasureTheory.integral_const_mul])
+  rw [hLHS]
+  rw [Finset.sum_congr rfl (fun i _ => Finset.sum_congr rfl (fun k hk => by rw [hterm i k hk]))]
+  rw [triple_sum_swap Finset.univ (fun i => Finset.range ((p n i + 1) / 2)) (Finset.range (q n))
+    (fun i k => g_coef n i k)
+    (fun i k y =>
+      Real.cos (2 * Real.pi * (k : ℝ) * ((gridPt n y : X₀) : ℝ) * (q n : ℝ) / (p n i : ℝ)))
+    (fun y => basisCos n S ↑y * basisCos n T ↑y * Psi n ↑y) (1 / (q n : ℝ))]
+  congr 1
+  refine Finset.sum_congr rfl (fun x _ => ?_)
+  rw [show c_cont₀ n (gridPt n x) = ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
+        g_coef n i k *
+          Real.cos (2 * Real.pi * (k : ℝ) * ((gridPt n x : X₀) : ℝ) * (q n : ℝ) / (p n i : ℝ)) from
+            rfl]
+  ring
+
+/-- The windowed weighted quadrature for a linear combination of continuous basis cosines: the
+continuous integral of `c_cont₀ · (∑ c_S bc_S)²` against `Psi_cont` equals the windowed discrete
+grid sum, exactly. -/
+lemma c_cont₀_sq_sum_Psi_quadrature (n : ℕ) (c : Finset (Fin (w n)) → ℝ) :
+    ∫ t : X₀, c_cont₀ n t * (∑ S ∈ Finset.univ.powerset, c S * basisCos_cont n S t) ^ 2 *
+        Psi_cont n t ∂μ₀
+      = (1 / (q n : ℝ)) * ∑ x ∈ Finset.range (q n),
+          c_cont₀ n (gridPt n x) *
+            (∑ S ∈ Finset.univ.powerset, c S * basisCos n S ↑x) ^ 2 * Psi n ↑x := by
+  classical
+  have hcc : Continuous (c_cont₀ n) := by unfold c_cont₀; fun_prop
+  have hcont : ∀ S T : Finset (Fin (w n)),
+      Continuous (fun t : X₀ => c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t *
+        Psi_cont n t) :=
+    fun S T => (((hcc.mul (basisCos_cont_continuous n S)).mul
+      (basisCos_cont_continuous n T)).mul (Psi_cont_continuous n))
+  have hexp : ∀ t : X₀,
+      c_cont₀ n t * (∑ S ∈ Finset.univ.powerset, c S * basisCos_cont n S t) ^ 2 * Psi_cont n t
+      = ∑ S ∈ Finset.univ.powerset, ∑ T ∈ Finset.univ.powerset, (c S * c T)
+        * (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) := by
+    intro t
+    rw [sq, Finset.sum_mul_sum, Finset.mul_sum, Finset.sum_mul]
+    refine Finset.sum_congr rfl (fun S _ => ?_)
+    rw [Finset.mul_sum, Finset.sum_mul]
+    exact Finset.sum_congr rfl (fun T _ => by ring)
+  have hInt2 : ∀ (S : Finset (Fin (w n))), ∀ T ∈ Finset.univ.powerset,
+      Integrable (fun t : X₀ => (c S * c T) *
+        (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ :=
+    fun S T _ => (continuous_const.mul (hcont S T)).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  have hInt1 : ∀ S ∈ Finset.univ.powerset,
+      Integrable (fun t : X₀ => ∑ T ∈ Finset.univ.powerset, (c S * c T) *
+        (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)) μ₀ :=
+    fun S _ => (continuous_finsetSum _ (fun T _ => continuous_const.mul
+      (hcont S T))).integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
+  rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall hexp)]
+  rw [MeasureTheory.integral_finsetSum _ hInt1]
+  have hinner : ∀ S ∈ Finset.univ.powerset,
+      (∫ t : X₀, ∑ T ∈ Finset.univ.powerset, (c S * c T) *
+          (c_cont₀ n t * basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t) ∂μ₀)
+        = ∑ T ∈ Finset.univ.powerset, (c S * c T) * ((1 / (q n : ℝ)) *
+            ∑ x ∈ Finset.range (q n),
+              basisCos n S ↑x * basisCos n T ↑x * (c_cont₀ n (gridPt n x) * Psi n ↑x)) := by
+    intro S _
+    rw [MeasureTheory.integral_finsetSum _ (hInt2 S)]
+    refine Finset.sum_congr rfl (fun T _ => ?_)
+    rw [MeasureTheory.integral_const_mul]
+    have h2 := c_cont₀_basisCos_product_quadrature n S T
+    rw [numerator_error, abs_nonpos_iff, sub_eq_zero] at h2
+    have hswap : (∑ x ∈ Finset.range (q n),
+          c_cont₀ n (gridPt n x) * basisCos n S x * basisCos n T x * Psi n ↑x)
+        = ∑ x ∈ Finset.range (q n),
+            basisCos n S ↑x * basisCos n T ↑x * (c_cont₀ n (gridPt n x) * Psi n ↑x) :=
+      Finset.sum_congr rfl (fun x _ => by ring)
+    rw [h2, hswap]
+  rw [Finset.sum_congr rfl hinner]
+  rw [sq_sum_swap Finset.univ.powerset (Finset.range (q n)) c (fun S x => basisCos n S ↑x)
+    (fun x => c_cont₀ n (gridPt n x) * Psi n ↑x) (1 / (q n : ℝ))]
+  congr 1
+  exact Finset.sum_congr rfl (fun x _ => by ring)
 
 /-- Numerator Quadrature (Weighted Norm Equivalence) -/
 theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
@@ -372,7 +797,17 @@ theorem numerator_quadrature (n : ℕ) (h : H₀ n) :
       (1 / (q n : ℝ)) *
         ∑ x ∈ Finset.range (q n), c_cont₀ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n ↑x|
       ≤ numerator_error n * ‖coeCLM₀ n h‖ ^ 2 := by
-  sorry
+  rw [numerator_error, zero_mul, abs_nonpos_iff, sub_eq_zero]
+  have hae : (fun x => c_cont₀ n x * ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x)
+      =ᵐ[μ₀] (fun t => c_cont₀ n t * (∑ S ∈ Finset.univ.powerset,
+          (h : Finset (Fin (w n)) → ℝ) S * basisCos_cont n S t) ^ 2 * Psi_cont n t) := by
+    filter_upwards [coeCLM₀_coeFn_ae n h] with x hx
+    rw [hx]; rfl
+  rw [MeasureTheory.integral_congr_ae hae,
+    c_cont₀_sq_sum_Psi_quadrature n (h : Finset (Fin (w n)) → ℝ)]
+  congr 1
+  refine Finset.sum_congr rfl (fun x _ => ?_)
+  rw [evalOnGrid_mem_eq, Finset.powerset_univ]
 
 /-- The `L²` norm-squared of `coeCLM₀ n h` against `Psi_cont`, expressed as an integral,
 is strictly positive whenever its norm is positive. -/
