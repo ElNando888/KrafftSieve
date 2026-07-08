@@ -6,11 +6,12 @@ This document lists all remaining `sorry` stubs in the `KrafftSieve` workspace, 
 
 ## Summary of Stubs
 
-There are exactly **5** core stubs remaining in the sieve reduction workspace:
+There are exactly **2** core stubs remaining in the sieve reduction workspace:
 *   **0** in [OptimalWeights.lean](file:///Users/nando/KrafftSieve/KrafftSieve/OptimalWeights.lean) (All 13 stubs successfully closed by Aristotle!)
 *   **0** in [MainTheorem.lean](file:///Users/nando/KrafftSieve/KrafftSieve/MainTheorem.lean) (All stubs successfully closed!)
 *   **2** in [RKHSLimit.lean](file:///Users/nando/KrafftSieve/KrafftSieve/RKHSLimit.lean) (Mercer's theorem/integral operator remain reserved for Tjeerd)
-*   **3** in [Discretization.lean](file:///Users/nando/KrafftSieve/KrafftSieve/Discretization.lean) (Fourier discretization quadratures)
+*   **0** in [Discretization.lean](file:///Users/nando/KrafftSieve/KrafftSieve/Discretization.lean) (All stubs successfully closed!)
+*   **0** in [DirichletQuadrature.lean](file:///Users/nando/KrafftSieve/KrafftSieve/DirichletQuadrature.lean) (All stubs successfully closed!)
 
 ### Remaining sorry Stubs Census Table
 
@@ -18,17 +19,17 @@ There are exactly **5** core stubs remaining in the sieve reduction workspace:
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `RKHSLimit.lean` | 32 | `integralOperator` | **High** | Operator Theory | Definition of the continuous integral operator on $L^2$ (reserved for Tjeerd). |
 | `RKHSLimit.lean` | 187 | `mercer_theorem` | **Very High** | Functional Analysis | Spectral decomposition and eigenvalues/eigenfunctions of the kernel (reserved for Tjeerd). |
-| `Discretization.lean` | 297 | `denominator_quadrature` | **Medium** | Quadrature | Approximate windowed continuous L² norm to discrete sum quadrature. |
-| `Discretization.lean` | 313 | `c_cont₀_basisCos_product_quadrature` | **High** | Fourier Analysis | Approximate quadrature for $c_{\text{cont}_0} \cdot B_S \cdot B_T \cdot \Psi_{\text{cont}}$. |
-| `Discretization.lean` | 322 | `numerator_quadrature` | **High** | Fourier Analysis | Approximate windowed weighted norm quadrature. |
 
 ---
 
 ## Closed Stubs (Recent)
 
-### Closed in `Discretization.lean` (by Aristotle)
-*   `krafft_quadrature_holds`: **Fully closed and proved** (algebraically bounding the discrete sieve minimum quotient $\mu_{\min}(n)$ by the continuous quotient and the quadrature bounds).
-*   `muMin_le_discreteRatio`: **Fully closed and proved** (using `csInf_le` on the compact attainable ratios sphere).
+### Closed in `Discretization.lean` & `DirichletQuadrature.lean` (by Aristotle)
+*   `denominator_quadrature`: **Fully closed and proved** (using the exact reproducing properties of `Psi_cont` built from the Dirichlet kernel, yielding zero error).
+*   `c_cont₀_basisCos_product_quadrature`: **Fully closed and proved** (using the Dirichlet reproducing window to integrate cosines exactly).
+*   `numerator_quadrature`: **Fully closed and proved** (integrating the majorant weight times a linear combination squared exactly).
+*   `krafft_quadrature_holds`: **Fully closed and proved** (algebraically bounding the discrete sieve minimum quotient by the continuous quotient).
+*   `muMin_le_discreteRatio`: **Fully closed and proved** (attaining discrete ratios sphere).
 
 ### Closed in `MainTheorem.lean` (by Aristotle)
 *   `mu_min_eventually_lt_one`: **Fully closed and proved** (using RKHS projections, convergence of continuous Rayleigh quotients, and quadrature bounds).
