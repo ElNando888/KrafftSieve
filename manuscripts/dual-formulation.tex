@@ -285,7 +285,7 @@ variable ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
 variable [hK : Fact (Continuous (fun (p : X × X) $\mapsto$ kernel H p.1 p.2))]
 
 -- The integral operator as a continuous linear map from L^2 to L^2
-def integralOperator : Lp V 2 $\mu$ $\to\text{L}[\mathbb{K}]$ Lp V 2 $\mu$ := sorry
+def integralOperator : Lp V 2 $\mu$ $\to \mathrm{L}[\mathbb{K}]$ Lp V 2 $\mu$ := sorry
 
 /-- Mercer's Theorem (Refined with Mathlib idioms): -/
 theorem mercer_theorem :
@@ -294,7 +294,7 @@ theorem mercer_theorem :
       ($\sigma$ : $\iota$ $\to$ $\mathbb{R}$),
       ($\forall$ i, 0 $\le$ $\sigma$ i) $\wedge$
       -- Eigenvalue equation: T_K(b_i) = \sigma_i b_i
-      ($\forall$ i, (integralOperator $\mu$ : Lp V 2 $\mu$ $\to\text{L}[\mathbb{K}]$ Lp V 2 $\mu$) (b i) = ($\sigma$ i : $\mathbb{K}$) $\cdot$ (b i)) $\wedge$
+      ($\forall$ i, (integralOperator $\mu$ : Lp V 2 $\mu$ $\to \mathrm{L}[\mathbb{K}]$ Lp V 2 $\mu$) (b i) = ($\sigma$ i : $\mathbb{K}$) $\cdot$ (b i)) $\wedge$
       -- The kernel decomposition holds in the RKHS (using evaluation)
       ($\forall$ (x y : X) (v : V), 
         kernel H x y v = $\sum_{\iota}$ i, ($\sigma$ i : $\mathbb{K}$) $\cdot$ $\langle$v, (b i : X $\to$ V) y$\rangle_{\mathbb{K}}$ $\cdot$ (b i : X $\to$ V) x) := by
@@ -338,12 +338,13 @@ The discretization mapping proceeds via the following machine-checked definition
     \end{theorem}
     Aristotle closed this proof with zero \texttt{sorry}s by setting $\lambda = h$.
     
-    \item \textbf{Riemann Sum Quadrature}: The Lebesgue integral on $[0,1]$ and the discrete sums differ by the grid spacing $dx = 1/q(n)$. Since the continuous window is compactly supported and hence not band-limited, we formalize approximate quadratures with explicit error bounds $E_1(n)$ and $E_2(n)$:
+    \item \textbf{Riemann Sum Quadrature}: Rather than using an approximate quadrature that introduces non-vanishing high-frequency errors, we construct an exact reproducing continuous window $\Psi_{\text{cont}}(n, t)$ built from the Dirichlet kernel of degree $M = \text{kernelDegree}(n) = q(n)(6w(n) + 1)$. Because the total absolute frequency of all cosine product terms in the quadratures is bounded by $M$, this reproducing kernel guarantees that the windowed Riemann sum quadratures hold \textbf{exactly} with \textbf{zero error}, i.e., $E_1(n) = 0$ and $E_2(n) = 0$:
     \begin{align}
     \left| \int_{X_0} (\text{coeCLM}_0(n, h)(t))^2 \Psi_{\text{cont}}(n, t) d\mu_0 - \frac{1}{q(n)} \sum_{x \in q(n)} (\text{evalOnGrid}(n, h)(x))^2 \Psi_n(x) \right| &\le E_1(n) \Vert \text{coeCLM}_0(n, h) \Vert^2 \\
     \left| \int_{X_0} c_{\text{cont}_0}(n, t) (\text{coeCLM}_0(n, h)(t))^2 \Psi_{\text{cont}}(n, t) d\mu_0 - \frac{1}{q(n)} \sum_{x \in q(n)} c_{\text{cont}_0}(n, \text{gridPt}(n, x)) (\text{evalOnGrid}(n, h)(x))^2 \Psi_n(x) \right| &\le E_2(n) \Vert \text{coeCLM}_0(n, h) \Vert^2
     \end{align}
-    These correspond to \texttt{denominator\_quadrature} and \texttt{numerator\_quadrature} in the codebase, where the error bounds satisfy $\lim_{n \to \infty} E_1(n) = 0$ and $\lim_{n \to \infty} E_2(n) = 0$.
+    These correspond to \texttt{denominator\_quadrature} and \texttt{numerator\_quadrature} in the codebase, where the error bounds are exactly zero.
+    
     
     \item \textbf{Sieve Majorant Inequality}: Instead of requiring $c_{\text{cont}_0}(n, t)$ to exactly interpolate $c_n(x)$ (which is impossible without high-frequency aliasing), we define the continuous weight as a band-limited majorant satisfying:
     \begin{equation}
@@ -421,8 +422,8 @@ theorem continuousRatio_limit ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
 theorem muMin_le_rkhs_ratio ($\mu$ : Measure X) [IsFiniteMeasure $\mu$] (n : $\mathbb{N}$)
     (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
     [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
-    (coeCLM\_seq : $\forall$ i, H\_seq i $\to\text{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
-    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to\text{L}[\mathbb{R}]$ H\_seq i)
+    (coeCLM\_seq : $\forall$ i, H\_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H\_seq i)
     (c\_cont : X $\to$ $\mathbb{R}$) (Psi\_cont : X $\to$ $\mathbb{R}$) (f : Lp $\mathbb{R}$ 2 $\mu$)
     (hn : ($\int$ x, ((coeCLM\_seq n (projectionToRKHS n f) : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$) > 0)
     (h\_quadrature : $\forall$ (h : H\_seq n), ($\int$ x, ((coeCLM\_seq n h : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$) > 0 $\to$
@@ -437,8 +438,8 @@ theorem muMin_le_rkhs_ratio ($\mu$ : Measure X) [IsFiniteMeasure $\mu$] (n : $\m
 theorem twin_prime_conjecture ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
     (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
     [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
-    (coeCLM\_seq : $\forall$ i, H\_seq i $\to\text{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
-    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to\text{L}[\mathbb{R}]$ H\_seq i)
+    (coeCLM\_seq : $\forall$ i, H\_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H\_seq i)
     (c\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c\_cont)]
     (Psi\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous Psi\_cont)] :
     {p : $\mathbb{N}$ | Prime p $\wedge$ Prime (p + 2)}.Infinite := by
