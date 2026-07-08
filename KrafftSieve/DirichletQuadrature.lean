@@ -54,10 +54,21 @@ Base shifted-cosine integral over the unit interval: the average of `cos (2π j 
 theorem base_cos_shift_integral (j : ℤ) (φ : ℝ) :
     ∫ t : unitInterval, Real.cos (2 * Real.pi * (j : ℝ) * (t : ℝ) + φ) ∂(volume) =
       if j = 0 then Real.cos φ else 0 := by
-  convert ( MeasureTheory.integral_subtype ( measurableSet_Icc ) fun t => Real.cos ( 2 * Real.pi * j * t + φ ) ) using 1
-  split_ifs <;> simp_all +decide [ MeasureTheory.integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one ]
-  rw [ Real.sin_sub_sin ] ; ring_nf ; norm_num
-  exact Or.inl ( Real.sin_eq_zero_iff.mpr ⟨ j, by ring ⟩ )
+  convert (MeasureTheory.integral_subtype (measurableSet_Icc)
+    (fun t => Real.cos (2 * Real.pi * j * t + φ))) using 1
+  split_ifs with hj
+  · subst hj
+    simp
+  · simp_all only [integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le zero_le_one, ne_eq, mul_eq_zero,
+      OfNat.ofNat_ne_zero, Real.pi_ne_zero, or_self, Int.cast_eq_zero,
+      not_false_eq_true, intervalIntegral.integral_comp_mul_add, mul_inv_rev,
+      mul_zero, zero_add, mul_one, integral_cos, smul_eq_mul,
+      zero_eq_mul, inv_eq_zero, false_or]
+    rw [Real.sin_sub_sin]
+    ring_nf
+    norm_num
+    exact Or.inl (Real.sin_eq_zero_iff.mpr ⟨j, by ring⟩)
 
 /-- Product-to-sum expansion of a product of cosines over a `Finset`, indexed by a
 powerset of sign choices. -/
@@ -118,8 +129,10 @@ lemma cos_mul_cos_shift_integral (m : ℤ) (k : ℕ) (a : ℝ) :
   have key : ∀ t : unitInterval,
       Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) *
           Real.cos (2 * Real.pi * (k : ℝ) * ((t : ℝ) - a))
-        = Real.cos (2 * Real.pi * ((m + (k : ℤ) : ℤ) : ℝ) * (t : ℝ) + (-(2 * Real.pi * (k : ℝ) * a))) / 2
-          + Real.cos (2 * Real.pi * ((m - (k : ℤ) : ℤ) : ℝ) * (t : ℝ) + (2 * Real.pi * (k : ℝ) * a)) / 2 := by
+        = Real.cos (2 * Real.pi * ((m + (k : ℤ) : ℤ) : ℝ) * (t : ℝ) +
+            (-(2 * Real.pi * (k : ℝ) * a))) / 2
+          + Real.cos (2 * Real.pi * ((m - (k : ℤ) : ℤ) : ℝ) * (t : ℝ) +
+            (2 * Real.pi * (k : ℝ) * a)) / 2 := by
     intro t
     have e1 : (2 * Real.pi * ((m + (k : ℤ) : ℤ) : ℝ) * (t : ℝ) + (-(2 * Real.pi * (k : ℝ) * a)))
             = 2 * Real.pi * (m : ℝ) * (t : ℝ) + 2 * Real.pi * (k : ℝ) * ((t : ℝ) - a) := by
@@ -130,10 +143,13 @@ lemma cos_mul_cos_shift_integral (m : ℤ) (k : ℕ) (a : ℝ) :
     rw [e1, e2, Real.cos_add, Real.cos_sub]; ring
   rw [MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall key)]
   have hcont1 : Continuous (fun t : unitInterval =>
-      Real.cos (2 * Real.pi * ((m + (k : ℤ) : ℤ) : ℝ) * (t : ℝ) + (-(2 * Real.pi * (k : ℝ) * a))) / 2) := by fun_prop
+      Real.cos (2 * Real.pi * ((m + (k : ℤ) : ℤ) : ℝ) * (t : ℝ) +
+        (-(2 * Real.pi * (k : ℝ) * a))) / 2) := by fun_prop
   have hcont2 : Continuous (fun t : unitInterval =>
-      Real.cos (2 * Real.pi * ((m - (k : ℤ) : ℤ) : ℝ) * (t : ℝ) + (2 * Real.pi * (k : ℝ) * a)) / 2) := by fun_prop
-  rw [MeasureTheory.integral_add (hcont1.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))
+      Real.cos (2 * Real.pi * ((m - (k : ℤ) : ℤ) : ℝ) * (t : ℝ) +
+        (2 * Real.pi * (k : ℝ) * a)) / 2) := by fun_prop
+  rw [MeasureTheory.integral_add
+      (hcont1.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))
       (hcont2.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)),
     MeasureTheory.integral_div, MeasureTheory.integral_div,
     base_cos_shift_integral, base_cos_shift_integral, Real.cos_neg]
@@ -151,8 +167,16 @@ theorem dirichlet_cos_repro (M : ℕ) (m : ℤ) (a : ℝ) (hm : m.natAbs ≤ M) 
     ∫ t : unitInterval,
         Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) * dirichletKernel M ((t : ℝ) - a) ∂(volume) =
       Real.cos (2 * Real.pi * (m : ℝ) * a) := by
-  -- Split the integral into two parts: one involving the constant term and the other involving the sum of cosines.
-  have h_split : ∫ t : unitInterval, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) * (1 + 2 * ∑ k ∈ Finset.Icc 1 M, Real.cos (2 * Real.pi * (k : ℝ) * ((t : ℝ) - a))) ∂(volume) = (∫ t : unitInterval, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) ∂(volume)) + 2 * ∑ k ∈ Finset.Icc 1 M, (∫ t : unitInterval, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) * Real.cos (2 * Real.pi * (k : ℝ) * ((t : ℝ) - a)) ∂(volume)) := by
+  -- Split the integral into two parts: one involving the constant term
+  -- and the other involving the sum of cosines.
+  have h_split : ∫ t : unitInterval,
+        Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) *
+          (1 + 2 * ∑ k ∈ Finset.Icc 1 M,
+            Real.cos (2 * Real.pi * (k : ℝ) * ((t : ℝ) - a))) ∂(volume) =
+      (∫ t : unitInterval, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) ∂(volume)) +
+        2 * ∑ k ∈ Finset.Icc 1 M,
+          (∫ t : unitInterval, Real.cos (2 * Real.pi * (m : ℝ) * (t : ℝ)) *
+            Real.cos (2 * Real.pi * (k : ℝ) * ((t : ℝ) - a)) ∂(volume)) := by
     simp +decide only [Finset.mul_sum _ _ _, mul_add, ← integral_const_mul]
     rw [ MeasureTheory.integral_add, MeasureTheory.integral_finsetSum ]
     · grind
@@ -161,7 +185,9 @@ theorem dirichlet_cos_repro (M : ℕ) (m : ℤ) (a : ℝ) (hm : m.natAbs ≤ M) 
       · fun_prop
       · rw [ hasCompactSupport_iff_eventuallyEq ]
         norm_num [ Filter.EventuallyEq ]
-    · exact Continuous.integrable_of_hasCompactSupport ( by exact Continuous.mul ( Real.continuous_cos.comp <| by continuity ) continuous_const ) ( by exact HasCompactSupport.of_compactSpace _ )
+    · exact Continuous.integrable_of_hasCompactSupport
+        (by exact Continuous.mul (Real.continuous_cos.comp <| by continuity) continuous_const)
+        (by exact HasCompactSupport.of_compactSpace _)
     · refine Continuous.integrable_of_hasCompactSupport ?_ ?_
       · fun_prop
       · rw [ hasCompactSupport_iff_eventuallyEq ]
@@ -225,27 +251,40 @@ theorem prod_cos_dirichlet_repro (M : ℕ) (a : ℝ) {ι : Type*}
         dirichletKernel M ((t : ℝ) - a) ∂(volume) =
       ∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * a) := by
   -- Apply the product-to-sum expansion to the integrand.
-  have h_prod_to_sum : (∫ t : unitInterval, (∏ i ∈ A, Real.cos (2 * Real.pi * (g i) * (t : ℝ))) * dirichletKernel M ((t : ℝ) - a) ∂(volume)) =
-    (2 ^ A.card : ℝ)⁻¹ * (∑ B ∈ A.powerset, ∫ t : unitInterval, (Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * (t : ℝ))) * dirichletKernel M ((t : ℝ) - a) ∂(volume)) := by
+  have h_prod_to_sum : (∫ t : unitInterval,
+      (∏ i ∈ A, Real.cos (2 * Real.pi * (g i) * (t : ℝ))) *
+        dirichletKernel M ((t : ℝ) - a) ∂(volume)) =
+    (2 ^ A.card : ℝ)⁻¹ * (∑ B ∈ A.powerset, ∫ t : unitInterval,
+      (Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * (t : ℝ))) *
+        dirichletKernel M ((t : ℝ) - a) ∂(volume)) := by
       rw [ ← MeasureTheory.integral_finsetSum ]
       · rw [ ← MeasureTheory.integral_const_mul ]
         congr with t
         rw [ dirichlet_prod_cos_expand ]
         simp +decide [ mul_sub, mul_comm, mul_left_comm, Finset.mul_sum _ _ _ ]
-      · intro B hB; apply_rules [ Continuous.integrable_of_hasCompactSupport, Continuous.mul ] <;> norm_num [ dirichletKernel_continuous ]
+      · intro B hB
+        apply_rules [Continuous.integrable_of_hasCompactSupport, Continuous.mul]
+          <;> norm_num [dirichletKernel_continuous]
         · fun_prop (disch := norm_num)
         · exact dirichletKernel_continuous M |> Continuous.comp <| by continuity
         · rw [ hasCompactSupport_iff_eventuallyEq ]
           simp +decide [ Filter.EventuallyEq ]
   -- Apply the reproducing property of the Dirichlet kernel to each term in the sum.
-  have h_reproducing : ∀ B ∈ A.powerset, (∫ t : unitInterval, (Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * (t : ℝ))) * dirichletKernel M ((t : ℝ) - a) ∂(volume)) =
+  have h_reproducing : ∀ B ∈ A.powerset, (∫ t : unitInterval,
+      (Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * (t : ℝ))) *
+        dirichletKernel M ((t : ℝ) - a) ∂(volume)) =
     (Real.cos (2 * Real.pi * (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) * a)) := by
       intro B hB
       have h_freq_bound : Int.natAbs (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) ≤ M := by
         refine le_trans ?_ hM
         rw [ ← Finset.sum_sdiff ( Finset.mem_powerset.mp hB ) ]
-        cases abs_cases ( ∑ i ∈ B, g i - ∑ i ∈ A \ B, g i ) <;> cases abs_cases ( ∑ i ∈ B, g i ) <;> cases abs_cases ( ∑ i ∈ A \ B, g i ) <;> linarith [ abs_le.mp ( Finset.abs_sum_le_sum_abs ( fun i => g i ) B ), abs_le.mp ( Finset.abs_sum_le_sum_abs ( fun i => g i ) ( A \ B ) ) ]
-      exact dirichlet_cos_repro M (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) a h_freq_bound |> fun h => by simpa using h
+        cases abs_cases (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) <;>
+          cases abs_cases (∑ i ∈ B, g i) <;>
+          cases abs_cases (∑ i ∈ A \ B, g i) <;>
+          linarith [abs_le.mp (Finset.abs_sum_le_sum_abs (fun i => g i) B),
+            abs_le.mp (Finset.abs_sum_le_sum_abs (fun i => g i) (A \ B))]
+      exact dirichlet_cos_repro M (∑ i ∈ B, g i - ∑ i ∈ A \ B, g i) a
+        h_freq_bound |> fun h => by simpa using h
   rw [ h_prod_to_sum, Finset.sum_congr rfl h_reproducing ]
   convert dirichlet_prod_cos_expand A ( fun i => 2 * Real.pi * ( g i : ℝ ) * a ) |> Eq.symm using 1
   simp +decide [ mul_sub, sub_mul, Finset.mul_sum _ _ _, Finset.sum_mul ]
@@ -272,8 +311,12 @@ theorem prod_cos_reproWindow (N M : ℕ) (ψ : ℕ → ℝ) {ι : Type*}
       (1 / (N : ℝ)) * ∑ y ∈ Finset.range N,
         ψ y * ∏ i ∈ A, Real.cos (2 * Real.pi * (g i : ℝ) * ((y : ℝ) / (N : ℝ))) := by
   -- Use the linearity of the integral and the definition of `reproWindow`.
-  have h_integral : ∫ t : unitInterval, (∏ i ∈ A, (Real.cos (2 * Real.pi * (g i : ℝ) * t))) * (reproWindow N M ψ t) ∂volume =
-                 (1 / N : ℝ) * ∑ y ∈ Finset.range N, ψ y * ∫ t : unitInterval, (∏ i ∈ A, (Real.cos (2 * Real.pi * (g i : ℝ) * t))) * dirichletKernel M (t - (y : ℝ) / N) ∂volume := by
+  have h_integral : ∫ t : unitInterval,
+      (∏ i ∈ A, (Real.cos (2 * Real.pi * (g i : ℝ) * t))) *
+        (reproWindow N M ψ t) ∂volume =
+      (1 / N : ℝ) * ∑ y ∈ Finset.range N, ψ y * ∫ t : unitInterval,
+        (∏ i ∈ A, (Real.cos (2 * Real.pi * (g i : ℝ) * t))) *
+          dirichletKernel M (t - (y : ℝ) / N) ∂volume := by
                    simp +decide only [reproWindow, Finset.mul_sum _ _ _, ← integral_const_mul]
                    rw [ MeasureTheory.integral_finsetSum ]
                    · exact Finset.sum_congr rfl fun _ _ => by congr; ext; ring
@@ -284,6 +327,8 @@ theorem prod_cos_reproWindow (N M : ℕ) (ψ : ℕ → ℝ) {ι : Type*}
                        · exact dirichletKernel_continuous M |> Continuous.comp <| by continuity
                      · rw [ hasCompactSupport_iff_eventuallyEq ]
                        simp +decide [ Filter.EventuallyEq ]
-  exact h_integral.trans ( by congr; ext y; exact prod_cos_dirichlet_repro M ( y / N ) A g hM ▸ by rfl )
+  exact h_integral.trans (by
+    congr; ext y
+    exact prod_cos_dirichlet_repro M (y / N) A g hM ▸ by rfl)
 
 end KrafftSieve
