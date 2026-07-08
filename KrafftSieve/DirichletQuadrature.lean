@@ -21,7 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Constructions.UnitInterval
-import Mathlib
+import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Dirichlet-kernel exact quadrature (self-contained)
