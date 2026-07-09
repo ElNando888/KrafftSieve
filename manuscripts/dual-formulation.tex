@@ -17,7 +17,7 @@
 
 \def\lstlanguagefiles{lstlean.sty}
 \lstset{language=lean}
-\lstnewenvironment{lean}{\lstset{language=lean}}{}
+\lstnewenvironment{lean}{\lstset{language=lean, basicstyle=\footnotesize}}{}
 \def\leaninline{\lstinline[language=lean, basicstyle=\lst@ifdisplaystyle\scriptsize\fi]}
 
 \definecolor{keywordcolor}{rgb}{0.7, 0.1, 0.1}   % red
@@ -405,24 +405,24 @@ noncomputable def Psi_cont (n : $\mathbb{N}$) : X$_0$ $\to$ $\mathbb{R}$ :=
 
 -- Denominator quadrature (Discretization.lean, zero sorry)
 theorem denominator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
-    |$\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont n x $\partial\mu_0$ -
+    ∣$\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont n x $\partial\mu_0$ -
       (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ Finset.range (q n),
-        (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))|
+        (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))∣
       $\le$ denominator_error n * $\Vert$coeCLM$_0$ n h$\Vert$ ^ 2
 
 -- Numerator quadrature (Discretization.lean, zero sorry)
 theorem numerator_quadrature (n : $\mathbb{N}$) (h : H$_0$ n) :
-    |$\int$ x, c\_cont$_0$ n x * ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 *
+    ∣$\int$ x, c_cont$_0$ n x * ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 *
         Psi_cont n x $\partial\mu_0$ -
       (1 / (q n : $\mathbb{R}$)) * $\sum$ x $\in$ Finset.range (q n),
-        c\_cont$_0$ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))|
+        c_cont$_0$ n (gridPt n x) * (evalOnGrid n h x) ^ 2 * Psi n (x : ZMod (q n))∣
       $\le$ numerator_error n * $\Vert$coeCLM$_0$ n h$\Vert$ ^ 2
 
 -- The discretization bridge (Discretization.lean, zero sorry)
 theorem krafft_quadrature_holds (n : $\mathbb{N}$) (h : H$_0$ n)
     (hn : ($\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 *
       Psi_cont n x $\partial\mu_0$) $>$ 0) :
-    muMin n $\le$ continuousRatio $\mu_0$ (c\_cont$_0$ n) (Psi_cont n) (coeCLM$_0$ n h) +
+    muMin n $\le$ continuousRatio $\mu_0$ (c_cont$_0$ n) (Psi_cont n) (coeCLM$_0$ n h) +
       (numerator_error n + muMin n * denominator_error n) *
         $\Vert$coeCLM$_0$ n h$\Vert$ ^ 2 /
         ($\int$ x, ((coeCLM$_0$ n h : X$_0$ $\to$ $\mathbb{R}$) x) ^ 2 *
@@ -443,40 +443,40 @@ Below is the formalized Lean 4 proof chain in \texttt{MainTheorem.lean} (abbrevi
 \begin{lean}
 -- Rayleigh quotients converge under strong L^2 convergence
 theorem continuousRatio_limit ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
-    (c\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c\_cont)]
-    (Psi\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous Psi\_cont)]
-    (f : Lp $\mathbb{R}$ 2 $\mu$) (f\_seq : $\mathbb{N}$ $\to$ Lp $\mathbb{R}$ 2 $\mu$)
-    (h\_conv : Filter.Tendsto (fun n $\mapsto$ $\Vert$f\_seq n - f$\Vert$) Filter.atTop (nhds 0)) :
-    Filter.Tendsto (fun n $\mapsto$ continuousRatio $\mu$ c\_cont Psi\_cont (f\_seq n)) Filter.atTop
-      (nhds (continuousRatio $\mu$ c\_cont Psi\_cont f))
+    (c_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c_cont)]
+    (Psi_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous Psi_cont)]
+    (f : Lp $\mathbb{R}$ 2 $\mu$) (f_seq : $\mathbb{N}$ $\to$ Lp $\mathbb{R}$ 2 $\mu$)
+    (h_conv : Filter.Tendsto (fun n $\mapsto$ $\Vert$f_seq n - f$\Vert$) Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun n $\mapsto$ continuousRatio $\mu$ c_cont Psi_cont (f_seq n)) Filter.atTop
+      (nhds (continuousRatio $\mu$ c_cont Psi_cont f))
 
 -- Discrete quotient bound by the RKHS-projected test function quotient
 theorem muMin_le_rkhs_ratio ($\mu$ : Measure X) [IsFiniteMeasure $\mu$] (n : $\mathbb{N}$)
-    (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
-    [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
-    (coeCLM\_seq : $\forall$ i, H\_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
-    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H\_seq i)
-    (c\_cont : X $\to$ $\mathbb{R}$) (Psi\_cont : X $\to$ $\mathbb{R}$) (f : Lp $\mathbb{R}$ 2 $\mu$)
-    (hn : ($\int$ x, ((coeCLM\_seq n (projectionToRKHS n f) : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$) > 0)
-    (h\_quadrature : $\forall$ (h : H\_seq n), ($\int$ x, ((coeCLM\_seq n h : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$) > 0 $\to$
-      muMin n $\le$ continuousRatio $\mu$ c\_cont Psi\_cont (coeCLM\_seq n h) +
-        (numerator_error n + muMin n * denominator_error n) * $\Vert$coeCLM\_seq n h$\Vert$ ^ 2 /
-          ($\int$ x, ((coeCLM\_seq n h : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$)) :
-    muMin n $\le$ continuousRatio $\mu$ c\_cont Psi\_cont (coeCLM\_seq n (projectionToRKHS n f)) +
-      (numerator_error n + muMin n * denominator_error n) * $\Vert$coeCLM\_seq n (projectionToRKHS n f)$\Vert$ ^ 2 /
-        ($\int$ x, ((coeCLM\_seq n (projectionToRKHS n f) : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi\_cont x $\partial\mu$)
+    (H_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H_seq i)]
+    [$\forall$ i, CompleteSpace (H_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H_seq i) X $\mathbb{R}$]
+    (coeCLM_seq : $\forall$ i, H_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H_seq i)
+    (c_cont : X $\to$ $\mathbb{R}$) (Psi_cont : X $\to$ $\mathbb{R}$) (f : Lp $\mathbb{R}$ 2 $\mu$)
+    (hn : ($\int$ x, ((coeCLM_seq n (projectionToRKHS n f) : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont x $\partial\mu$) > 0)
+    (h_quadrature : $\forall$ (h : H_seq n), ($\int$ x, ((coeCLM_seq n h : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont x $\partial\mu$) > 0 $\to$
+      muMin n $\le$ continuousRatio $\mu$ c_cont Psi_cont (coeCLM_seq n h) +
+        (numerator_error n + muMin n * denominator_error n) * $\Vert$coeCLM_seq n h$\Vert$ ^ 2 /
+          ($\int$ x, ((coeCLM_seq n h : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont x $\partial\mu$)) :
+    muMin n $\le$ continuousRatio $\mu$ c_cont Psi_cont (coeCLM_seq n (projectionToRKHS n f)) +
+      (numerator_error n + muMin n * denominator_error n) * $\Vert$coeCLM_seq n (projectionToRKHS n f)$\Vert$ ^ 2 /
+        ($\int$ x, ((coeCLM_seq n (projectionToRKHS n f) : X $\to$ $\mathbb{R}$) x) ^ 2 * Psi_cont x $\partial\mu$)
 
 -- The main reduction of the Twin Prime Conjecture
 theorem twin_prime_conjecture ($\mu$ : Measure X) [IsFiniteMeasure $\mu$]
-    (H\_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H\_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H\_seq i)]
-    [$\forall$ i, CompleteSpace (H\_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H\_seq i) X $\mathbb{R}$]
-    (coeCLM\_seq : $\forall$ i, H\_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
-    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H\_seq i)
-    (c\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c\_cont)]
-    (Psi\_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous Psi\_cont)] :
+    (H_seq : $\mathbb{N}$ $\to$ Type*) [$\forall$ i, NormedAddCommGroup (H_seq i)] [$\forall$ i, InnerProductSpace $\mathbb{R}$ (H_seq i)]
+    [$\forall$ i, CompleteSpace (H_seq i)] [$\forall$ i, RKHS $\mathbb{R}$ (H_seq i) X $\mathbb{R}$]
+    (coeCLM_seq : $\forall$ i, H_seq i $\to \mathrm{L}[\mathbb{R}]$ Lp $\mathbb{R}$ 2 $\mu$)
+    (projectionToRKHS : $\forall$ i, Lp $\mathbb{R}$ 2 $\mu$ $\to \mathrm{L}[\mathbb{R}]$ H_seq i)
+    (c_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous c_cont)]
+    (Psi_cont : X $\to$ $\mathbb{R}$) [Fact (Continuous Psi_cont)] :
     {p : $\mathbb{N}$ | Prime p $\wedge$ Prime (p + 2)}.Infinite := by
   apply mu_min_lt_one_implies_tpc
-  exact mu_min_infinite $\mu$ H\_seq coeCLM\_seq projectionToRKHS c\_cont Psi\_cont
+  exact mu_min_infinite $\mu$ H_seq coeCLM_seq projectionToRKHS c_cont Psi_cont
 \end{lean}
 
 \section{Concluding Remarks and Future Work} \label{sec:conclusion}
