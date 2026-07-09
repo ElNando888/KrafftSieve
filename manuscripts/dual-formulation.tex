@@ -69,7 +69,13 @@ This working note details a reformulation of the variational optimization of spe
 
 \section{Introduction and the Primal Formulation} \label{sec:intro}
 
-The study of prime number sieves dates back to the classical work of Krafft \cite{Krafft1801} and Viggo Brun \cite{Brun1919}, which laid the foundation for modern Selberg sieves \cite{Selberg1947} and recent major breakthroughs in bounded prime gaps by Goldston, Pintz, and Y{\i}ld{\i}r{\i}m \cite{GPY2009} and James Maynard \cite{Maynard2015}. The primal formulation of the Krafft sieve optimization (outlined in Section 5 of \cite{Portela2026b}) seeks a weight function $W(x) \ge 0$ supported on the interval $\mathcalA_n = [6n^2 - 2n, 6n^2 + 10n + 3]$ to minimize the sieve quotient:
+The study of prime number sieves dates back to the classical work of Viggo Brun \cite{Brun1919},
+which laid the foundation for modern Selberg sieves \cite{Selberg1947} and recent major
+breakthroughs in bounded prime gaps by Goldston, Pintz, and Y{\i}ld{\i}r{\i}m \cite{GPY2009} and
+James Maynard \cite{Maynard2015}. Rooted in the diophantine equivalence established by
+Krafft~\cite{Krafft1801}, the primal formulation of the Krafft sieve optimization (outlined
+in Section 5 of \cite{Portela2026b}) seeks a weight function $W(x) \ge 0$ supported on the interval
+$\mathcalA_n = [6n^2 - 2n, 6n^2 + 10n + 3]$ to minimize the sieve quotient:
 \begin{equation}
 \mu(n, W) = \frac{\sum_{x \in \mathcalA_n} c(x) W(x)}{\sum_{x \in \mathcalA_n} W(x)}
 \end{equation}
