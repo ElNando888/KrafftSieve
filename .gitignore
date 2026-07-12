@@ -1,10 +1,12 @@
 /.lake
 /.agents
 /aristotle
+/manuscripts/*.md
 /manuscripts/AHL
 /manuscripts/JIS
 /manuscripts/ENT
 /manuscripts/CPC/cover
+/manuscripts/AoM
 /Old
 GetDeps.lean
 *.aux
