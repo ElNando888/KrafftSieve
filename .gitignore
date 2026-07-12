@@ -15,6 +15,7 @@ GetDeps.lean
 *.fls
 *.log
 *.out
+*.rpi
 *.run.xml
 *.synctex.gz
 *.xcf
