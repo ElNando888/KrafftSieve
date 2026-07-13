@@ -181,9 +181,13 @@ lemma charFun_add_apply (k₁ k₂ : ℕ →₀ ℤ) (x : X) :
   unfold charFun
   simp +decide only [Finsupp.coe_add, PolynomialModule.funLike_eq, Pi.add_apply, Int.cast_add,
     ZMod.natCast_val]
-  rw [ Finset.prod_subset ( show ( k₁ + k₂ |> Finsupp.support ) ⊆ k₁.support ∪ k₂.support from fun i hi => by by_cases hi₁ : k₁ i = 0 <;> by_cases hi₂ : k₂ i = 0 <;> aesop ) ]
-  · rw [ Finset.prod_subset ( show k₁.support ⊆ k₁.support ∪ k₂.support from Finset.subset_union_left ), Finset.prod_subset ( show k₂.support ⊆ k₁.support ∪ k₂.support from Finset.subset_union_right ) ]
-    · rw [ ← Finset.prod_mul_distrib ] ; congr ; ext ; rw [ ← Complex.exp_add ] ; ring
+  rw [ Finset.prod_subset ( show ( k₁ + k₂ |> Finsupp.support ) ⊆ k₁.support ∪ k₂.support
+      from fun i _hi => by by_cases _hi₁ : k₁ i = 0 <;> by_cases _hi₂ : k₂ i = 0 <;> aesop ) ]
+  · rw [ Finset.prod_subset ( show k₁.support ⊆ k₁.support ∪ k₂.support
+          from Finset.subset_union_left ),
+      Finset.prod_subset ( show k₂.support ⊆ k₁.support ∪ k₂.support
+          from Finset.subset_union_right ) ]
+    · rw [ ← Finset.prod_mul_distrib ] ; congr ; ext ; rw [ ← Complex.exp_add ] ; ring_nf
     · aesop
     · aesop
   · intro i hi h; norm_cast at *; aesop
@@ -210,7 +214,9 @@ lemma charFun_separatesPoints : (Set.range charFun).SeparatesPoints := by
   -- then $x_i = y_i$ for all $i$.
   have h_eq : ∀ i, (x i).val = (y i).val := by
     intro i
-    specialize hxy (fun x => Complex.exp (2 * Real.pi * Complex.I * ((x i).val : ℂ) / (globalPrime i : ℂ))) (Finsupp.single i 1) (by
+    specialize hxy (fun x => Complex.exp (2 * Real.pi * Complex.I * ((x i).val : ℂ) /
+      (globalPrime i : ℂ)))
+      (Finsupp.single i 1) (by
     unfold charFun
     simp +decide only [ne_eq, Finsupp.support_single, Finsupp.single_apply, Int.cast_ite,
       Int.cast_one, Int.cast_zero, ZMod.natCast_val, ite_mul, one_mul, zero_mul,
@@ -220,10 +226,13 @@ lemma charFun_separatesPoints : (Set.range charFun).SeparatesPoints := by
     -- By simplifying, we can see that $(x_i).val = (y_i).val$.
     obtain ⟨n, hn⟩ := hxy
     have h_eq : (x i).val = (y i).val + n * (globalPrime i) := by
-      rw [ div_add', div_eq_div_iff ] at hn <;> norm_num [ Complex.ext_iff, Real.pi_ne_zero, Nat.Prime.ne_zero ( globalPrime_prime i ) ] at *
+      rw [ div_add', div_eq_div_iff ] at hn <;> norm_num [ Complex.ext_iff, Real.pi_ne_zero,
+        Nat.Prime.ne_zero ( globalPrime_prime i ) ] at *
       erw [ ZMod.cast_eq_val, ZMod.cast_eq_val ] at * ; norm_cast at *
-      exact_mod_cast ( by nlinarith [ Real.pi_pos ] : ( x i |> ZMod.val : ℝ ) = ( y i |> ZMod.val : ℝ ) + n * ( globalPrime i : ℝ ) )
-    nlinarith [ show n = 0 by nlinarith [ ZMod.val_lt ( x i ), ZMod.val_lt ( y i ) ] ]
+      exact_mod_cast ( by nlinarith [ Real.pi_pos ] :
+        ( x i |> ZMod.val : ℝ ) = ( y i |> ZMod.val : ℝ ) + n * ( globalPrime i : ℝ ) )
+    nlinarith [ show n = 0 by
+      nlinarith [ ZMod.val_lt ( x i ), ZMod.val_lt ( y i ) ] ]
   exact funext fun i => ZMod.val_injective _ <| h_eq i
 
 /-!
@@ -305,14 +314,20 @@ theorem charSpan_dense : (Submodule.span ℂ charSet).topologicalClosure = ⊤ :
   -- The span of the characters in $L^2(X)$ is dense by the Stone-Weierstrass theorem because the
   -- characters form a *-subalgebra of $C(X, \mathbb{C})$ that separates points and contains the
   -- constant functions.
-  have h_span_dense : ∀ f : C(X, ℂ), ∃ seq : ℕ → Lp ℂ 2 haarProb, Filter.Tendsto seq Filter.atTop (nhds (ContinuousMap.toLp 2 haarProb ℂ f)) ∧ ∀ n, seq n ∈ Submodule.span ℂ (Set.range charLp) := by
+  have h_span_dense : ∀ f : C(X, ℂ), ∃ seq : ℕ → Lp ℂ 2 haarProb,
+      Filter.Tendsto seq Filter.atTop (nhds (ContinuousMap.toLp 2 haarProb ℂ f)) ∧
+      ∀ n, seq n ∈ Submodule.span ℂ (Set.range charLp) := by
     intro f
-    obtain ⟨seq, hseq⟩ : ∃ seq : ℕ → C(X, ℂ), Filter.Tendsto seq Filter.atTop (nhds f) ∧ ∀ n, seq n ∈ Submodule.span ℂ (Set.range charMk) := by
+    obtain ⟨seq, hseq⟩ : ∃ seq : ℕ → C(X, ℂ), Filter.Tendsto seq Filter.atTop (nhds f) ∧
+        ∀ n, seq n ∈ Submodule.span ℂ (Set.range charMk) := by
       have h_dense : Dense (Submodule.span ℂ (Set.range charMk) : Set C(X, ℂ)) := by
-        have h_star_subalgebra : ∃ A : StarSubalgebra ℂ C(X, ℂ), (A : Set C(X, ℂ)) = Submodule.span ℂ (Set.range charMk) := by
+        have h_star_subalgebra : ∃ A : StarSubalgebra ℂ C(X, ℂ),
+            (A : Set C(X, ℂ)) = Submodule.span ℂ (Set.range charMk) := by
           refine ⟨ ?_, ?_ ⟩
           refine' { .. }
-          · exact ( Submodule.span ℂ ( Set.range charMk ) : Submodule ℂ C(X, ℂ) ) |> Submodule.toAddSubmonoid |> AddSubmonoid.toAddSubsemigroup |> AddSubsemigroup.carrier
+          · exact ( Submodule.span ℂ ( Set.range charMk ) : Submodule ℂ C(X, ℂ) )
+              |> Submodule.toAddSubmonoid |> AddSubmonoid.toAddSubsemigroup
+              |> AddSubsemigroup.carrier
           all_goals norm_num
           · intro a b ha hb
             rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at ha hb
@@ -352,7 +367,8 @@ theorem charSpan_dense : (Submodule.span ℂ charSet).topologicalClosure = ⊤ :
           use charMk k; simp_all +decide only [Set.ext_iff, SetLike.mem_coe, ne_eq,
             StarSubalgebra.coe_toSubalgebra, Set.mem_image, DFunLike.coe_fn_eq, exists_eq_right]
           exact ⟨ Submodule.subset_span ⟨ k, rfl ⟩, hk ⟩
-        have := ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints A h_separates_points
+        have := ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints
+          A h_separates_points
         simp_all +decide only [SetLike.ext_iff, StarSubalgebra.mem_top, iff_true]
         convert this using 1
         rw [ show ( Submodule.span ℂ ( Set.range charMk ) : Set C(X, ℂ) ) = A from hA.symm ]
@@ -364,18 +380,21 @@ theorem charSpan_dense : (Submodule.span ℂ charSet).topologicalClosure = ⊤ :
     · exact ContinuousMap.toLp 2 haarProb ℂ |>.continuous.continuousAt.tendsto.comp hseq.1
     · intro n
       have h_seq_n : seq n ∈ Submodule.span ℂ (Set.range charMk) := hseq.right n
-      have h_seq_n_Lp : ContinuousMap.toLp 2 haarProb ℂ (seq n) ∈ Submodule.span ℂ (Set.range charLp) := by
+      have h_seq_n_Lp : ContinuousMap.toLp 2 haarProb ℂ (seq n)
+          ∈ Submodule.span ℂ (Set.range charLp) := by
         rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at h_seq_n
         obtain ⟨ c, hc ⟩ := h_seq_n; rw [ ← hc ]
         simp +decide only [ContinuousMap.toLp, Finsupp.sum, map_sum, map_smul,
           ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
           LinearIsometryEquiv.coe_toContinuousLinearEquiv]
-        exact Submodule.sum_mem _ fun i hi => Submodule.smul_mem _ _ <| Submodule.subset_span <| Set.mem_range_self _
+        exact Submodule.sum_mem _ fun i hi => Submodule.smul_mem _ _ <|
+          Submodule.subset_span <| Set.mem_range_self _
       exact h_seq_n_Lp
   refine eq_top_iff.mpr fun x hx => ?_
   -- By the density of continuous functions in $L^2(X)$, there exists a sequence of continuous
   -- functions $f_n$ such that $f_n \to x$ in $L^2$.
-  obtain ⟨f_n, hf_n⟩ : ∃ f_n : ℕ → C(X, ℂ), Filter.Tendsto (fun n => ContinuousMap.toLp 2 haarProb ℂ (f_n n)) Filter.atTop (nhds x) := by
+  obtain ⟨f_n, hf_n⟩ : ∃ f_n : ℕ → C(X, ℂ),
+      Filter.Tendsto (fun n => ContinuousMap.toLp 2 haarProb ℂ (f_n n)) Filter.atTop (nhds x) := by
     have := ContinuousMap.toLp_denseRange ( E := ℂ ) haarProb ( p := 2 ) ℂ ( by norm_num )
     have := this x
     rw [ mem_closure_iff_seq_limit ] at this
@@ -384,13 +403,23 @@ theorem charSpan_dense : (Submodule.span ℂ charSet).topologicalClosure = ⊤ :
   choose seq hseq₁ hseq₂ using fun n => h_span_dense ( f_n n )
   -- By the properties of the limit, we can find a sequence in the span of the characters that
   -- converges to $x$.
-  have h_seq : ∃ seq : ℕ → Lp ℂ 2 haarProb, Filter.Tendsto seq Filter.atTop (nhds x) ∧ ∀ n, seq n ∈ Submodule.span ℂ (Set.range charLp) := by
-    have h_seq : ∀ n, ∃ m, dist (seq n m) (ContinuousMap.toLp 2 haarProb ℂ (f_n n)) < 1 / (n + 1) := by
-      exact fun n => by rcases Metric.tendsto_atTop.mp ( hseq₁ n ) ( 1 / ( n + 1 ) ) ( by positivity ) with ⟨ m, hm ⟩ ; exact ⟨ m, hm m le_rfl ⟩
+  have h_seq : ∃ seq : ℕ → Lp ℂ 2 haarProb, Filter.Tendsto seq Filter.atTop (nhds x) ∧
+      ∀ n, seq n ∈ Submodule.span ℂ (Set.range charLp) := by
+    have h_seq : ∀ n, ∃ m, dist (seq n m) (ContinuousMap.toLp 2 haarProb ℂ (f_n n)) <
+        1 / (n + 1) := by
+      exact fun n => by
+        rcases Metric.tendsto_atTop.mp ( hseq₁ n ) ( 1 / ( n + 1 ) ) ( by positivity ) with ⟨m, hm⟩
+        exact ⟨ m, hm m le_rfl ⟩
     choose m hm using h_seq
     use fun n => seq n (m n)
-    exact ⟨ by simpa using Filter.Tendsto.add ( hf_n ) ( show Filter.Tendsto ( fun n => seq n ( m n ) - ( ContinuousMap.toLp 2 haarProb ℂ ) ( f_n n ) ) Filter.atTop ( nhds 0 ) from tendsto_zero_iff_norm_tendsto_zero.mpr <| squeeze_zero ( fun _ => by positivity ) ( fun n => le_of_lt <| by rw [ ← dist_eq_norm ]; simpa using hm n ) <| tendsto_one_div_add_atTop_nhds_zero_nat ), fun n => hseq₂ _ _ ⟩
-  exact mem_closure_of_tendsto h_seq.choose_spec.1 ( Filter.Eventually.of_forall h_seq.choose_spec.2 )
+    exact ⟨ by simpa using Filter.Tendsto.add ( hf_n ) ( show Filter.Tendsto ( fun n =>
+        seq n ( m n ) -
+        ( ContinuousMap.toLp 2 haarProb ℂ ) ( f_n n ) ) Filter.atTop ( nhds 0 ) from
+          tendsto_zero_iff_norm_tendsto_zero.mpr <| squeeze_zero ( fun _ => by positivity )
+          ( fun n => le_of_lt <| by rw [ ← dist_eq_norm ]; simpa using hm n )
+          <| tendsto_one_div_add_atTop_nhds_zero_nat ), fun n => hseq₂ _ _ ⟩
+  exact mem_closure_of_tendsto h_seq.choose_spec.1
+    ( Filter.Eventually.of_forall h_seq.choose_spec.2 )
 
 /-- **`h_dense`**: the union of the finite-window spans is dense in `L²(X, haarProb)`.
 This is the Peter–Weyl theorem for the compact abelian group `X`: its characters span a
