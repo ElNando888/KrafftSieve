@@ -363,7 +363,7 @@ The uniform measure of a singleton in a finite cyclic factor is `1 / pᵢ`.
 -/
 lemma unifMeasure_real_singleton (i : ℕ) (z : ZMod (globalPrime i)) :
     (unifMeasure i).real {z} = ((globalPrime i : ℝ))⁻¹ := by
-  unfold unifMeasure;
+  unfold unifMeasure
   rw [ MeasureTheory.measureReal_def ] ; norm_num [PMF.uniformOfFintype_apply]
 
 /-
@@ -375,7 +375,10 @@ lemma measureReal_pi_singleton {ι : Type*} [Fintype ι] {α : ι → Type*}
     (ν : (i : ι) → Measure (α i)) [∀ i, IsFiniteMeasure (ν i)]
     (z : (i : ι) → α i) :
     (Measure.pi ν).real {z} = ∏ i, (ν i).real {z i} := by
-  rw [ MeasureTheory.measureReal_def, show { z } = Set.pi Set.univ fun i => { z i } by ext; simp +decide [ funext_iff ], MeasureTheory.Measure.pi_pi ] ; norm_num [ MeasureTheory.measureReal_def ]
+  rw [ MeasureTheory.measureReal_def, show { z } = Set.pi Set.univ fun i => { z i } by
+    ext
+    simp +decide [ funext_iff ], MeasureTheory.Measure.pi_pi ]
+  norm_num [ MeasureTheory.measureReal_def ]
 
 /-
 A character supported on the finite window `I` factors through the finite grid: its value
@@ -384,8 +387,8 @@ obtained by restricting `x` to `I` and extending by `0`.
 -/
 lemma charFun_gridEmbed_restrict (s : Finset ℕ) (k : ℕ →₀ ℤ) (hk : k.support ⊆ s) (x : X) :
     charFun k (gridEmbed s (s.restrict x)) = charFun k x := by
-  refine' Finset.prod_congr rfl fun i hi => _;
-  rw [ gridEmbed_apply_mem s _ ( hk hi ) ] ; rfl;
+  refine Finset.prod_congr rfl fun i hi => ?_
+  rw [ gridEmbed_apply_mem s _ ( hk hi ) ] ; rfl
 
 /-
 **Task 6 (Haar integral = discrete grid average).**
@@ -397,24 +400,27 @@ theorem charFun_haar_integral_eq_gridAverage (s : Finset ℕ) (k : ℕ →₀ �
     ∫ x, charFun k x ∂haarProb
       = (((∏ i ∈ s, globalPrime i : ℕ)) : ℂ)⁻¹ *
           ∑ z : (i : s) → ZMod (globalPrime i), charFun k (gridEmbed s z) := by
-  -- By definition of `haarProb`, we know that it is the product measure of the uniform measures on each `ZMod (globalPrime i)`.
+  -- By definition of `haarProb`, we know that it is the product measure of the uniform measures
+  -- on each `ZMod (globalPrime i)`.
   have h_haar_prob : haarProb.map (s.restrict) = Measure.pi (fun i : s => unifMeasure i) := by
     unfold haarProb
     exact MeasureTheory.Measure.infinitePi_map_restrict unifMeasure
-  have h_integral_eq : ∫ x, charFun k x ∂haarProb = ∫ z, charFun k (gridEmbed s z) ∂(Measure.pi (fun i : s => unifMeasure i)) := by
-    rw [ ← h_haar_prob, MeasureTheory.integral_map ];
-    · exact congr_arg _ ( funext fun x => charFun_gridEmbed_restrict s k hk x ▸ rfl );
-    · fun_prop;
-    · refine' Continuous.aestronglyMeasurable _;
+  have h_integral_eq : ∫ x, charFun k x ∂haarProb =
+      ∫ z, charFun k (gridEmbed s z) ∂(Measure.pi (fun i : s => unifMeasure i)) := by
+    rw [ ← h_haar_prob, MeasureTheory.integral_map ]
+    · exact congr_arg _ ( funext fun x => charFun_gridEmbed_restrict s k hk x ▸ rfl )
+    · fun_prop
+    · refine Continuous.aestronglyMeasurable ?_
       exact charFun_continuous k |> Continuous.comp <| by
-        exact continuous_pi_iff.mpr fun i => by unfold gridEmbed; split_ifs <;> continuity;
-  rw [ h_integral_eq, MeasureTheory.integral_fintype ];
-  · rw [ Finset.mul_sum _ _ _ ] ; congr ; ext ; rw [ measureReal_pi_singleton ] ; norm_num [ unifMeasure_real_singleton ] ; ring;
-    exact Or.inl <| by conv_rhs => rw [ ← Finset.prod_attach ] ;
-  · refine' Continuous.integrable_of_hasCompactSupport _ _;
-    · refine' continuous_finset_prod _ fun i hi => _;
-      fun_prop;
-    · rw [ hasCompactSupport_iff_eventuallyEq ];
+        exact continuous_pi_iff.mpr fun i => by unfold gridEmbed; split_ifs <;> continuity
+  rw [ h_integral_eq, MeasureTheory.integral_fintype ]
+  · rw [ Finset.mul_sum _ _ _ ] ; congr ; ext ; rw [ measureReal_pi_singleton ]
+    norm_num [ unifMeasure_real_singleton ] ; ring_nf
+    exact Or.inl <| by conv_rhs => rw [ ← Finset.prod_attach ]
+  · refine Continuous.integrable_of_hasCompactSupport ?_ ?_
+    · refine continuous_finsetProd _ fun i hi => ?_
+      fun_prop
+    · rw [ hasCompactSupport_iff_eventuallyEq ]
       simp +decide [ Filter.EventuallyEq ]
 
 /-
@@ -427,13 +433,14 @@ theorem trigPoly_haar_integral_eq_gridAverage (s : Finset ℕ) (S : Finset (ℕ 
     ∫ x, (∑ k ∈ S, c k * charFun k x) ∂haarProb
       = (((∏ i ∈ s, globalPrime i : ℕ)) : ℂ)⁻¹ *
           ∑ z : (i : s) → ZMod (globalPrime i), (∑ k ∈ S, c k * charFun k (gridEmbed s z)) := by
-  rw [ MeasureTheory.integral_finset_sum ];
-  · simp +decide only [integral_const_mul];
-    rw [ Finset.sum_congr rfl fun k hk => by rw [ charFun_haar_integral_eq_gridAverage s k ( hS k hk ) ] ];
-    simp +decide only [Finset.mul_sum _ _ _, mul_left_comm];
-    exact Finset.sum_comm;
-  · intro k hk;
-    refine' MeasureTheory.Integrable.const_mul _ _;
+  rw [ MeasureTheory.integral_finsetSum ]
+  · simp +decide only [integral_const_mul]
+    rw [ Finset.sum_congr rfl fun k hk => by
+      rw [ charFun_haar_integral_eq_gridAverage s k ( hS k hk ) ] ]
+    simp +decide only [Finset.mul_sum _ _ _, mul_left_comm]
+    exact Finset.sum_comm
+  · intro k hk
+    refine MeasureTheory.Integrable.const_mul ?_ _
     exact MeasureTheory.MemLp.integrable one_le_two ( charFun_memLp k )
 
 end KrafftSieve
