@@ -323,40 +323,50 @@ theorem charSpan_dense : (Submodule.span ℂ charSet).topologicalClosure = ⊤ :
       have h_dense : Dense (Submodule.span ℂ (Set.range charMk) : Set C(X, ℂ)) := by
         have h_star_subalgebra : ∃ A : StarSubalgebra ℂ C(X, ℂ),
             (A : Set C(X, ℂ)) = Submodule.span ℂ (Set.range charMk) := by
-          refine ⟨ ?_, ?_ ⟩
-          refine' { .. }
-          · exact ( Submodule.span ℂ ( Set.range charMk ) : Submodule ℂ C(X, ℂ) )
+          exact ⟨ {
+            carrier := ( Submodule.span ℂ ( Set.range charMk ) : Submodule ℂ C(X, ℂ) )
               |> Submodule.toAddSubmonoid |> AddSubmonoid.toAddSubsemigroup
               |> AddSubsemigroup.carrier
-          all_goals norm_num
-          · intro a b ha hb
-            rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at ha hb
-            obtain ⟨ c, rfl ⟩ := ha; obtain ⟨ d, rfl ⟩ := hb
-            simp +decide only [Finsupp.sum, Finset.sum_mul _ _ _, Algebra.smul_mul_assoc]
-            simp +decide only [Finset.mul_sum _ _ _, Algebra.mul_smul_comm, Submodule.mem_span]
-            intro p hp
-            refine Submodule.sum_mem _ fun i hi => Submodule.smul_mem _ _ ?_
-            refine Submodule.sum_mem _ fun j hj => Submodule.smul_mem _ _ ?_
-            have hmul : charMk i * charMk j = charMk (i + j) := by
-              ext x; simp +decide [ charMk, charFun_add_apply ]
-            rw [hmul]; exact hp ⟨ i + j, rfl ⟩
-          · exact Submodule.subset_span ⟨ 0, by ext; simp +decide [ charMk, charFun_zero_apply ] ⟩
-          · exact fun ha hb => Submodule.add_mem _ ha hb
-          · intro r
-            rw [ Submodule.mem_span ]
-            intro p hp
-            convert p.smul_mem r ( hp ⟨ 0, rfl ⟩ ) using 1
-            ext; simp only [algebraMap_apply, smul_eq_mul, mul_one, charMk, ContinuousMap.coe_smul,
-              ContinuousMap.coe_mk, Pi.smul_apply]
-            unfold charFun; aesop
-          · intro a ha
-            rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at ha
-            obtain ⟨ c, rfl ⟩ := ha
-            simp +decide only [Finsupp.sum, star_sum, star_smul, RCLike.star_def,
-              Submodule.mem_span]
-            intro p hp; exact Submodule.sum_mem _ fun i hi =>
-              Submodule.smul_mem _ _ <| hp <| Set.mem_range.mpr ⟨ -i, by
-                ext x; simp +decide [ charMk, charFun_neg_apply ] ; ⟩
+            mul_mem' := by
+              intro a b ha hb
+              change _ ∈ Submodule.span ℂ (Set.range charMk)
+              change a ∈ Submodule.span ℂ (Set.range charMk) at ha
+              change b ∈ Submodule.span ℂ (Set.range charMk) at hb
+              rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at ha hb
+              obtain ⟨ c, rfl ⟩ := ha; obtain ⟨ d, rfl ⟩ := hb
+              simp +decide only [Finsupp.sum, Finset.sum_mul _ _ _, Algebra.smul_mul_assoc]
+              simp +decide only [Finset.mul_sum _ _ _, Algebra.mul_smul_comm, Submodule.mem_span]
+              intro p hp
+              refine Submodule.sum_mem _ fun i hi => Submodule.smul_mem _ _ ?_
+              refine Submodule.sum_mem _ fun j hj => Submodule.smul_mem _ _ ?_
+              have hmul : charMk i * charMk j = charMk (i + j) := by
+                ext x; simp +decide [ charMk, charFun_add_apply ]
+              rw [hmul]; exact hp ⟨ i + j, rfl ⟩
+            one_mem' := Submodule.subset_span ⟨ 0,
+              by ext; simp +decide [ charMk, charFun_zero_apply ] ⟩
+            add_mem' := fun ha hb => Submodule.add_mem _ ha hb
+            zero_mem' := by norm_num
+            algebraMap_mem' := by
+              intro r
+              change _ ∈ Submodule.span ℂ (Set.range charMk)
+              rw [ Submodule.mem_span ]
+              intro p hp
+              convert p.smul_mem r ( hp ⟨ 0, rfl ⟩ ) using 1
+              ext; simp only [algebraMap_apply, smul_eq_mul, mul_one, charMk,
+                ContinuousMap.coe_smul, ContinuousMap.coe_mk, Pi.smul_apply]
+              unfold charFun; aesop
+            star_mem' := by
+              intro a ha
+              change a ∈ Submodule.span ℂ (Set.range charMk) at ha
+              change _ ∈ Submodule.span ℂ (Set.range charMk)
+              rw [ Finsupp.mem_span_range_iff_exists_finsupp ] at ha
+              obtain ⟨ c, rfl ⟩ := ha
+              simp +decide only [Finsupp.sum, star_sum, star_smul, RCLike.star_def,
+                Submodule.mem_span]
+              intro p hp; exact Submodule.sum_mem _ fun i hi =>
+                Submodule.smul_mem _ _ <| hp <| Set.mem_range.mpr ⟨ -i, by
+                  ext x; simp +decide [ charMk, charFun_neg_apply ] ; ⟩
+          }, rfl ⟩
         obtain ⟨A, hA⟩ := h_star_subalgebra
         have h_separates_points : A.SeparatesPoints := by
           have h_separates_points : ∀ x y : X, x ≠ y → ∃ k : ℕ →₀ ℤ, charFun k x ≠ charFun k y := by
