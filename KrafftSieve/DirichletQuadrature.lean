@@ -22,6 +22,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import KrafftSieve.ProfiniteRKHS
 
 /-!
 # Dirichlet-kernel exact quadrature (self-contained)
@@ -330,5 +331,109 @@ theorem prod_cos_reproWindow (N M : ℕ) (ψ : ℕ → ℝ) {ι : Type*}
   exact h_integral.trans (by
     congr; ext y
     exact prod_cos_dirichlet_repro M (y / N) A g hM ▸ by rfl)
+
+/-!
+## Task 6: bridging the exact quadrature to the Haar integral over `X`
+
+The exact Dirichlet quadrature above computes a continuous integral of a trigonometric
+polynomial as an exact discrete average over a finite grid. We now re-verify that this exact
+quadrature is *isomorphic to the Haar integral over the profinite space* `X` from
+`ProfiniteRKHS.lean`: for a character (and hence, by linearity, any trigonometric polynomial)
+depending only on the coordinates of a finite window `I`, its integral against the normalized
+Haar measure `haarProb` equals its discrete average over the finite grid
+`∏_{i ∈ I} ℤ/pᵢℤ`.  By the Chinese Remainder Theorem this finite grid is isomorphic to
+`ℤ/qℤ`, with `q = ∏_{i ∈ I} pᵢ` the primorial modulus (e.g. `q = q n`, `|I| = w n` for the
+`n`-th window), so this is exactly the discrete average over `ℤ/q(n)ℤ`.
+-/
+
+open MeasureTheory
+open scoped BigOperators
+
+/-- Embedding of a finite grid point (a tuple over the coordinates in the window `s`) into the
+profinite ambient space `X`, extending by `0` outside the window. -/
+noncomputable def gridEmbed (s : Finset ℕ) (z : (i : s) → ZMod (globalPrime i)) : X :=
+  fun j => if h : j ∈ s then z ⟨j, h⟩ else 0
+
+lemma gridEmbed_apply_mem (s : Finset ℕ) (z : (i : s) → ZMod (globalPrime i))
+    {j : ℕ} (hj : j ∈ s) : gridEmbed s z j = z ⟨j, hj⟩ := by
+  simp [gridEmbed, hj]
+
+/-
+The uniform measure of a singleton in a finite cyclic factor is `1 / pᵢ`.
+-/
+lemma unifMeasure_real_singleton (i : ℕ) (z : ZMod (globalPrime i)) :
+    (unifMeasure i).real {z} = ((globalPrime i : ℝ))⁻¹ := by
+  unfold unifMeasure;
+  rw [ MeasureTheory.measureReal_def ] ; norm_num [PMF.uniformOfFintype_apply]
+
+/-
+For a family of finite measures on finite spaces with measurable singletons, the product
+measure of a singleton is the product of the singleton masses.
+-/
+lemma measureReal_pi_singleton {ι : Type*} [Fintype ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] [∀ i, MeasurableSingletonClass (α i)]
+    (ν : (i : ι) → Measure (α i)) [∀ i, IsFiniteMeasure (ν i)]
+    (z : (i : ι) → α i) :
+    (Measure.pi ν).real {z} = ∏ i, (ν i).real {z i} := by
+  rw [ MeasureTheory.measureReal_def, show { z } = Set.pi Set.univ fun i => { z i } by ext; simp +decide [ funext_iff ], MeasureTheory.Measure.pi_pi ] ; norm_num [ MeasureTheory.measureReal_def ]
+
+/-
+A character supported on the finite window `I` factors through the finite grid: its value
+at `x` depends only on the coordinates in `I`, so it agrees with its value at the grid point
+obtained by restricting `x` to `I` and extending by `0`.
+-/
+lemma charFun_gridEmbed_restrict (s : Finset ℕ) (k : ℕ →₀ ℤ) (hk : k.support ⊆ s) (x : X) :
+    charFun k (gridEmbed s (s.restrict x)) = charFun k x := by
+  refine' Finset.prod_congr rfl fun i hi => _;
+  rw [ gridEmbed_apply_mem s _ ( hk hi ) ] ; rfl;
+
+/-
+**Task 6 (Haar integral = discrete grid average).**
+For a character `charFun k` supported on the finite window `I`, its Haar integral over the
+profinite space `X` equals its exact discrete average over the finite grid
+`∏_{i ∈ I} ℤ/pᵢℤ` with primorial modulus `q = ∏_{i ∈ I} pᵢ`.
+-/
+theorem charFun_haar_integral_eq_gridAverage (s : Finset ℕ) (k : ℕ →₀ ℤ) (hk : k.support ⊆ s) :
+    ∫ x, charFun k x ∂haarProb
+      = (((∏ i ∈ s, globalPrime i : ℕ)) : ℂ)⁻¹ *
+          ∑ z : (i : s) → ZMod (globalPrime i), charFun k (gridEmbed s z) := by
+  -- By definition of `haarProb`, we know that it is the product measure of the uniform measures on each `ZMod (globalPrime i)`.
+  have h_haar_prob : haarProb.map (s.restrict) = Measure.pi (fun i : s => unifMeasure i) := by
+    unfold haarProb
+    exact MeasureTheory.Measure.infinitePi_map_restrict unifMeasure
+  have h_integral_eq : ∫ x, charFun k x ∂haarProb = ∫ z, charFun k (gridEmbed s z) ∂(Measure.pi (fun i : s => unifMeasure i)) := by
+    rw [ ← h_haar_prob, MeasureTheory.integral_map ];
+    · exact congr_arg _ ( funext fun x => charFun_gridEmbed_restrict s k hk x ▸ rfl );
+    · fun_prop;
+    · refine' Continuous.aestronglyMeasurable _;
+      exact charFun_continuous k |> Continuous.comp <| by
+        exact continuous_pi_iff.mpr fun i => by unfold gridEmbed; split_ifs <;> continuity;
+  rw [ h_integral_eq, MeasureTheory.integral_fintype ];
+  · rw [ Finset.mul_sum _ _ _ ] ; congr ; ext ; rw [ measureReal_pi_singleton ] ; norm_num [ unifMeasure_real_singleton ] ; ring;
+    exact Or.inl <| by conv_rhs => rw [ ← Finset.prod_attach ] ;
+  · refine' Continuous.integrable_of_hasCompactSupport _ _;
+    · refine' continuous_finset_prod _ fun i hi => _;
+      fun_prop;
+    · rw [ hasCompactSupport_iff_eventuallyEq ];
+      simp +decide [ Filter.EventuallyEq ]
+
+/-
+**Task 6 (trigonometric-polynomial version).**
+By linearity, the Haar integral over `X` of any trigonometric polynomial supported on the
+window `I` equals its exact discrete average over the finite grid `∏_{i ∈ I} ℤ/pᵢℤ`.
+-/
+theorem trigPoly_haar_integral_eq_gridAverage (s : Finset ℕ) (S : Finset (ℕ →₀ ℤ))
+    (c : (ℕ →₀ ℤ) → ℂ) (hS : ∀ k ∈ S, k.support ⊆ s) :
+    ∫ x, (∑ k ∈ S, c k * charFun k x) ∂haarProb
+      = (((∏ i ∈ s, globalPrime i : ℕ)) : ℂ)⁻¹ *
+          ∑ z : (i : s) → ZMod (globalPrime i), (∑ k ∈ S, c k * charFun k (gridEmbed s z)) := by
+  rw [ MeasureTheory.integral_finset_sum ];
+  · simp +decide only [integral_const_mul];
+    rw [ Finset.sum_congr rfl fun k hk => by rw [ charFun_haar_integral_eq_gridAverage s k ( hS k hk ) ] ];
+    simp +decide only [Finset.mul_sum _ _ _, mul_left_comm];
+    exact Finset.sum_comm;
+  · intro k hk;
+    refine' MeasureTheory.Integrable.const_mul _ _;
+    exact MeasureTheory.MemLp.integrable one_le_two ( charFun_memLp k )
 
 end KrafftSieve
