@@ -18,16 +18,7 @@ rev = "v4.32.0-rc1"
 name = "KrafftSieve"
 
 [[lean_lib]]
-name = "Challenge"
-
-[[lean_lib]]
-name = "Conformance"
-
-[[lean_lib]]
 name = "ComparatorChallenge"
 
 [[lean_lib]]
 name = "ComparatorSolution"
-
-[[lean_lib]]
-name = "Legendre"
