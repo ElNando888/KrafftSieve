@@ -8,6 +8,7 @@
 /manuscripts/CPC/cover
 /manuscripts/AoM
 /Old
+/venv
 GetDeps.lean
 *.aux
 *.bbl

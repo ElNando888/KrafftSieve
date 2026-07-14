@@ -65,31 +65,37 @@ lemma g_i_expected_quarter (n : ℕ) (hn : 4 ≤ n) (i : Fin (w n)) (y_pos y_neg
 
 /--
 By the Chinese Remainder Theorem independence, the sum of the continuous penalty function evaluated
-at `y + 0.25` over all `2^{w(n)}` CRT roots is bounded by `-0.04 * w(n) * 2^{w(n)}`. By the
-$y \mapsto 2-y$ involution, the sum over the `2^{w(n)-1}` lower-half roots is identically bounded
-by `-0.04 * w(n) * 2^{w(n)-1}`.
+at `y + 0.25` over all `2^{w(n)}` CRT roots factors exactly into the product of the expected values.
+Consequently, the total sum is bounded by `-0.04 * w(n) * 2^{w(n)}`.
 -/
-lemma sum_c_cont_0_lower_half (n : ℕ) (hn : 4 ≤ n) :
-    let S := (Finset.Ioc 0 ((q n : ℤ) / 2)).filter (fun y =>
+lemma sum_c_cont_0_all_roots (n : ℕ) (hn : 4 ≤ n) :
+    let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
                ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
                                 y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]);
     ∑ y ∈ S, c_cont₀ n ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋, ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
-    ≤ -0.04 * (w n : ℝ) * (2 ^ (w n - 1) : ℝ) := by
+    ≤ -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) := by
   sorry
 
 /--
-Because the $E_{max}$ trap region has polynomial capacity while the lower half CRT roots scale
-exponentially, there exists at least one root $y_{CRT}$ in the golden region $(E_{max}, q(n)/2]$
+For $n \ge 18$, the exponential growth of the solution space strictly dominates the polynomial capacity of the trap region.
+-/
+lemma trap_capacity_lt_exponential (n : ℕ) (hn : 18 ≤ n) :
+    (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.04 * (2 ^ w n : ℝ) := by
+  sorry
+
+/--
+Because the $E_{max}$ trap region has polynomial capacity while the total CRT roots scale
+exponentially, there exists at least one root $y_{CRT}$ in the golden region (outside the trap region)
 where the penalty drops below `-0.04 * w(n)`.
 -/
-lemma c_cont_0_valley_quarter (n : ℕ) (hn : 4 ≤ n) :
-    ∃ y_CRT : ℤ, (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT ∧ y_CRT < (q n : ℤ) / 2 ∧
+lemma c_cont_0_valley_quarter (n : ℕ) (hn : 18 ≤ n) :
+    ∃ y_CRT : ℤ, (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT ∧ y_CRT < (q n : ℤ) - (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) ∧
     c_cont₀ n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
       ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ ≤ -0.04 * (w n : ℝ) := by
   sorry
 
 /--
-For any CRT valley in the golden region $(E_{max}, q(n)/2)$, the reproducing window `Psi_cont`
+For any CRT valley in the golden region, the reproducing window `Psi_cont`
 is strictly positive at the quarter-integer because the Dirichlet kernels transform into
 strictly positive cotangents.
 
@@ -100,8 +106,8 @@ genuine analytic fact (the windowed Dirichlet sum telescopes to a positive cotan
 in the golden region). Formalizing this requires the exact `dirichletKernel` telescoping identity
 and is left for future work; it is used by `h_dip_unconditional` below.
 -/
-lemma Psi_cont_positive_quarter (n : ℕ) (hn : 4 ≤ n) (y_CRT : ℤ)
-    (h_gt : (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT) (h_lt : y_CRT < (q n : ℤ) / 2) :
+lemma Psi_cont_positive_quarter (n : ℕ) (hn : 18 ≤ n) (y_CRT : ℤ)
+    (h_gt : (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT) (h_lt : y_CRT < (q n : ℤ) - (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3)) :
     0 < Psi_cont n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
       ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ := by
   sorry
@@ -150,13 +156,13 @@ lemma volume_pos_of_isOpen_nonempty (s : Set X₀) (hs : IsOpen s) (hne : s.None
 
 /--
 The continuous penalty `c_cont₀` drops below 1 and `Psi_cont` has positive integral on a set,
-satisfying the `h_dip` hypothesis unconditionally for $n \ge 4$.
+satisfying the `h_dip` hypothesis unconditionally for $n \ge 18$.
 
 The witnessing set is the (open) region where `Psi_cont` is positive and `c_cont₀ < 1`; it contains
 the Gibbs valley point, hence is nonempty (positive volume), and `Psi_cont` is positive throughout,
 so its integral is positive.
 -/
-theorem h_dip_unconditional (n : ℕ) (hn : 4 ≤ n) :
+theorem h_dip_unconditional (n : ℕ) (hn : 18 ≤ n) :
     ∃ s : Set X₀, MeasurableSet s ∧
     0 < ∫ t in s, Psi_cont n t ∂(volume : Measure X₀) ∧
     ∀ t ∈ s, c_cont₀ n t < 1 := by
