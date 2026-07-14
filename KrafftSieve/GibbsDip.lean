@@ -28,8 +28,8 @@ open unitInterval
 open MeasureTheory
 
 /--
-At the quarter-integer evaluated exactly at the CRT residue offset (positive sign), the local interpolant
-experiences a Gibbs undershoot strictly bounded below `-0.1`.
+At the quarter-integer evaluated exactly at the CRT residue offset (positive sign), the local
+interpolant experiences a Gibbs undershoot strictly bounded below `-0.1`.
 -/
 lemma g_i_undershoot_quarter_pos (n : ℕ) (i : Fin (w n)) (y : ℤ)
     (hy : y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]) :
@@ -40,34 +40,52 @@ lemma g_i_undershoot_quarter_pos (n : ℕ) (i : Fin (w n)) (y : ℤ)
   simpa only [g_coef] using h
 
 /--
-At the quarter-integer evaluated exactly at the CRT residue offset (negative sign), the local interpolant
-experiences the identical Gibbs undershoot strictly bounded below `-0.1`.
+At the quarter-integer evaluated exactly at the CRT residue offset (negative sign), the local
+interpolant experiences a positive Gibbs overshoot bounded above by `0.12`.
 -/
-lemma g_i_undershoot_quarter_neg (n : ℕ) (i : Fin (w n)) (y : ℤ)
+lemma g_i_overshoot_quarter_neg (n : ℕ) (i : Fin (w n)) (y : ℤ)
     (hy : y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]) :
     ∑ k ∈ Finset.range ((p n i + 1) / 2),
-      g_coef n i k * Real.cos (2 * Real.pi * k * (y + 0.25) / (p n i : ℝ)) ≤ -0.1 := by
+      g_coef n i k * Real.cos (2 * Real.pi * k * (y + 0.25) / (p n i : ℝ)) ≤ 0.12 := by
   sorry
 
 /--
-By the Chinese Remainder Theorem and the Pigeonhole Principle on the $2^{w-1}$ symmetric solutions,
-there exists a global integer `y_CRT` modulo `q(n)` that aligns the Gibbs undershoot for every prime
-simultaneously, and falls strictly in the golden region $(E_{max}, q(n)/2)$.
+The arithmetic mean of the positive and negative root evaluations at the quarter offset is strictly
+negative. (This relies on the fact that the positive root undershoot dominates the negative root
+overshoot when appropriately scaled for primes >= 5; specifically, for p=5, the mean is <= -0.04).
 -/
-lemma exists_CRT_valley_pigeonhole (n : ℕ) (hn : 4 ≤ n) :
-    ∃ y_CRT : ℤ, (∀ i : Fin (w n), y_CRT ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨ 
-                                   y_CRT ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]) ∧
-      (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT ∧ y_CRT < (q n : ℤ) / 2 := by
+lemma g_i_expected_quarter (n : ℕ) (hn : 4 ≤ n) (i : Fin (w n)) (y_pos y_neg : ℤ)
+    (h_pos : y_pos ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
+    (h_neg : y_neg ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]) :
+    (1 / 2 : ℝ) * (
+      (∑ k ∈ Finset.range ((p n i + 1) / 2), g_coef n i k * Real.cos (2 * Real.pi * k * (y_pos + 0.25) / (p n i : ℝ))) +
+      (∑ k ∈ Finset.range ((p n i + 1) / 2), g_coef n i k * Real.cos (2 * Real.pi * k * (y_neg + 0.25) / (p n i : ℝ)))
+    ) ≤ -0.04 := by
   sorry
 
 /--
-At the aligned CRT valley in the golden region, the total continuous penalty drops below
-`-0.1 * w(n)`.
+By the Chinese Remainder Theorem independence, the sum of the continuous penalty function evaluated
+at `y + 0.25` over all `2^{w(n)}` CRT roots is bounded by `-0.04 * w(n) * 2^{w(n)}`. By the
+$y \mapsto 2-y$ involution, the sum over the `2^{w(n)-1}` lower-half roots is identically bounded
+by `-0.04 * w(n) * 2^{w(n)-1}`.
+-/
+lemma sum_c_cont_0_lower_half (n : ℕ) (hn : 4 ≤ n) :
+    let S := (Finset.Ioc 0 ((q n : ℤ) / 2)).filter (fun y =>
+               ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+                                y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)]);
+    ∑ y ∈ S, c_cont₀ n ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋, ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
+    ≤ -0.04 * (w n : ℝ) * (2 ^ (w n - 1) : ℝ) := by
+  sorry
+
+/--
+Because the $E_{max}$ trap region has polynomial capacity while the lower half CRT roots scale
+exponentially, there exists at least one root $y_{CRT}$ in the golden region $(E_{max}, q(n)/2]$
+where the penalty drops below `-0.04 * w(n)`.
 -/
 lemma c_cont_0_valley_quarter (n : ℕ) (hn : 4 ≤ n) :
     ∃ y_CRT : ℤ, (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT ∧ y_CRT < (q n : ℤ) / 2 ∧
     c_cont₀ n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
-      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ ≤ -0.1 * (w n : ℝ) := by
+      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ ≤ -0.04 * (w n : ℝ) := by
   sorry
 
 /--
