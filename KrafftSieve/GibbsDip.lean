@@ -18,6 +18,7 @@ import KrafftSieve.Discretization
 import KrafftSieve.GibbsAux
 import KrafftSieve.CRTExpectation
 import KrafftSieve.LocalEval
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Lemma 5.1: The Unconditional Continuous Penalty Dip (`h_dip`)
