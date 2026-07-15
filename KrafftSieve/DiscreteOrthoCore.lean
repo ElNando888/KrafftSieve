@@ -17,9 +17,6 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 import KrafftSieve.OptimalWeights
 import Mathlib.Data.Pi.Interval
 
-set_option linter.style.longLine false
-set_option linter.style.refine false
-
 /-!
 Core file: the genuinely-true lemmas for discrete orthogonality, proved WITHOUT the
 false `sum_evalInterval_eq_range` stub in scope (so the environment is consistent).
@@ -45,10 +42,11 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
         exact ⟨ p_prime n i, p_prime n j ⟩
       have h_distinct : p n i ≠ p n j := by
         have h_distinct : List.Nodup (primesList n) := by
-          exact Finset.sort_nodup _ _;
-        exact fun h => hij <| by have := List.nodup_iff_injective_get.mp h_distinct h; aesop;
+          exact Finset.sort_nodup _ _
+        exact fun h => hij <| by have := List.nodup_iff_injective_get.mp h_distinct h; aesop
       exact Nat.coprime_primes h_prime.left h_prime.right |>.2 h_distinct
-    -- By the Chinese Remainder Theorem, there is a bijection between the elements of the range of $q_n$ and the elements of the product of the ranges of $p_n i$.
+    -- By the Chinese Remainder Theorem, there is a bijection between the elements of the range of
+    -- $q_n$ and the elements of the product of the ranges of $p_n i$.
     have h_crt_bij : ∃ g : (Fin (w n) → ℕ) → ℕ, ∀ x : (Fin (w n) → ℕ), (∀ i, x i < p n i) → g x < ∏ i, p n i ∧ ∀ i, g x % p n i = x i := by
       have h_crt_bij : ∀ x : Fin (w n) → ℕ, (∀ i, x i < p n i) → ∃ y, y < ∏ i, p n i ∧ ∀ i, y % p n i = x i := by
         intro x hx
@@ -56,10 +54,10 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
           have h_crt : ∀ i : Fin (w n), ∃ y, y ≡ x i [MOD p n i] ∧ ∀ j : Fin (w n), j ≠ i → y ≡ 0 [MOD p n j] := by
             intro i
             obtain ⟨y, hy⟩ : ∃ y, y ≡ 1 [MOD p n i] ∧ y ≡ 0 [MOD (∏ j ∈ Finset.univ.erase i, p n j)] := by
-              have := Nat.chineseRemainder ( show Nat.Coprime ( p n i ) ( ∏ j ∈ Finset.univ.erase i, p n j ) from Nat.Coprime.prod_right fun j hj => h_coprime i j <| by aesop );
-              exact ⟨ _, this 1 0 |>.2 ⟩;
-            use y * x i;
-            exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩;
+              have := Nat.chineseRemainder ( show Nat.Coprime ( p n i ) ( ∏ j ∈ Finset.univ.erase i, p n j ) from Nat.Coprime.prod_right fun j hj => h_coprime i j <| by aesop )
+              exact ⟨ _, this 1 0 |>.2 ⟩
+            use y * x i
+            exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩
           choose y hy₁ hy₂ using h_crt
           use ∑ i, y i
           intro i
@@ -80,16 +78,24 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
         rw [Nat.mod_mod_of_dvd y h_div]
         have hyi := hy i
         rwa [Nat.ModEq, Nat.mod_eq_of_lt (hx i)] at hyi
-      exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0, fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩;
+      exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0, fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩
     obtain ⟨g, hg⟩ := h_crt_bij
     have h_crt_bij : Finset.image g (Finset.Iic (fun i => p n i - 1)) = Finset.range (∏ i, p n i) := by
-      refine' Finset.eq_of_subset_of_card_le ( Finset.image_subset_iff.mpr _ ) _;
-      · exact fun x hx => Finset.mem_range.mpr ( hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) |>.1 );
-      · rw [ Finset.card_image_of_injOn ];
-        · erw [ Finset.card_map, Finset.card_pi ] ; norm_num;
-          exact Finset.prod_le_prod' fun i _ => by rw [ Nat.sub_add_cancel ( Nat.Prime.pos ( p_prime n i ) ) ] ;
-        · intros x hx y hy hxy;
-          ext i; have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i ) ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) ; aesop;
+      refine Finset.eq_of_subset_of_card_le ( Finset.image_subset_iff.mpr ?_ ) ?_
+      · exact fun x hx => Finset.mem_range.mpr ( hg x ( fun i =>
+          Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i )
+            ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) ) |>.1 )
+      · rw [ Finset.card_image_of_injOn ]
+        · erw [ Finset.card_map, Finset.card_pi ] ; norm_num
+          exact Finset.prod_le_prod' fun i _ => by
+            rw [ Nat.sub_add_cancel ( Nat.Prime.pos ( p_prime n i ) ) ]
+        · intros x hx y hy hxy
+          ext i
+          have := hg x ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i )
+            ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) )
+          have := hg y ( fun i => Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hy i )
+            ( Nat.pred_lt ( ne_bot_of_gt ( p_pos n i ) ) ) )
+          aesop
     rw [ ← h_crt_bij, Finset.sum_image ]
     · rw [ Finset.prod_sum ]
       refine Finset.sum_bij (fun x _hx => fun i _ => x i) ?_ ?_ ?_ ?_
@@ -125,14 +131,17 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
           rw [Nat.mul_succ, ← add_assoc, hf, hk]
     · intros x hx y hy hxy
       ext i
-      have hx_lt : ∀ i, x i < p n i := fun i => lt_of_le_of_lt (Finset.mem_Iic.mp hx i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
-      have hy_lt : ∀ i, y i < p n i := fun i => lt_of_le_of_lt (Finset.mem_Iic.mp hy i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+      have hx_lt : ∀ i, x i < p n i := fun i =>
+        lt_of_le_of_lt (Finset.mem_Iic.mp hx i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
+      have hy_lt : ∀ i, y i < p n i := fun i =>
+        lt_of_le_of_lt (Finset.mem_Iic.mp hy i) (Nat.pred_lt (ne_bot_of_gt (p_pos n i)))
       have hg_x := hg x hx_lt |>.2 i
       have hg_y := hg y hy_lt |>.2 i
       rw [← hg_x, ← hg_y, hxy]
-  convert h_crt using 1;
-  unfold q;
-  rw [ show primeWindow n = Finset.image ( fun i : Fin ( w n ) => p n i ) Finset.univ from ?_, Finset.prod_image ];
+  convert h_crt using 1
+  unfold q
+  rw [ show primeWindow n = Finset.image ( fun i : Fin ( w n ) => p n i ) Finset.univ from ?_,
+       Finset.prod_image ]
   · intro i hi j hj hij
     have h_inj : Function.Injective (fun i : Fin (w n) => p n i) := by
       intro i j hij
@@ -155,15 +164,18 @@ theorem cos_prime_sum_zero (n : ℕ) (i : Fin (w n)) (k : ℤ) (hk : k % p n i �
   -- Let $z = e^{2\pi i k / p n i}$, which is a primitive $p n i$-th root of unity.
   set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * k / (p n i : ℂ))
   have hz : z ^ (p n i) = 1 := by
-    rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff ];
-    exact ⟨ k, by rw [ div_mul_cancel₀ _ ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] ; ring ⟩
+    rw [ ← Complex.exp_nat_mul, mul_comm, Complex.exp_eq_one_iff ]
+    exact ⟨ k, by
+      rw [ div_mul_cancel₀ _ ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] ; ring ⟩
   have hz_ne_one : z ≠ 1 := by
-    rw [ Ne.eq_def, Complex.exp_eq_one_iff ];
-    field_simp;
-    exact fun ⟨ m, hm ⟩ => hk <| Int.emod_eq_zero_of_dvd <| by rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] at hm; norm_cast at hm; aesop;
+    rw [ Ne.eq_def, Complex.exp_eq_one_iff ]
+    field_simp
+    exact fun ⟨ m, hm ⟩ => hk <| Int.emod_eq_zero_of_dvd <| by
+      rw [ div_eq_iff ( Nat.cast_ne_zero.mpr <| Nat.Prime.ne_zero <| p_prime n i ) ] at hm
+      norm_cast at hm; aesop
   -- The sum of the roots of unity is zero.
   have hsum_roots : ∑ x ∈ Finset.range (p n i), z ^ x = 0 := by
-    rw [ geom_sum_eq ] <;> aesop;
+    rw [ geom_sum_eq ] <;> aesop
   rw [show (0 : ℝ) = Complex.re 0 from Complex.zero_re.symm, ← hsum_roots, Complex.re_sum]
   exact Finset.sum_congr rfl fun x hx => by
     rw [← Complex.exp_nat_mul]; norm_num [Complex.exp_re]; ring_nf
@@ -198,13 +210,13 @@ theorem prod_p_eq_q (n : ℕ) : ∏ i : Fin (w n), (p n i : ℝ) = (q n : ℝ) :
   have h_prod : (∏ i : Fin (w n), p n i : ℕ) = (∏ p ∈ primeWindow n, p : ℕ) := by
     have h_prod : ∏ i : Fin (w n), p n i =
         ∏ x ∈ Finset.image (fun i => p n i) (Finset.univ : Finset (Fin (w n))), x := by
-      rw [ Finset.prod_image ];
-      intro i hi j hj hij;
+      rw [ Finset.prod_image ]
+      intro i hi j hj hij
       have h_unique : List.Nodup (primesList n) := by
-        exact Finset.sort_nodup _ _;
-      have := List.nodup_iff_injective_get.mp h_unique hij; aesop;
-    convert h_prod using 2;
-    ext x; simp +decide [ mem_P_n_iff_exists_index ] ;
+        exact Finset.sort_nodup _ _
+      have := List.nodup_iff_injective_get.mp h_unique hij; aesop
+    convert h_prod using 2
+    ext x; simp +decide [ mem_P_n_iff_exists_index ]
   norm_cast
 
 /-
@@ -222,7 +234,8 @@ theorem basisCos_discrete_orthogonal_range (n : ℕ) (S T : Finset (Fin (w n))) 
       simp +decide [ZMod.val_natCast_of_lt (Finset.mem_range.mp hx)]
   · split_ifs with hST
     · subst hST
-      -- For each $i$, if $i \in S$, then $\sum_{y=0}^{p_i-1} \cos^2(2\pi \cdot 3 \cdot y / p_i) = p_i / 2$.
+      -- For each $i$, if $i \in S$, then
+      -- $\sum_{y=0}^{p_i-1} \cos^2(2\pi \cdot 3 \cdot y / p_i) = p_i / 2$.
       have h_cos_sq : ∀ i : Fin (w n), i ∈ S →
           ∑ y ∈ Finset.range (p n i), (Real.cos (2 * Real.pi * 3 * y / p n i)) ^ 2 =
             (p n i : ℝ) / 2 := by
