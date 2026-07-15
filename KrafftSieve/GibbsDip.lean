@@ -33,6 +33,8 @@ below `1.0`, entirely bypassing the discrete arithmetic barrier.
 The heavy self-contained analytic content lives in `KrafftSieve.GibbsAux`.
 -/
 
+set_option linter.style.longLine false
+
 namespace KrafftSieve
 
 open scoped unitInterval Function
@@ -206,7 +208,7 @@ lemma w_ge_sqrt_of_ge_hundred (n : ℕ) (hn : 100 ≤ n) : Nat.sqrt n ≤ w n :=
       have := Real.log_le_log ( by positivity ) h_binom
       rw [ Real.log_div ( by positivity ) ( by positivity ), Real.log_pow ] at this
       rw [ ge_iff_le, div_le_iff₀ ( Real.log_pos <| by norm_cast ) ] ; linarith
-    convert h_chebyshev ( 6 * n + 1 ) ( by linarith ) using 1 ; push_cast ; ring
+    convert h_chebyshev ( 6 * n + 1 ) ( by linarith ) using 1 ; push_cast ; ring_nf
   -- Simplify the inequality obtained from Chebyshev's theorem.
   have h_simplified : Nat.primeCounting (6 * n + 1) ≥ Nat.sqrt n + 3 := by
     -- We'll use that $Real.log (6 * n + 2) / Real.log (6 * n + 1) < 2$ for $n \geq 100$.
@@ -287,19 +289,22 @@ lemma crt_two_choices_Ico_card {m : ℕ} (a : Fin m → ℕ)
     ((Finset.Ico 0 ((∏ i, a i) : ℤ)).filter (fun y : ℤ =>
       ∀ i, (y : ZMod (a i)) = u i ∨ (y : ZMod (a i)) = v i)).card = 2 ^ m := by
   revert hne v u
-  -- By the Chinese Remainder Theorem, there is a bijection between the set of integers $y$ modulo $Q$ and the set of $m$-tuples $(y_1, y_2, \ldots, y_m)$ where $y_i \in \{u_i, v_i\}$.
+  -- By the Chinese Remainder Theorem, there is a bijection between the set of integers $y$ modulo
+  -- $Q$ and the set of $m$-tuples $(y_1, y_2, \ldots, y_m)$ where $y_i \in \{u_i, v_i\}$.
   intros u v hne
   have h_bij : Finset.image (fun y : ℤ => fun i : Fin m => (y : ZMod (a i))) (Finset.filter (fun y => ∀ i, (y : ZMod (a i)) = u i ∨ (y : ZMod (a i)) = v i) (Finset.Ico 0 (∏ i, (a i)))) = Finset.image (fun b : Fin m → Bool => fun i => if b i then v i else u i) (Finset.univ : Finset (Fin m → Bool)) := by
     ext b
     simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_Ico, Finset.mem_univ, true_and]
     constructor <;> intro h
     · rcases h with ⟨ y, ⟨ ⟨ hy₀, hy₁ ⟩, hy₂ ⟩, rfl ⟩ ; use fun i => ( y : ZMod ( a i ) ) = v i; ext i; specialize hy₂ i; aesop
-    · -- By the Chinese Remainder Theorem, there exists an integer $y$ such that $y \equiv b_i \pmod{a_i}$ for all $i$.
+    · -- By the Chinese Remainder Theorem, there exists an integer $y$ such that
+      -- $y \equiv b_i \pmod{a_i}$ for all $i$.
       obtain ⟨y, hy⟩ : ∃ y : ℤ, ∀ i, (y : ZMod (a i)) = b i := by
         have h_crt : ∀ i, ∃ y : ℤ, (y : ZMod (a i)) = b i ∧ ∀ j ≠ i, (y : ZMod (a j)) = 0 := by
           intro i
           obtain ⟨y, hy⟩ : ∃ y : ℤ, y ≡ (b i).val [ZMOD a i] ∧ ∀ j ≠ i, y ≡ 0 [ZMOD a j] := by
-            -- By the Chinese Remainder Theorem, there exists an integer $y$ such that $y \equiv b_i \pmod{a_i}$ and $y \equiv 0 \pmod{a_j}$ for all $j \neq i$.
+            -- By the Chinese Remainder Theorem, there exists an integer $y$ such that
+            -- $y \equiv b_i \pmod{a_i}$ and $y \equiv 0 \pmod{a_j}$ for all $j \neq i$.
             obtain ⟨y, hy⟩ : ∃ y : ℤ, y ≡ 1 [ZMOD a i] ∧ y ≡ 0 [ZMOD (∏ j ∈ Finset.univ.erase i, a j)] := by
               have := Nat.chineseRemainder ( show Nat.Coprime ( a i ) ( ∏ j ∈ Finset.univ.erase i, a j ) from ?_ )
               · obtain ⟨ y, hy₁, hy₂ ⟩ := this 1 0; use y; simp_all +decide [ ← Int.natCast_modEq_iff ]
@@ -335,7 +340,10 @@ lemma crt_two_choices_Ico_card {m : ℕ} (a : Fin m → ℕ)
       exact fun i _ j _ hij => Int.isCoprime_iff_gcd_eq_one.mpr ( hcop hij )
     exact Int.modEq_iff_dvd.mp h_cong.symm |> fun ⟨ k, hk ⟩ => by nlinarith [ show k = 0 by nlinarith ] ;)
   · rw [ Finset.card_image_of_injective ] <;> norm_num [ Function.Injective ]
-    intro b₁ b₂ h; ext i; replace h := congr_fun h i; by_cases hi : b₁ i = true <;> by_cases hj : b₂ i = true <;> simp_all +decide
+    intro b₁ b₂ h; ext i
+    replace h := congr_fun h i
+    by_cases hi : b₁ i = true <;> by_cases hj : b₂ i = true <;> simp_all +decide only [ne_eq,
+      ↓reduceIte, Bool.false_eq_true, Bool.not_eq_true, Bool.true_eq_false]
     exact hne i h.symm
 
 lemma krafft_residues_distinct (P : ℕ) (hP : P.Prime) (h5 : 5 ≤ P) :

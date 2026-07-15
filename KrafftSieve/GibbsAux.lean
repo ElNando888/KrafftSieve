@@ -16,6 +16,8 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import Mathlib
 
+set_option linter.style.longLine false
+
 /-!
 # Auxiliary self-contained lemmas for the Gibbs dip (`GibbsDip.lean`)
 
