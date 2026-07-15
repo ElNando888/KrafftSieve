@@ -179,7 +179,7 @@ lemma charLp_eq_toLp (k : ℕ →₀ ℤ) :
 lemma charFun_add_apply (k₁ k₂ : ℕ →₀ ℤ) (x : X) :
     charFun (k₁ + k₂) x = charFun k₁ x * charFun k₂ x := by
   unfold charFun
-  simp +decide only [Finsupp.coe_add, PolynomialModule.funLike_eq, Pi.add_apply, Int.cast_add,
+  simp +decide only [Finsupp.coe_add, Pi.add_apply, Int.cast_add,
     ZMod.natCast_val]
   rw [ Finset.prod_subset ( show ( k₁ + k₂ |> Finsupp.support ) ⊆ k₁.support ∪ k₂.support
       from fun i _hi => by by_cases _hi₁ : k₁ i = 0 <;> by_cases _hi₂ : k₂ i = 0 <;> aesop ) ]
@@ -200,7 +200,7 @@ lemma charFun_zero_apply (x : X) : charFun 0 x = 1 := by
 lemma charFun_neg_apply (k : ℕ →₀ ℤ) (x : X) :
     charFun (-k) x = starRingEnd ℂ (charFun k x) := by
   unfold charFun
-  simp +decide only [Finsupp.support_neg, Finsupp.coe_neg, PolynomialModule.funLike_eq,
+  simp +decide only [Finsupp.support_neg, Finsupp.coe_neg,
     Pi.neg_apply, Int.cast_neg, ZMod.natCast_val, neg_mul, map_prod]
   refine Finset.prod_congr rfl fun i hi => ?_
   norm_num [ Complex.ext_iff, Complex.exp_re, Complex.exp_im, neg_div ]

@@ -414,7 +414,12 @@ lemma sin_taylor_le (x : ℝ) (hx : 0 ≤ x) (hx1 : x ≤ 1) :
   have h := Real.sin_bound (show |x| ≤ 1 by rwa [abs_of_nonneg hx])
   rw [abs_of_nonneg hx] at h
   have h2 := (abs_le.mp h).2
-  nlinarith [h2]
+  have h3 : x^5 / 100 ≤ x^4 * (5 / 96) := by
+    have h4 : (1 / 100 : ℝ) ≤ 5 / 96 := by norm_num
+    calc x^5 / 100 = x^4 * (x / 100) := by ring
+      _ ≤ x^4 * (1 / 100) := by gcongr
+      _ ≤ x^4 * (5 / 96) := by exact mul_le_mul_of_nonneg_left h4 (by positivity)
+  linarith
 
 /-- Two-sided Taylor bound for `sin` on `[0,1]` (lower form), a convenience wrapper of
 `Real.sin_bound`. -/
@@ -423,7 +428,12 @@ lemma sin_taylor_ge (x : ℝ) (hx : 0 ≤ x) (hx1 : x ≤ 1) :
   have h := Real.sin_bound (show |x| ≤ 1 by rwa [abs_of_nonneg hx])
   rw [abs_of_nonneg hx] at h
   have h1 := (abs_le.mp h).1
-  nlinarith [h1]
+  have h3 : x^5 / 100 ≤ x^4 * (5 / 96) := by
+    have h4 : (1 / 100 : ℝ) ≤ 5 / 96 := by norm_num
+    calc x^5 / 100 = x^4 * (x / 100) := by ring
+      _ ≤ x^4 * (1 / 100) := by gcongr
+      _ ≤ x^4 * (5 / 96) := by exact mul_le_mul_of_nonneg_left h4 (by positivity)
+  linarith
 
 /-
 **Closed form of the Gibbs partial sum at the aligned quarter-integer, negative root.**
@@ -514,26 +524,46 @@ theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR :
   · have h_sin_bound : Real.sin ((8 * R - 5) * Real.pi / (4 * P)) ≥ Real.sin (5 * Real.pi / (4 * P)) := by
       convert Real.sin_le_sin_of_le_of_le_pi_div_two _ _ _ using 1
       · exact le_trans ( by linarith [ Real.pi_pos ] ) ( div_nonneg ( by positivity ) ( by positivity ) )
-      · rw [ div_le_iff₀ ] <;> nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≤ ( P + 1 ) / 6 by exact_mod_cast hR.symm ▸ Nat.cast_div_le .., mul_div_cancel₀ ( ( P + 1 : ℝ ) ) ( by norm_num : ( 6 : ℝ ) ≠ 0 ) ]
+      · rw [ div_le_iff₀ ] <;> try positivity
+        nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast,
+          show ( R : ℝ ) ≤ ( P + 1 ) / 6 by exact_mod_cast hR.symm ▸ Nat.cast_div_le ..,
+          mul_div_cancel₀ ( ( P + 1 : ℝ ) ) ( by norm_num : ( 6 : ℝ ) ≠ 0 ) ]
       · gcongr ; nlinarith [ Real.pi_pos, show ( R : ℝ ) ≥ 2 by norm_cast ]
     refine le_trans ?_ ( show 0 ≤ 0.12 by norm_num )
-    exact mul_nonpos_of_nonneg_of_nonpos ( by positivity ) ( sub_nonpos_of_le <| one_div_le_one_div_of_le ( Real.sin_pos_of_pos_of_lt_pi ( by positivity ) <| by rw [ div_lt_iff₀ <| by positivity ] ; nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast ] ) h_sin_bound )
+    exact mul_nonpos_of_nonneg_of_nonpos ( by positivity ) ( sub_nonpos_of_le <|
+      one_div_le_one_div_of_le ( Real.sin_pos_of_pos_of_lt_pi ( by positivity ) <|
+      by rw [ div_lt_iff₀ <| by positivity ] ; nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast ] ) h_sin_bound )
   · interval_cases _ : R <;> norm_num at *
     · omega
-    · rcases P with ( _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | P ) <;> norm_num at *
-      · rw [ show 5 * Real.pi / 20 = Real.pi / 4 by ring, Real.sin_pi_div_four ]
+    · rcases P with ( _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | _ | P )
+      · revert hP; decide
+      · revert hP; decide
+      · omega
+      · omega
+      · omega
+      · norm_num at *
+        rw [ show 5 * Real.pi / 20 = Real.pi / 4 by ring, Real.sin_pi_div_four ]
         -- Using the Taylor series expansion for sine, we can approximate $\sin(3\pi/20)$.
-        have h_sin_approx : Real.sin (3 * Real.pi / 20) ≥ 3 * Real.pi / 20 - (3 * Real.pi / 20)^3 / 6 - (3 * Real.pi / 20)^4 * (5 / 96) := by
+        have h_sin_approx : Real.sin (3 * Real.pi / 20) ≥
+            3 * Real.pi / 20 - (3 * Real.pi / 20)^3 / 6 - (3 * Real.pi / 20)^4 * (5 / 96) := by
           exact sin_taylor_ge _ ( by positivity ) ( by linarith [ Real.pi_le_four ] )
         -- Substitute the approximation of $\sin(3\pi/20)$ into the inequality.
         have h_subst : Real.sin (3 * Real.pi / 20) ≥ 0.4512 := by
           have h_pi_approx : Real.pi > 3.141592 := by
             grind +suggestions
-          exact le_trans ( by norm_num1 at *; nlinarith [ Real.pi_le_four, pow_pos ( sub_pos.mpr h_pi_approx ) 2, pow_pos ( sub_pos.mpr h_pi_approx ) 3 ] ) h_sin_approx
+          have h_le : (0.4512 : ℝ) ≤ 3 * Real.pi / 20 - (3 * Real.pi / 20)^3 / 6 - (3 * Real.pi / 20)^4 * (5 / 96) := by
+            norm_num1 at *
+            nlinarith [ Real.pi_le_four, (pow_pos ( sub_pos.mpr h_pi_approx ) 2), (pow_pos ( sub_pos.mpr h_pi_approx ) 3) ]
+          exact le_trans h_le h_sin_approx
         field_simp
         nlinarith [ Real.sqrt_nonneg 2, Real.sq_sqrt zero_le_two ]
-      · -- Use the Taylor series bounds for sine to estimate the values.
-        have h_sin_bounds : Real.sin (3 * Real.pi / 28) ≥ 3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96) ∧ Real.sin (5 * Real.pi / 28) ≤ 5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96) := by
+      · revert hP; decide
+      · norm_num at *
+        -- Use the Taylor series bounds for sine to estimate the values.
+        have h_sin_bounds : Real.sin (3 * Real.pi / 28) ≥
+            3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96) ∧
+            Real.sin (5 * Real.pi / 28) ≤
+            5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96) := by
           apply And.intro
           · convert sin_taylor_ge _ _ _ using 1 <;> ring_nf <;> norm_num [ Real.pi_pos ]
             linarith [ Real.pi_le_four ]
@@ -541,20 +571,45 @@ theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR :
             · positivity
             · linarith [ Real.pi_le_four ]
         -- Substitute the bounds into the expression.
-        have h_subst : (Real.sqrt 2 / 14) * ((1 / (3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96)) - 1 / (5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96)))) ≤ 3 / 25 := by
+        have h_subst : (Real.sqrt 2 / 14) * ((1 / (3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 -
+            (3 * Real.pi / 28)^4 * (5 / 96)) - 1 / (5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 +
+            (5 * Real.pi / 28)^4 * (5 / 96)))) ≤ 3 / 25 := by
           rw [ div_sub_div, mul_div, div_le_iff₀ ] <;> ring_nf <;> norm_num
           · have h_pi_approx : Real.pi > 3.141592 ∧ Real.pi < 3.141593 := by
               grind +suggestions
             have h_sqrt2_approx : Real.sqrt 2 < 1.414214 := by
               rw [ Real.sqrt_lt ] <;> norm_num
-            nlinarith [ pow_pos ( sub_pos.mpr h_pi_approx.1 ) 3, pow_pos ( sub_pos.mpr h_pi_approx.1 ) 4, pow_pos ( sub_pos.mpr h_pi_approx.1 ) 5, pow_pos ( sub_pos.mpr h_pi_approx.1 ) 6, pow_pos ( sub_pos.mpr h_pi_approx.1 ) 7, pow_pos ( sub_pos.mpr h_pi_approx.1 ) 8, Real.sqrt_nonneg 2, Real.sq_sqrt zero_le_two ]
-          · have := Real.pi_lt_d4; norm_num at *; nlinarith [ pow_pos Real.pi_pos 3, pow_pos Real.pi_pos 4, pow_pos Real.pi_pos 5, pow_pos Real.pi_pos 6, pow_pos Real.pi_pos 7 ]
-          · nlinarith only [ Real.pi_gt_three, Real.pi_le_four, pow_pos Real.pi_pos 2, pow_pos Real.pi_pos 3 ]
-          · nlinarith only [ Real.pi_gt_three, Real.pi_le_four, pow_pos Real.pi_pos 2, pow_pos Real.pi_pos 3 ]
+            nlinarith [ (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 3), (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 4),
+              (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 5), (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 6),
+              (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 7), (pow_pos ( sub_pos.mpr h_pi_approx.1 ) 8),
+              Real.sqrt_nonneg 2, Real.sq_sqrt zero_le_two ]
+          · have := Real.pi_lt_d4; norm_num at *
+            nlinarith [ (pow_pos Real.pi_pos 3), (pow_pos Real.pi_pos 4), (pow_pos Real.pi_pos 5),
+              (pow_pos Real.pi_pos 6), (pow_pos Real.pi_pos 7) ]
+          · nlinarith only [ Real.pi_gt_three, Real.pi_le_four, (pow_pos Real.pi_pos 2), (pow_pos Real.pi_pos 3) ]
+          · nlinarith only [ Real.pi_gt_three, Real.pi_le_four, (pow_pos Real.pi_pos 2), (pow_pos Real.pi_pos 3) ]
         refine le_trans ?_ h_subst
         gcongr
-        · rw [ one_div ] ; exact inv_anti₀ ( by nlinarith only [ Real.pi_gt_three, Real.pi_le_four, pow_pos Real.pi_pos 2, pow_pos Real.pi_pos 3 ] ) h_sin_bounds.1
-        · rw [ inv_eq_one_div, div_le_div_iff₀ ] <;> nlinarith [ Real.pi_gt_three, Real.pi_le_four, pow_pos Real.pi_pos 2, pow_pos Real.pi_pos 3, pow_pos Real.pi_pos 4, Real.sin_pos_of_pos_of_lt_pi ( show 0 < 5 * Real.pi / 28 by positivity ) ( by linarith [ Real.pi_pos ] ) ]
+        · rw [ one_div ] ; exact inv_anti₀ ( by nlinarith only [ Real.pi_gt_three, Real.pi_le_four,
+            (pow_pos Real.pi_pos 2), (pow_pos Real.pi_pos 3) ] ) h_sin_bounds.1
+        · rw [ inv_eq_one_div, div_le_div_iff₀ ]
+          · nlinarith [ Real.pi_gt_three, Real.pi_le_four, (pow_pos Real.pi_pos 2), (pow_pos Real.pi_pos 3),
+              (pow_pos Real.pi_pos 4), (Real.sin_pos_of_pos_of_lt_pi ( show 0 < 5 * Real.pi / 28 by positivity )
+              ( by linarith [ Real.pi_pos ] )) ]
+          · have hpos : 0 < 5 * Real.pi / 28 := by positivity
+            have hp3 : (5 * Real.pi / 28)^3 < 5 * Real.pi / 28 := by
+              calc (5 * Real.pi / 28)^3 = (5 * Real.pi / 28) * (5 * Real.pi / 28)^2 := by ring
+                _ < (5 * Real.pi / 28) * 1 := by
+                  gcongr
+                  calc (5 * Real.pi / 28)^2 < (5 * 4 / 28)^2 := by gcongr; exact Real.pi_lt_four
+                    _ < 1 := by norm_num
+                _ = 5 * Real.pi / 28 := by ring
+            linarith [pow_pos hpos 4]
+          · exact Real.sin_pos_of_pos_of_lt_pi (by positivity) (by linarith [Real.pi_pos])
+      · revert hP; decide
+      · revert hP; decide
+      · revert hP; decide
+      · omega
       · omega
 
 /-- **The Gibbs overshoot at the quarter-integer (negative root).**

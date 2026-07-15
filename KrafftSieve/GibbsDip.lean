@@ -174,27 +174,38 @@ lemma w_ge_sqrt_of_ge_hundred (n : ℕ) (hn : 100 ≤ n) : Nat.sqrt n ≤ w n :=
       -- Apply Chebyshev's theorem to the prime counting function.
       have h_chebyshev : Real.log (Nat.choose m (m / 2)) ≤ (Nat.primeCounting m : ℝ) * Real.log m := by
         -- By definition of binomial coefficients, we know that $\binom{m}{\lfloor m/2 \rfloor}$ is divisible by all primes $p \leq m$.
-        have h_div : (∏ p ∈ Finset.filter Nat.Prime (Finset.range (m + 1)), p ^ (Nat.factorization (Nat.choose m (m / 2)) p)) ≤ m ^ (Nat.primeCounting m) := by
-          refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_le_pow_right ( Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2 ) <| show Nat.factorization ( Nat.choose m ( m / 2 ) ) p ≤ Nat.log p m from ?_ ) ?_
+        have h_div : (∏ p ∈ Finset.filter Nat.Prime (Finset.range (m + 1)),
+            p ^ (Nat.factorization (Nat.choose m (m / 2)) p)) ≤ m ^ (Nat.primeCounting m) := by
+          refine le_trans ( Finset.prod_le_prod' fun p hp =>
+            Nat.pow_le_pow_right ( Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2 ) <|
+            show Nat.factorization ( Nat.choose m ( m / 2 ) ) p ≤ Nat.log p m from ?_ ) ?_
           · have := @Nat.factorization_choose_le_log p m ( m / 2 ) ; aesop
-          · refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_log_le_self p <| by linarith [ Finset.mem_filter.mp hp ] ) ?_ ; norm_num [ Nat.primeCounting ]
+          · refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_log_le_self p <|
+              by linarith [ Finset.mem_filter.mp hp ] ) ?_
+            norm_num [ Nat.primeCounting ]
             rw [ Nat.primeCounting', Nat.count_eq_card_filter_range ]
         have h_div : (Nat.choose m (m / 2) : ℝ) ≤ m ^ (Nat.primeCounting m) := by
           refine mod_cast le_trans ?_ h_div
-          conv_lhs => rw [ ← Nat.prod_factorization_pow_eq_self ( Nat.ne_of_gt ( Nat.choose_pos ( Nat.div_le_self m 2 ) ) ) ]
+          conv_lhs => rw [ ← Nat.prod_factorization_pow_eq_self
+            ( Nat.ne_of_gt ( Nat.choose_pos ( Nat.div_le_self m 2 ) ) ) ]
           rw [ Finsupp.prod_of_support_subset ] <;> norm_num
           intro p hp
           simp_all +decide only [Nat.mem_primeFactors, ne_eq, Finset.mem_filter, Finset.mem_range,
             Order.lt_add_one_iff, and_true]
-          exact hp.1.dvd_factorial.mp ( dvd_trans hp.2.1 ( Nat.choose_mul_factorial_mul_factorial ( show m / 2 ≤ m from Nat.div_le_self _ _ ) ▸ dvd_mul_of_dvd_left ( dvd_mul_right _ _ ) _ ) )
-        simpa using Real.log_le_log ( Nat.cast_pos.mpr <| Nat.choose_pos <| Nat.div_le_self _ _ ) h_div
+          exact hp.1.dvd_factorial.mp ( dvd_trans hp.2.1
+            ( Nat.choose_mul_factorial_mul_factorial
+              ( show m / 2 ≤ m from Nat.div_le_self _ _ ) ▸ dvd_mul_of_dvd_left ( dvd_mul_right _ _ ) _ ) )
+        simpa using Real.log_le_log
+          ( Nat.cast_pos.mpr <| Nat.choose_pos <| Nat.div_le_self _ _ ) h_div
       -- We'll use that $\binom{m}{m/2} \geq \frac{2^m}{m+1}$.
       have h_binom : (Nat.choose m (m / 2) : ℝ) ≥ (2 ^ m) / (m + 1) := by
         rw [ ge_iff_le, div_le_iff₀ ] <;> norm_cast <;> try positivity
         have := Nat.sum_range_choose m
-        exact this ▸ le_trans ( Finset.sum_le_sum fun _ _ => Nat.choose_le_middle _ _ ) ( by simp +decide [ mul_comm ] )
+        exact this ▸ le_trans ( Finset.sum_le_sum fun _ _ => Nat.choose_le_middle _ _ )
+          ( by simp +decide [ mul_comm ] )
       have := Real.log_le_log ( by positivity ) h_binom
-      rw [ Real.log_div ( by positivity ) ( by positivity ), Real.log_pow ] at this ; rw [ ge_iff_le, div_le_iff₀ ( Real.log_pos <| by norm_cast ) ] ; linarith
+      rw [ Real.log_div ( by positivity ) ( by positivity ), Real.log_pow ] at this
+      rw [ ge_iff_le, div_le_iff₀ ( Real.log_pos <| by norm_cast ) ] ; linarith
     convert h_chebyshev ( 6 * n + 1 ) ( by linarith ) using 1 ; push_cast ; ring
   -- Simplify the inequality obtained from Chebyshev's theorem.
   have h_simplified : Nat.primeCounting (6 * n + 1) ≥ Nat.sqrt n + 3 := by
@@ -212,14 +223,25 @@ lemma w_ge_sqrt_of_ge_hundred (n : ℕ) (hn : 100 ≤ n) : Nat.sqrt n ≤ w n :=
         -- exponential growth rate.
         have h_exp_gt : ∀ x : ℝ, 10 ≤ x → Real.exp x > 3 * x := by
           intro x hx; rw [ Real.exp_eq_exp_ℝ ] ; norm_num [ NormedSpace.exp_eq_tsum_div ]
-          refine lt_of_lt_of_le ?_ ( Summable.sum_le_tsum ( Finset.range 10 ) ( fun _ _ => by positivity ) ( by simpa using Real.summable_pow_div_factorial x ) ) ; norm_num [ Finset.sum_range_succ, Nat.factorial ] ; nlinarith [ pow_pos ( by linarith : 0 < x ) 2, pow_pos ( by linarith : 0 < x ) 3, pow_pos ( by linarith : 0 < x ) 4, pow_pos ( by linarith : 0 < x ) 5, pow_pos ( by linarith : 0 < x ) 6, pow_pos ( by linarith : 0 < x ) 7, pow_pos ( by linarith : 0 < x ) 8, pow_pos ( by linarith : 0 < x ) 9 ]
+          refine lt_of_lt_of_le ?_ ( Summable.sum_le_tsum ( Finset.range 10 )
+            ( fun _ _ => by positivity ) ( by simpa using Real.summable_pow_div_factorial x ) )
+          norm_num [ Finset.sum_range_succ, Nat.factorial ]
+          nlinarith [ pow_pos ( by linarith : 0 < x ) 2, pow_pos ( by linarith : 0 < x ) 3,
+            pow_pos ( by linarith : 0 < x ) 4, pow_pos ( by linarith : 0 < x ) 5,
+            pow_pos ( by linarith : 0 < x ) 6, pow_pos ( by linarith : 0 < x ) 7,
+            pow_pos ( by linarith : 0 < x ) 8, pow_pos ( by linarith : 0 < x ) 9 ]
         exact h_exp_gt _ <| Real.le_sqrt_of_sq_le <| mod_cast by linarith
-      nlinarith [ Real.sqrt_nonneg n, Real.sq_sqrt <| Nat.cast_nonneg n, show ( n : ℝ ) ≥ 100 by norm_cast ]
+      nlinarith [ Real.sqrt_nonneg n, Real.sq_sqrt <| Nat.cast_nonneg n,
+        show ( n : ℝ ) ≥ 100 by norm_cast ]
     -- Substitute the bounds into the inequality from Chebyshev's theorem.
     have h_subst : (6 * n + 1) * Real.log 2 / Real.log (6 * n + 1) > Nat.sqrt n + 5 := by
       rw [ gt_iff_lt, lt_div_iff₀ ( Real.log_pos <| by norm_cast; linarith ) ]
       refine lt_of_lt_of_le ( mul_lt_mul_of_pos_left h_log_bound ( by positivity ) ) ?_
-      have := Real.log_two_gt_d9 ; norm_num at * ; nlinarith only [ this, show ( n :ℝ ) ≥ 100 by norm_cast, Real.sqrt_nonneg n, Real.sq_sqrt <| Nat.cast_nonneg n, show ( Nat.sqrt n :ℝ ) ≤ Real.sqrt n by exact Real.le_sqrt_of_sq_le <| mod_cast Nat.sqrt_le' n, pow_two_nonneg <| Real.sqrt n - 10 ]
+      have := Real.log_two_gt_d9 ; norm_num at *
+      nlinarith only [ this, show ( n :ℝ ) ≥ 100 by norm_cast, Real.sqrt_nonneg n,
+        Real.sq_sqrt <| Nat.cast_nonneg n,
+        show ( Nat.sqrt n :ℝ ) ≤ Real.sqrt n by exact Real.le_sqrt_of_sq_le <| mod_cast Nat.sqrt_le' n,
+        pow_two_nonneg <| Real.sqrt n - 10 ]
     exact Nat.le_of_lt_succ <| by rw [ ← @Nat.cast_lt ℝ ] ; push_cast; linarith
   linarith [ w_eq_primeCounting_six_mul_add_one n ( by linarith ) ]
 
@@ -231,8 +253,13 @@ lemma trap_exponential_dominates_from_1024 (n : ℕ) (hn : 1024 ≤ n) :
     exact Nat.le_sqrt.2 ( by linarith )
   -- Substitute $n < (k+1)^2$ into the inequality.
   have h_sub : (2 : ℝ) * (6 * ((k + 1) ^ 2) ^ 2 + 10 * ((k + 1) ^ 2) + 3) + 1 < 0.01 * 2 ^ k := by
-    exact Nat.le_induction ( by norm_num ) ( fun k hk ih ↦ by norm_num [ pow_succ' ] at * ; nlinarith [ ( by norm_cast : ( 32 :ℝ ) ≤ k ), pow_pos ( by norm_num : ( 0 :ℝ ) < 2 ) k ] ) k hk
-  exact lt_of_le_of_lt ( by nlinarith only [ show ( n : ℝ ) ≤ ( k + 1 ) ^ 2 by exact_mod_cast Nat.lt_succ_sqrt' n |> le_of_lt ] ) h_sub
+    exact Nat.le_induction ( by norm_num ) ( fun k hk ih ↦ by
+      norm_num [ pow_succ' ] at *
+      nlinarith [ ( by norm_cast : ( 32 :ℝ ) ≤ k ), pow_pos ( by norm_num : ( 0 :ℝ ) < 2 ) k ] ) k hk
+  have hn_le : (n : ℝ) ≤ (k + 1) ^ 2 := by
+    have h1 := Nat.lt_succ_sqrt' n
+    exact_mod_cast h1.le
+  exact lt_of_le_of_lt (by nlinarith only [hn_le]) h_sub
 
 
 /--

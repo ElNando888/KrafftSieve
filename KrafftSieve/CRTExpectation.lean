@@ -61,24 +61,44 @@ lemma crt_two_choices_coordinate_sum {m : ℕ} (a : Fin m → ℕ)
     · grind;
     · exact fun b hb hb' => ⟨ b, ⟨ ⟨ Nat.cast_nonneg _, mod_cast hb ⟩, mod_cast hb' ⟩, rfl ⟩;
     · exact fun x hx₁ hx₂ hx₃ => by rw [ ← Int.toNat_of_nonneg hx₁ ] ; norm_cast;
-  · -- Let's simplify the sum $\sum_{b : (j : Fin m) → Bool} f (if b i then v i else u i)$.
-    have h_sum_simplified : ∑ b : (j : Fin m) → Bool, f (if b i then v i else u i) = ∑ b : (j : Fin m) → Bool, f (u i) + ∑ b : (j : Fin m) → Bool, (f (v i) - f (u i)) * (if b i then 1 else 0) := by
-      rw [ ← Finset.sum_add_distrib ] ; congr ; ext b ; split_ifs <;> ring;
-    -- Let's simplify the sum $\sum_{b : (j : Fin m) → Bool} (f (v i) - f (u i)) * (if b i then 1 else 0)$.
+  · -- Let's simplify the sum
+    have h_sum_simplified : ∑ b : (j : Fin m) → Bool, f (if b i then v i else u i) =
+        ∑ b : (j : Fin m) → Bool, f (u i) +
+        ∑ b : (j : Fin m) → Bool, (f (v i) - f (u i)) * (if b i then 1 else 0) := by
+      rw [ ← Finset.sum_add_distrib ] ; congr ; ext b ; split_ifs <;> ring
+    -- Let's simplify the sum
     have h_sum_indicator : ∑ b : (j : Fin m) → Bool, (if b i then 1 else 0) = 2 ^ (m - 1) := by
-      have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) = Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) / 2 := by
-        have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) = Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) := by
-          rw [ Finset.card_filter, Finset.card_filter ];
-          rw [ ← Equiv.sum_comp ( Equiv.addRight ( Pi.single i true ) ) ] ; aesop;
-        have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) + Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) = Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) := by
-          rw [ Finset.card_filter, Finset.card_filter ];
-          rw [ ← Finset.sum_add_distrib, Finset.card_eq_sum_ones ] ; congr ; ext ; aesop;
-        grind;
-      cases m <;> simp_all +decide [ pow_succ' ];
-      exact Fin.elim0 i;
-    simp_all +decide [ Finset.sum_ite ];
-    cases m <;> simp_all +decide [ pow_succ' ] ; ring;
-    · fin_cases i;
-    · ring
+      have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) =
+          Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) / 2 := by
+        have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) =
+            Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) := by
+          rw [ Finset.card_filter, Finset.card_filter ]
+          rw [ ← Equiv.sum_comp ( Equiv.addRight ( Pi.single i true ) ) ] ; aesop
+        have h_sum_indicator2 : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) +
+            Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) =
+            Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) := by
+          rw [ Finset.card_filter, Finset.card_filter ]
+          rw [ ← Finset.sum_add_distrib, Finset.card_eq_sum_ones ] ; congr ; ext ; aesop
+        grind
+      rw [Finset.sum_boole, h_sum_indicator]
+      simp [Fintype.card_pi]
+      cases m with
+      | zero => exact Fin.elim0 i
+      | succ n =>
+        have h : (2 ^ (n + 1) : ℕ) / 2 = 2 ^ n := by
+          rw [pow_add, pow_one, Nat.mul_div_cancel _ (by decide)]
+        norm_cast
+        -- rw [h]
+    simp_all only [Finset.sum_ite, Finset.sum_const, smul_eq_mul, nsmul_eq_mul, mul_ite, mul_one, mul_zero, add_zero, sub_mul]
+    cases m with
+    | zero => fin_cases i
+    | succ n =>
+      simp_all only [pow_succ', Finset.card_univ, Fintype.card_pi, Fintype.card_bool, Finset.prod_const, Nat.cast_pow, Nat.cast_ofNat, add_tsub_cancel_right, Nat.cast_add, Nat.cast_one, Nat.cast_mul, sub_add_cancel_right, mul_add]
+      have h_card : Fintype.card (Fin (n + 1)) = n + 1 := Fintype.card_fin (n + 1)
+      rw [h_card]
+      have h_pow : (2 ^ (n + 1) : ℝ) = 2 * 2 ^ n := by
+        rw [pow_succ, mul_comm]
+      rw [h_pow]
+      ring
 
 end KrafftSieve
