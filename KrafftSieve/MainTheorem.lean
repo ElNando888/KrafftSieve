@@ -7,6 +7,9 @@ Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RKHSLimit
 import KrafftSieve.Discretization
+import KrafftSieve.GibbsDip
+import Mathlib.MeasureTheory.Measure.MeasureSpace
+
 
 /-!
 # Main Sieve Admissibility and Twin Prime Conjecture
@@ -201,5 +204,16 @@ theorem twin_prime_conjecture (μ : Measure X) [IsFiniteMeasure μ]
   apply mu_min_lt_one_implies_tpc
   exact mu_min_infinite μ H_seq coeCLM_seq projectionToRKHS c_cont Psi_cont
     h_dip h_orthogonal h_mono h_dense h_quadrature
+
+theorem infinitely_many_twin_primes : {p : ℕ | Prime p ∧ Prime (p + 2)}.Infinite := by
+  haveI : Fact (Continuous (c_cont₀ 19)) := ⟨by unfold c_cont₀; fun_prop⟩
+  haveI : Fact (Continuous (Psi_cont 19)) := ⟨Psi_cont_continuous 19⟩
+  exact twin_prime_conjecture (μ := volume) (H_seq := H₀) (coeCLM_seq := coeCLM₀) (c_cont := c_cont₀ 19) (Psi_cont := Psi_cont 19)
+    sorry -- projectionToRKHS
+    (h_dip_unconditional 19 (by norm_num))
+    sorry -- h_orthogonal
+    sorry -- h_mono
+    sorry -- h_dense
+    sorry -- h_quadrature
 
 end KrafftSieve
