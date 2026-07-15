@@ -33,7 +33,7 @@ The heavy self-contained analytic content lives in `KrafftSieve.GibbsAux`.
 
 namespace KrafftSieve
 
-open scoped unitInterval
+open scoped unitInterval Function
 open unitInterval
 open MeasureTheory
 
@@ -77,6 +77,86 @@ lemma g_i_expected_quarter (n : ℕ) (hn : 4 ≤ n) (i : Fin (w n)) (y_pos y_neg
     (p_prime n i) (p_ge_5 n i) rfl y_pos y_neg h_pos h_neg
   simpa only [g_coef] using h
 
+/-- The set of CRT roots in the lower half `(0, q/2)`: integers `y` such that for every prime
+index `i`, `y ≡ ±krafftResidue n i + 1 (mod p n i)`. These are exactly the points where the
+continuous penalty `c_cont₀` experiences the Gibbs undershoot. -/
+noncomputable def crtRoots (n : ℕ) : Finset ℤ :=
+  (Finset.Ioo (0 : ℤ) ((q n : ℤ) / 2)).filter (fun y =>
+    ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+                     y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
+
+/-- The point in `X₀` associated with an integer root `y`: the fractional part of `(y+0.25)/q`. -/
+noncomputable def rootPt (n : ℕ) (y : ℤ) : X₀ :=
+  ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋,
+    ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
+
+/-- The absolute Fourier coefficients of a single local interpolant `g_i` sum to at most `2`
+(in fact exactly `2`): `|2/p| + ((p-1)/2)·|4/p| = 2`. -/
+lemma g_coef_abs_sum_le_two (n : ℕ) (i : Fin (w n)) :
+    ∑ k ∈ Finset.range ((p n i + 1) / 2), |g_coef n i k| ≤ 2 := by
+  have hP5 := p_ge_5 n i
+  have hPodd : Odd (p n i) := (p_prime n i).odd_of_ne_two (by omega)
+  have hP0 : (0 : ℝ) < (p n i : ℝ) := by exact_mod_cast (by omega : 0 < p n i)
+  have hPne : (p n i : ℝ) ≠ 0 := ne_of_gt hP0
+  obtain ⟨t, ht⟩ := hPodd
+  have hm : (p n i + 1) / 2 = t + 1 := by omega
+  have hbound : ∀ k ∈ Finset.range ((p n i + 1) / 2),
+      |g_coef n i k| ≤ (if k = 0 then 2 / (p n i : ℝ) else 4 / (p n i : ℝ)) := by
+    intro k _
+    unfold g_coef
+    split_ifs with h0 h1
+    · rw [abs_of_nonneg (by positivity)]
+    · rw [abs_mul]
+      have hc : |Real.cos (2 * Real.pi * k * (krafftResidue n i : ℝ) / (p n i : ℝ))| ≤ 1 :=
+        Real.abs_cos_le_one _
+      have h4 : (0 : ℝ) ≤ 4 / (p n i : ℝ) := by positivity
+      rw [abs_of_nonneg h4]
+      nlinarith [hc, h4]
+    · simpa using (by positivity : (0 : ℝ) ≤ 4 / (p n i : ℝ))
+  calc ∑ k ∈ Finset.range ((p n i + 1) / 2), |g_coef n i k|
+      ≤ ∑ k ∈ Finset.range ((p n i + 1) / 2),
+          (if k = 0 then 2 / (p n i : ℝ) else 4 / (p n i : ℝ)) := Finset.sum_le_sum hbound
+    _ = 2 := by
+        rw [hm, Finset.sum_range_succ']
+        simp only [Nat.succ_ne_zero, if_false, if_true]
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
+        have h2P : (p n i : ℝ) = 2 * (t : ℝ) + 1 := by rw [ht]; push_cast; ring
+        rw [h2P]
+        have hne : (2 * (t : ℝ) + 1) ≠ 0 := by positivity
+        field_simp
+        ring
+
+/-- Global pointwise lower bound: since each of the `w n` local interpolants has absolute Fourier
+mass at most `2`, and `|cos| ≤ 1`, the continuous penalty is bounded below by `-2 * w n`
+everywhere. -/
+lemma c_cont₀_ge (n : ℕ) (t : X₀) : -2 * (w n : ℝ) ≤ c_cont₀ n t := by
+  have hinner : ∀ i : Fin (w n), (-2 : ℝ) ≤
+      ∑ k ∈ Finset.range ((p n i + 1) / 2),
+        g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) := by
+    intro i
+    have habs : |∑ k ∈ Finset.range ((p n i + 1) / 2),
+        g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))| ≤ 2 := by
+      calc |∑ k ∈ Finset.range ((p n i + 1) / 2),
+              g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))|
+          ≤ ∑ k ∈ Finset.range ((p n i + 1) / 2),
+              |g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))| :=
+            Finset.abs_sum_le_sum_abs _ _
+        _ ≤ ∑ k ∈ Finset.range ((p n i + 1) / 2), |g_coef n i k| := by
+            refine Finset.sum_le_sum (fun k _ => ?_)
+            rw [abs_mul]
+            have hc := Real.abs_cos_le_one
+              (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ))
+            nlinarith [abs_nonneg (g_coef n i k), hc, abs_nonneg
+              (Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)))]
+        _ ≤ 2 := g_coef_abs_sum_le_two n i
+    linarith [(abs_le.mp habs).1]
+  calc -2 * (w n : ℝ) = ∑ _i : Fin (w n), (-2 : ℝ) := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]; ring
+    _ ≤ ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i + 1) / 2),
+        g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) :=
+        Finset.sum_le_sum (fun i _ => hinner i)
+    _ = c_cont₀ n t := by simp only [c_cont₀]
+
 /--
 By the Chinese Remainder Theorem independence, the sum of the continuous penalty function evaluated
 at `y + 0.25` over all `2^{w(n)}` CRT roots factors exactly into the product of the expected values.
@@ -90,24 +170,300 @@ lemma sum_c_cont_0_all_roots (n : ℕ) (hn : 4 ≤ n) :
     ≤ -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) := by
   sorry
 
+lemma w_eq_primeCounting_six_mul_add_one (n : ℕ) (hn : 1 ≤ n) : w n + 2 = Nat.primeCounting (6 * n + 1) := by
+  rw [ Nat.primeCounting ]
+  rw [ Nat.primeCounting', Nat.count_eq_card_filter_range ]
+  rw [ show Finset.filter Nat.Prime ( Finset.range ( 6 * n + 1 + 1 ) ) = Finset.filter ( fun x => 5 ≤ x ∧ Nat.Prime x ) ( Finset.range ( 6 * n + 1 + 1 ) ) ∪ { 2, 3 } from ?_, Finset.card_union ] <;> norm_num
+  · rfl
+  · ext ( _ | _ | _ | _ | _ | p ) <;> simp +arith +decide; all_goals grind
+
+lemma w_ge_sqrt_of_ge_hundred (n : ℕ) (hn : 100 ≤ n) : Nat.sqrt n ≤ w n := by
+  -- Apply Chebyshev's theorem with $m = 6n+1$.
+  have h_chebyshev : Nat.primeCounting (6 * n + 1) ≥ (6 * n + 1) * Real.log 2 / Real.log (6 * n + 1) - Real.log (6 * n + 2) / Real.log (6 * n + 1) := by
+    have h_chebyshev : ∀ m : ℕ, 2 ≤ m → (Nat.primeCounting m : ℝ) ≥ (m * Real.log 2 - Real.log (m + 1)) / Real.log m := by
+      intro m hm
+      -- Apply Chebyshev's theorem to the prime counting function.
+      have h_chebyshev : Real.log (Nat.choose m (m / 2)) ≤ (Nat.primeCounting m : ℝ) * Real.log m := by
+        -- By definition of binomial coefficients, we know that $\binom{m}{\lfloor m/2 \rfloor}$ is divisible by all primes $p \leq m$.
+        have h_div : (∏ p ∈ Finset.filter Nat.Prime (Finset.range (m + 1)), p ^ (Nat.factorization (Nat.choose m (m / 2)) p)) ≤ m ^ (Nat.primeCounting m) := by
+          refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_le_pow_right ( Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2 ) <| show Nat.factorization ( Nat.choose m ( m / 2 ) ) p ≤ Nat.log p m from ?_ ) ?_
+          · have := @Nat.factorization_choose_le_log p m ( m / 2 ) ; aesop
+          · refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_log_le_self p <| by linarith [ Finset.mem_filter.mp hp ] ) ?_ ; norm_num [ Nat.primeCounting ]
+            rw [ Nat.primeCounting', Nat.count_eq_card_filter_range ]
+        have h_div : (Nat.choose m (m / 2) : ℝ) ≤ m ^ (Nat.primeCounting m) := by
+          refine mod_cast le_trans ?_ h_div
+          conv_lhs => rw [ ← Nat.prod_factorization_pow_eq_self ( Nat.ne_of_gt ( Nat.choose_pos ( Nat.div_le_self m 2 ) ) ) ]
+          rw [ Finsupp.prod_of_support_subset ] <;> norm_num
+          intro p hp
+          simp_all +decide only [Nat.mem_primeFactors, ne_eq, Finset.mem_filter, Finset.mem_range,
+            Order.lt_add_one_iff, and_true]
+          exact hp.1.dvd_factorial.mp ( dvd_trans hp.2.1 ( Nat.choose_mul_factorial_mul_factorial ( show m / 2 ≤ m from Nat.div_le_self _ _ ) ▸ dvd_mul_of_dvd_left ( dvd_mul_right _ _ ) _ ) )
+        simpa using Real.log_le_log ( Nat.cast_pos.mpr <| Nat.choose_pos <| Nat.div_le_self _ _ ) h_div
+      -- We'll use that $\binom{m}{m/2} \geq \frac{2^m}{m+1}$.
+      have h_binom : (Nat.choose m (m / 2) : ℝ) ≥ (2 ^ m) / (m + 1) := by
+        rw [ ge_iff_le, div_le_iff₀ ] <;> norm_cast <;> try positivity
+        have := Nat.sum_range_choose m
+        exact this ▸ le_trans ( Finset.sum_le_sum fun _ _ => Nat.choose_le_middle _ _ ) ( by simp +decide [ mul_comm ] )
+      have := Real.log_le_log ( by positivity ) h_binom
+      rw [ Real.log_div ( by positivity ) ( by positivity ), Real.log_pow ] at this ; rw [ ge_iff_le, div_le_iff₀ ( Real.log_pos <| by norm_cast ) ] ; linarith
+    convert h_chebyshev ( 6 * n + 1 ) ( by linarith ) using 1 ; push_cast ; ring
+  -- Simplify the inequality obtained from Chebyshev's theorem.
+  have h_simplified : Nat.primeCounting (6 * n + 1) ≥ Nat.sqrt n + 3 := by
+    -- We'll use that $Real.log (6 * n + 2) / Real.log (6 * n + 1) < 2$ for $n \geq 100$.
+    have h_log_ratio : Real.log (6 * n + 2) / Real.log (6 * n + 1) < 2 := by
+      rw [ div_lt_iff₀ ( Real.log_pos <| by norm_cast; linarith ) ]
+      erw [ ← Real.log_pow, Real.log_lt_log_iff ] <;> norm_cast <;> nlinarith
+    -- We'll use that $Real.log (6 * n + 1) < 2 * Real.sqrt (n)$ for $n \geq 100$.
+    have h_log_bound : Real.log (6 * n + 1) < 2 * Real.sqrt (n) := by
+      rw [ Real.log_lt_iff_lt_exp ( by positivity ) ]
+      rw [ two_mul, Real.exp_add ]
+      -- We'll use that $e^{\sqrt{n}} > 3\sqrt{n}$ for $n \geq 100$.
+      have h_exp_gt : Real.exp (Real.sqrt n) > 3 * Real.sqrt n := by
+        -- We'll use that $e^{\sqrt{n}} > 3\sqrt{n}$ for $n \geq 100$. This follows from the
+        -- exponential growth rate.
+        have h_exp_gt : ∀ x : ℝ, 10 ≤ x → Real.exp x > 3 * x := by
+          intro x hx; rw [ Real.exp_eq_exp_ℝ ] ; norm_num [ NormedSpace.exp_eq_tsum_div ]
+          refine lt_of_lt_of_le ?_ ( Summable.sum_le_tsum ( Finset.range 10 ) ( fun _ _ => by positivity ) ( by simpa using Real.summable_pow_div_factorial x ) ) ; norm_num [ Finset.sum_range_succ, Nat.factorial ] ; nlinarith [ pow_pos ( by linarith : 0 < x ) 2, pow_pos ( by linarith : 0 < x ) 3, pow_pos ( by linarith : 0 < x ) 4, pow_pos ( by linarith : 0 < x ) 5, pow_pos ( by linarith : 0 < x ) 6, pow_pos ( by linarith : 0 < x ) 7, pow_pos ( by linarith : 0 < x ) 8, pow_pos ( by linarith : 0 < x ) 9 ]
+        exact h_exp_gt _ <| Real.le_sqrt_of_sq_le <| mod_cast by linarith
+      nlinarith [ Real.sqrt_nonneg n, Real.sq_sqrt <| Nat.cast_nonneg n, show ( n : ℝ ) ≥ 100 by norm_cast ]
+    -- Substitute the bounds into the inequality from Chebyshev's theorem.
+    have h_subst : (6 * n + 1) * Real.log 2 / Real.log (6 * n + 1) > Nat.sqrt n + 5 := by
+      rw [ gt_iff_lt, lt_div_iff₀ ( Real.log_pos <| by norm_cast; linarith ) ]
+      refine lt_of_lt_of_le ( mul_lt_mul_of_pos_left h_log_bound ( by positivity ) ) ?_
+      have := Real.log_two_gt_d9 ; norm_num at * ; nlinarith only [ this, show ( n :ℝ ) ≥ 100 by norm_cast, Real.sqrt_nonneg n, Real.sq_sqrt <| Nat.cast_nonneg n, show ( Nat.sqrt n :ℝ ) ≤ Real.sqrt n by exact Real.le_sqrt_of_sq_le <| mod_cast Nat.sqrt_le' n, pow_two_nonneg <| Real.sqrt n - 10 ]
+    exact Nat.le_of_lt_succ <| by rw [ ← @Nat.cast_lt ℝ ] ; push_cast; linarith
+  linarith [ w_eq_primeCounting_six_mul_add_one n ( by linarith ) ]
+
+lemma trap_exponential_dominates_from_1024 (n : ℕ) (hn : 1024 ≤ n) :
+    (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.01 * (2 ^ Nat.sqrt n : ℝ) := by
+  -- Let $k = \sqrt{n}$. Then $k \geq 32$.
+  set k : ℕ := Nat.sqrt n
+  have hk : 32 ≤ k := by
+    exact Nat.le_sqrt.2 ( by linarith )
+  -- Substitute $n < (k+1)^2$ into the inequality.
+  have h_sub : (2 : ℝ) * (6 * ((k + 1) ^ 2) ^ 2 + 10 * ((k + 1) ^ 2) + 3) + 1 < 0.01 * 2 ^ k := by
+    exact Nat.le_induction ( by norm_num ) ( fun k hk ih ↦ by norm_num [ pow_succ' ] at * ; nlinarith [ ( by norm_cast : ( 32 :ℝ ) ≤ k ), pow_pos ( by norm_num : ( 0 :ℝ ) < 2 ) k ] ) k hk
+  exact lt_of_le_of_lt ( by nlinarith only [ show ( n : ℝ ) ≤ ( k + 1 ) ^ 2 by exact_mod_cast Nat.lt_succ_sqrt' n |> le_of_lt ] ) h_sub
+
+
 /--
-For $n \ge 18$, the exponential growth of the solution space strictly dominates the polynomial
+For $n \ge 19$, the exponential growth of the solution space strictly dominates the polynomial
 capacity of the trap region.
 -/
-lemma trap_capacity_lt_exponential (n : ℕ) (hn : 18 ≤ n) :
-    (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.04 * (2 ^ w n : ℝ) := by
-  sorry
+lemma trap_capacity_lt_exponential (n : ℕ) (hn : 19 ≤ n) :
+    (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.01 * (2 ^ w n : ℝ) := by
+  by_cases hn1024 : n ≥ 1024
+  · convert trap_exponential_dominates_from_1024 n hn1024 |> lt_of_lt_of_le <| mul_le_mul_of_nonneg_left ( pow_le_pow_right₀ ( by norm_num : ( 1 : ℝ ) ≤ 2 ) <| show w n ≥ Nat.sqrt n from ?_ ) <| by norm_num using 1
+    exact w_ge_sqrt_of_ge_hundred n ( by linarith )
+  · norm_num [ w ] at *
+    field_simp
+    exact mod_cast by interval_cases n <;> native_decide
+
+lemma crt_map_int {m : ℕ} (a : Fin m → ℕ) (hcop : Pairwise (Nat.Coprime on a))
+    (y : ℤ) (i : Fin m) :
+    (ZMod.prodEquivPi a hcop (y : ZMod (∏ i, a i))) i = (y : ZMod (a i)) := by
+  simp +decide
+
+lemma crt_two_choices_Ico_card {m : ℕ} (a : Fin m → ℕ)
+    [NeZero (∏ i, a i)]
+    (hcop : Pairwise (Nat.Coprime on a))
+    (u v : (i : Fin m) → ZMod (a i)) (hne : ∀ i, u i ≠ v i) :
+    ((Finset.Ico 0 ((∏ i, a i) : ℤ)).filter (fun y : ℤ =>
+      ∀ i, (y : ZMod (a i)) = u i ∨ (y : ZMod (a i)) = v i)).card = 2 ^ m := by
+  revert hne v u
+  -- By the Chinese Remainder Theorem, there is a bijection between the set of integers $y$ modulo $Q$ and the set of $m$-tuples $(y_1, y_2, \ldots, y_m)$ where $y_i \in \{u_i, v_i\}$.
+  intros u v hne
+  have h_bij : Finset.image (fun y : ℤ => fun i : Fin m => (y : ZMod (a i))) (Finset.filter (fun y => ∀ i, (y : ZMod (a i)) = u i ∨ (y : ZMod (a i)) = v i) (Finset.Ico 0 (∏ i, (a i)))) = Finset.image (fun b : Fin m → Bool => fun i => if b i then v i else u i) (Finset.univ : Finset (Fin m → Bool)) := by
+    ext b
+    simp only [Finset.mem_image, Finset.mem_filter, Finset.mem_Ico, Finset.mem_univ, true_and]
+    constructor <;> intro h
+    · rcases h with ⟨ y, ⟨ ⟨ hy₀, hy₁ ⟩, hy₂ ⟩, rfl ⟩ ; use fun i => ( y : ZMod ( a i ) ) = v i; ext i; specialize hy₂ i; aesop
+    · -- By the Chinese Remainder Theorem, there exists an integer $y$ such that $y \equiv b_i \pmod{a_i}$ for all $i$.
+      obtain ⟨y, hy⟩ : ∃ y : ℤ, ∀ i, (y : ZMod (a i)) = b i := by
+        have h_crt : ∀ i, ∃ y : ℤ, (y : ZMod (a i)) = b i ∧ ∀ j ≠ i, (y : ZMod (a j)) = 0 := by
+          intro i
+          obtain ⟨y, hy⟩ : ∃ y : ℤ, y ≡ (b i).val [ZMOD a i] ∧ ∀ j ≠ i, y ≡ 0 [ZMOD a j] := by
+            -- By the Chinese Remainder Theorem, there exists an integer $y$ such that $y \equiv b_i \pmod{a_i}$ and $y \equiv 0 \pmod{a_j}$ for all $j \neq i$.
+            obtain ⟨y, hy⟩ : ∃ y : ℤ, y ≡ 1 [ZMOD a i] ∧ y ≡ 0 [ZMOD (∏ j ∈ Finset.univ.erase i, a j)] := by
+              have := Nat.chineseRemainder ( show Nat.Coprime ( a i ) ( ∏ j ∈ Finset.univ.erase i, a j ) from ?_ )
+              · obtain ⟨ y, hy₁, hy₂ ⟩ := this 1 0; use y; simp_all +decide [ ← Int.natCast_modEq_iff ]
+              · exact Nat.Coprime.prod_right fun j hj => hcop <| by aesop
+            use y * (b i).val
+            exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Int.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Int.dvd_of_emod_eq_zero <| hy.2.of_dvd <| mod_cast Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩
+          use y
+          simp_all +decide only [ne_eq, ← ZMod.intCast_eq_intCast_iff, Int.cast_natCast,
+            Int.cast_zero, not_false_eq_true, implies_true, and_true]
+          convert ZMod.natCast_zmod_val ( b i )
+          exact ⟨ by intro H; have := NeZero.ne ( ∏ i, a i ) ; simp_all +decide [ Finset.prod_eq_zero ( Finset.mem_univ i ) ] ⟩
+        choose y hy₁ hy₂ using h_crt
+        use ∑ i, y i; intro i
+        simp +decide only [Int.cast_sum]
+        rw [ Finset.sum_eq_single i ] <;> aesop
+      refine ⟨ y % ∏ i, ( a i : ℤ ), ?_, ?_ ⟩ <;> simp_all +decide only [ne_eq, funext_iff]
+      · refine ⟨ ⟨ Int.emod_nonneg _ <| mod_cast NeZero.ne _, Int.emod_lt_of_pos _ <| mod_cast Finset.prod_pos fun i _ => Nat.pos_of_ne_zero <| by intro k; have := NeZero.ne ( ∏ i, a i ) ; simp_all +decide [ Finset.prod_eq_zero ( Finset.mem_univ i ) ] ⟩, ?_ ⟩
+        intro i; specialize hy i; simp_all +decide [ Finset.prod_eq_prod_sdiff_singleton_mul ( Finset.mem_univ i ) ]
+        simp_all +decide [Int.emod_def]
+        grind +ring
+      · intro i; specialize hy i; simp_all +decide [Finset.prod_eq_prod_sdiff_singleton_mul
+            (Finset.mem_univ i)]
+        simp_all +decide [ ← hy, ZMod.intCast_eq_intCast_iff' ]
+  convert congr_arg Finset.card h_bij using 1
+  · rw [ Finset.card_image_of_injOn ]
+    intro x hx y hy; simp_all +decide only [ne_eq, Finset.coe_filter, Finset.mem_Ico,
+      Set.mem_setOf_eq, funext_iff]
+    intro h; exact (by
+    -- Since $x \equiv y \pmod{a_i}$ for all $i$, we have $x \equiv y \pmod{\prod_{i} a_i}$.
+    have h_cong : x ≡ y [ZMOD ∏ i, a i] := by
+      simp_all +decide only [implies_true, and_true, Int.modEq_iff_dvd]
+      convert Finset.prod_dvd_of_coprime _ _ <;> simp_all +decide only [Finset.coe_univ, Finset.mem_univ, ← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_sub, sub_self, imp_self, implies_true]
+      exact fun i _ j _ hij => Int.isCoprime_iff_gcd_eq_one.mpr ( hcop hij )
+    exact Int.modEq_iff_dvd.mp h_cong.symm |> fun ⟨ k, hk ⟩ => by nlinarith [ show k = 0 by nlinarith ] ;)
+  · rw [ Finset.card_image_of_injective ] <;> norm_num [ Function.Injective ]
+    intro b₁ b₂ h; ext i; replace h := congr_fun h i; by_cases hi : b₁ i = true <;> by_cases hj : b₂ i = true <;> simp_all +decide
+    exact hne i h.symm
+
+lemma krafft_residues_distinct (P : ℕ) (hP : P.Prime) (h5 : 5 ≤ P) :
+    (((P + 1) / 6 : ℕ) : ZMod P) + 1 ≠ -((((P + 1) / 6 : ℕ) : ZMod P)) + 1 := by
+  haveI := Fact.mk hP; norm_num
+  rw [ eq_neg_iff_add_eq_zero ] ; norm_cast
+  rw [ ZMod.natCast_eq_zero_iff ]
+  exact Nat.not_dvd_of_pos_of_lt ( by omega ) ( by omega )
+
+/-- The simultaneous sign choices give exactly `2 ^ w n` roots in one complete CRT period. -/
+lemma card_all_crt_roots (n : ℕ) :
+    ((Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+      ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+        y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])).card = 2 ^ w n := by
+  have hcop : Pairwise (Nat.Coprime on fun i : Fin (w n) => p n i) := by
+    intro i j hij
+    have hpne : p n i ≠ p n j := by
+      intro hp
+      have hnodup : (primesList n).Nodup := Finset.sort_nodup _ _
+      have hcast := List.nodup_iff_injective_get.mp hnodup hp
+      aesop
+    exact (Nat.coprime_primes (p_prime n i) (p_prime n j)).2 hpne
+  have hprod : (∏ i : Fin (w n), p n i) = q n := by
+    exact_mod_cast prod_p_eq_q n
+  rw [← hprod]
+  letI : NeZero (∏ i : Fin (w n), p n i) :=
+    ⟨Finset.prod_ne_zero_iff.mpr (fun i _ => p_ne_zero n i)⟩
+  have hcastprod : ((∏ i : Fin (w n), p n i : ℕ) : ℤ) =
+      ∏ i : Fin (w n), (p n i : ℤ) := by push_cast; rfl
+  rw [hcastprod]
+  simpa [← ZMod.intCast_eq_intCast_iff] using
+    (crt_two_choices_Ico_card (fun i : Fin (w n) => p n i) hcop
+      (fun i => (krafftResidue n i : ZMod (p n i)) + 1)
+      (fun i => -(krafftResidue n i : ZMod (p n i)) + 1)
+      (fun i => by
+        unfold krafftResidue
+        exact krafft_residues_distinct (p n i) (p_prime n i) (p_ge_5 n i)))
+
+lemma weighted_finset_pigeonhole
+    (S A : Finset ℤ) (f : ℤ → ℝ) (W N : ℕ)
+    (hAS : A ⊆ S) (hcardS : S.card = N)
+    (hcardA : (A.card : ℝ) < 0.01 * N)
+    (hN : 0 < N) (hW : 0 < W)
+    (htrap : ∀ y ∈ A, -2 * (W : ℝ) ≤ f y)
+    (hgold : ∀ y ∈ S \ A, -0.02 * (W : ℝ) < f y) :
+    -0.04 * (W : ℝ) * N < ∑ y ∈ S, f y := by
+  have h_sum_bound : (∑ y ∈ A, f y) + (∑ y ∈ S \ A, f y) > (∑ y ∈ A, -2 * W : ℝ) + (∑ y ∈ S \ A, -0.02 * W : ℝ) := by
+    refine add_lt_add_of_le_of_lt ( Finset.sum_le_sum htrap ) ( Finset.sum_lt_sum ?_ ?_ )
+    · exact fun x hx => le_of_lt ( hgold x hx )
+    · by_cases hA : A = S
+      · grind
+      · exact Exists.elim ( Finset.exists_of_ssubset ( lt_of_le_of_ne hAS hA ) ) fun x hx => ⟨ x, by aesop ⟩
+  simp_all +decide [ Finset.card_sdiff ]
+  rw [ Finset.inter_eq_left.mpr hAS ] at h_sum_bound
+  rw [ Nat.cast_sub ( by linarith [ Finset.card_le_card hAS ] ) ] at h_sum_bound
+  norm_num at * ; nlinarith [ ( by norm_cast : ( 0 :ℝ ) < W ), ( by norm_cast : ( 0 :ℝ ) < N ) ]
+
+lemma int_trap_filter_card_le (S : Finset ℤ) (Q B : ℤ) (hB : 0 ≤ B)
+    (hS : ∀ y ∈ S, y ∈ Finset.Ico 0 Q) :
+    (S.filter (fun y => ¬ (B < y ∧ y < Q - B))).card ≤ (2 * B + 1).toNat := by
+  let A := S.filter (fun y => ¬ (B < y ∧ y < Q - B))
+  have hsub : A ⊆ Finset.Icc 0 B ∪ Finset.Ico (Q - B) Q := by
+    intro y hy
+    have hy' : y ∈ S.filter (fun y => ¬ (B < y ∧ y < Q - B)) := by simpa [A] using hy
+    have hyS := (Finset.mem_filter.mp hy').1
+    have hyA := (Finset.mem_filter.mp hy').2
+    have hyI := Finset.mem_Ico.mp (hS y hyS)
+    simp only [Finset.mem_union, Finset.mem_Icc, Finset.mem_Ico]
+    omega
+  calc
+    A.card ≤ (Finset.Icc 0 B ∪ Finset.Ico (Q - B) Q).card := Finset.card_le_card hsub
+    _ ≤ (Finset.Icc 0 B).card + (Finset.Ico (Q - B) Q).card := Finset.card_union_le _ _
+    _ = (2 * B + 1).toNat := by
+      rw [Int.card_Icc, Int.card_Ico]
+      omega
 
 /--
 Because the $E_{max}$ trap region has polynomial capacity while the total CRT roots scale
 exponentially, there exists at least one root $y_{CRT}$ in the golden region (outside the trap
-region) where the penalty drops below `-0.04 * w(n)`.
+region) where the penalty drops below `-0.02 * w(n)`.
 -/
-lemma c_cont_0_valley_quarter (n : ℕ) (hn : 18 ≤ n) :
+lemma c_cont_0_valley_quarter (n : ℕ) (hn : 19 ≤ n) :
     ∃ y_CRT : ℤ, (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT ∧ y_CRT < (q n : ℤ) - (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) ∧
     c_cont₀ n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
-      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ ≤ -0.04 * (w n : ℝ) := by
-  sorry
+      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ ≤ -0.02 * (w n : ℝ) := by
+  let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+    ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+      y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
+  let B : ℤ := 6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3
+  let f : ℤ → ℝ := fun y => c_cont₀ n
+    ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋,
+      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
+  let A := S.filter (fun y => ¬ (B < y ∧ y < (q n : ℤ) - B))
+  by_contra h
+  push Not at h
+  have hAS : A ⊆ S := Finset.filter_subset _ _
+  have hcardS : S.card = 2 ^ w n := by simpa [S] using card_all_crt_roots n
+  have hB : 0 ≤ B := by dsimp [B]; positivity
+  have hSA : ∀ y ∈ S, y ∈ Finset.Ico 0 (q n : ℤ) := by
+    intro y hy
+    exact (Finset.mem_filter.mp hy).1
+  have hcardA_nat : A.card ≤ (2 * B + 1).toNat := by
+    simpa [A] using int_trap_filter_card_le S (q n : ℤ) B hB hSA
+  have hcardA : (A.card : ℝ) < 0.01 * (2 ^ w n : ℝ) := by
+    have hcap := trap_capacity_lt_exponential n hn
+    have hcast : (A.card : ℝ) ≤ 2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1 := by
+      rw [show (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) =
+        (((2 * B + 1).toNat : ℕ) : ℝ) by
+          norm_cast]
+      exact_mod_cast hcardA_nat
+    exact hcast.trans_lt hcap
+  have hw : 0 < w n := by
+    rw [w]
+    refine Finset.card_pos.mpr ⟨5, ?_⟩
+    simp only [primeWindow, Finset.mem_filter, Finset.mem_range]
+    constructor
+    · omega
+    · norm_num
+  have hN : 0 < 2 ^ w n := pow_pos (by omega) _
+  have htrap : ∀ y ∈ A, -2 * (w n : ℝ) ≤ f y := by
+    intro y hy
+    exact c_cont₀_ge n _
+  have hgold : ∀ y ∈ S \ A, -0.02 * (w n : ℝ) < f y := by
+    intro y hy
+    have hyS : y ∈ S := (Finset.mem_sdiff.mp hy).1
+    have hyA : y ∉ A := (Finset.mem_sdiff.mp hy).2
+    have hregion : B < y ∧ y < (q n : ℤ) - B := by
+      by_contra hr
+      exact hyA (Finset.mem_filter.mpr ⟨hyS, hr⟩)
+    simpa [B, f] using h y hregion.1 hregion.2
+  have hcardA' : (A.card : ℝ) < 0.01 * ((2 ^ w n : ℕ) : ℝ) := by
+    norm_num [Nat.cast_pow] at hcardA ⊢
+    exact hcardA
+  have hsum := weighted_finset_pigeonhole S A f (w n) (2 ^ w n)
+    hAS hcardS hcardA' hN hw htrap hgold
+  have htotal := sum_c_cont_0_all_roots n (by omega)
+  dsimp only at htotal
+  simp only [S, f] at hsum
+  have hsum' : -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) <
+      ∑ y ∈ S, f y := by
+    convert hsum using 1
+    norm_num
+  simp only [S, f] at hsum'
+  exact (not_lt_of_ge htotal) hsum'
 
 /--
 For any CRT valley in the golden region, the reproducing window `Psi_cont`
@@ -121,7 +477,7 @@ genuine analytic fact (the windowed Dirichlet sum telescopes to a positive cotan
 in the golden region). Formalizing this requires the exact `dirichletKernel` telescoping identity
 and is left for future work; it is used by `h_dip_unconditional` below.
 -/
-lemma Psi_cont_positive_quarter (n : ℕ) (hn : 18 ≤ n) (y_CRT : ℤ)
+lemma Psi_cont_positive_quarter (n : ℕ) (hn : 19 ≤ n) (y_CRT : ℤ)
     (h_gt : (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT) (h_lt : y_CRT < (q n : ℤ) - (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3)) :
     0 < Psi_cont n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
       ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ := by
@@ -171,13 +527,13 @@ lemma volume_pos_of_isOpen_nonempty (s : Set X₀) (hs : IsOpen s) (hne : s.None
 
 /--
 The continuous penalty `c_cont₀` drops below 1 and `Psi_cont` has positive integral on a set,
-satisfying the `h_dip` hypothesis unconditionally for $n \ge 18$.
+satisfying the `h_dip` hypothesis unconditionally for $n \ge 19$.
 
 The witnessing set is the (open) region where `Psi_cont` is positive and `c_cont₀ < 1`; it contains
 the Gibbs valley point, hence is nonempty (positive volume), and `Psi_cont` is positive throughout,
 so its integral is positive.
 -/
-theorem h_dip_unconditional (n : ℕ) (hn : 18 ≤ n) :
+theorem h_dip_unconditional (n : ℕ) (hn : 19 ≤ n) :
     ∃ s : Set X₀, MeasurableSet s ∧
     0 < ∫ t in s, Psi_cont n t ∂(volume : Measure X₀) ∧
     ∀ t ∈ s, c_cont₀ n t < 1 := by

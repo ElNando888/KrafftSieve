@@ -28,6 +28,9 @@ they are reusable and self-contained.
   step function dips below `-0.2` at the half-integer aligned with the residue.
 * `exists_crt` — the Chinese Remainder Theorem: existence of a simultaneous solution.
 * `sum_valley` — assembling the per-prime undershoots into the global continuous penalty bound.
+
+# TODO
+* deal with `set_option maxHeartbeats`
 -/
 
 namespace KrafftSieve.GibbsAux
@@ -417,6 +420,7 @@ Under `Y ≡ -R + 1 (mod P)` with `P` an odd prime `≥ 5` and `R = (P+1)/6`, th
 cosine series evaluated at `Y + 1/4` collapses to a difference of two reciprocal-sine terms.
 -/
 set_option maxHeartbeats 4000000 in
+-- reason for change? we haven't tried to optimize yet, duh!
 theorem overshoot_closed_form_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P)
     (hR : R = (P + 1) / 6) (Y : ℤ) (hY : Y ≡ -(R : ℤ) + 1 [ZMOD (P : ℤ)]) :
     ∑ k ∈ Finset.range ((P + 1) / 2),
@@ -431,7 +435,8 @@ theorem overshoot_closed_form_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P)
   have h_split : ∑ k ∈ Finset.range ((P + 1) / 2), (if k = 0 then 2 / (P : ℝ) else if k ≤ (P - 1) / 2 then 4 / (P : ℝ) * Real.cos (2 * Real.pi * k * (R : ℝ) / (P : ℝ)) else 0) * Real.cos (2 * Real.pi * k * ((Y : ℝ) + 0.25) / (P : ℝ)) = (2 / (P : ℝ)) + (2 / (P : ℝ)) * ∑ k ∈ Finset.range ((P - 1) / 2), (Real.cos (2 * Real.pi * (k + 1) * (5 / 4 : ℝ) / (P : ℝ)) + Real.cos (2 * Real.pi * (k + 1) * ((8 * R - 5) / 4 : ℝ) / (P : ℝ))) := by
     have h_split : ∑ k ∈ Finset.Ico 1 ((P + 1) / 2), (4 / (P : ℝ) * Real.cos (2 * Real.pi * k * (R : ℝ) / (P : ℝ))) * Real.cos (2 * Real.pi * k * ((Y : ℝ) + 0.25) / (P : ℝ)) = (2 / (P : ℝ)) * ∑ k ∈ Finset.range ((P - 1) / 2), (Real.cos (2 * Real.pi * (k + 1) * (5 / 4 : ℝ) / (P : ℝ)) + Real.cos (2 * Real.pi * (k + 1) * ((8 * R - 5) / 4 : ℝ) / (P : ℝ))) := by
       have h_split : ∀ k ∈ Finset.Ico 1 ((P + 1) / 2), (4 / (P : ℝ) * Real.cos (2 * Real.pi * k * (R : ℝ) / (P : ℝ))) * Real.cos (2 * Real.pi * k * ((Y : ℝ) + 0.25) / (P : ℝ)) = (2 / (P : ℝ)) * (Real.cos (2 * Real.pi * k * (5 / 4 : ℝ) / (P : ℝ)) + Real.cos (2 * Real.pi * k * ((8 * R - 5) / 4 : ℝ) / (P : ℝ))) := by
-        intro k hk; rw [ Real.cos_add_cos ] ; ring; norm_num [ show Y = -R + 1 + P * m by linarith ] ; ring
+        intro k hk; rw [ Real.cos_add_cos ] ; ring_nf
+        norm_num [ show Y = -R + 1 + P * m by linarith ] ; ring_nf
         norm_num [ hP.ne_zero ]
         exact Or.inl ( by convert Real.cos_periodic.int_mul ( k * m ) _ using 2; push_cast; ring )
       rw [ Finset.sum_congr rfl h_split, Finset.mul_sum _ _ _ ]
@@ -447,26 +452,33 @@ theorem overshoot_closed_form_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P)
   have h_dirichlet : ∀ θ : ℝ, Real.sin (θ / 2) ≠ 0 → ∑ k ∈ Finset.range ((P - 1) / 2), Real.cos ((k + 1) * θ) = (Real.sin ((P / 2) * θ) - Real.sin (θ / 2)) / (2 * Real.sin (θ / 2)) := by
     intro θ hθ
     have h_dirichlet_step : ∀ n : ℕ, ∑ k ∈ Finset.range n, Real.cos ((k + 1) * θ) = (Real.sin ((n + 1 / 2) * θ) - Real.sin (θ / 2)) / (2 * Real.sin (θ / 2)) := by
-      intro n; rw [ eq_div_iff ( mul_ne_zero two_ne_zero hθ ) ] ; induction n <;> simp_all +decide [ Finset.sum_range_succ, add_mul ] ; ring
-      rw [ ← Complex.ofReal_inj ] ; norm_num [ Complex.sin, Complex.cos ] ; ring
-      norm_num [ mul_assoc, ← Complex.exp_add ] ; ring
-    cases Nat.Prime.odd_of_ne_two hP ( by linarith ) ; simp_all +decide [ Nat.add_div ] ; ring
+      intro n; rw [ eq_div_iff ( mul_ne_zero two_ne_zero hθ ) ]
+      induction n with
+      | zero =>
+        simp_all +decide [ add_mul ] ; ring_nf
+      | succ n =>
+        simp_all +decide only [Int.natCast_ediv, Nat.cast_add, Nat.cast_one, Nat.cast_ofNat,
+          ite_mul, CharP.cast_eq_zero, mul_zero, zero_mul, zero_div, Real.cos_zero, mul_one, ne_eq,
+          add_mul, one_mul, one_div, sum_range_succ] ; ring_nf
+        rw [ ← Complex.ofReal_inj ] ; norm_num [ Complex.sin, Complex.cos ] ; ring_nf
+        norm_num [ mul_assoc, ← Complex.exp_add ] ; ring_nf
+    cases Nat.Prime.odd_of_ne_two hP ( by linarith ) ; simp_all +decide [ Nat.add_div ] ; ring_nf
   -- Apply the Dirichlet cosine sum closed form to each family and simplify.
   have h_simplify : ∑ k ∈ Finset.range ((P - 1) / 2), (Real.cos (2 * Real.pi * (k + 1) * (5 / 4 : ℝ) / (P : ℝ)) + Real.cos (2 * Real.pi * (k + 1) * ((8 * R - 5) / 4 : ℝ) / (P : ℝ))) = (-Real.sqrt 2 / 2 - Real.sin (5 * Real.pi / (4 * P))) / (2 * Real.sin (5 * Real.pi / (4 * P))) + (Real.sqrt 2 / 2 - Real.sin ((8 * R - 5) * Real.pi / (4 * P))) / (2 * Real.sin ((8 * R - 5) * Real.pi / (4 * P))) := by
     rw [ Finset.sum_add_distrib, show ( ∑ k ∈ Finset.range ( ( P - 1 ) / 2 ), Real.cos ( 2 * Real.pi * ( k + 1 ) * ( 5 / 4 ) / P ) ) = ( Real.sin ( P / 2 * ( 2 * Real.pi * ( 5 / 4 ) / P ) ) - Real.sin ( ( 2 * Real.pi * ( 5 / 4 ) / P ) / 2 ) ) / ( 2 * Real.sin ( ( 2 * Real.pi * ( 5 / 4 ) / P ) / 2 ) ) from ?_, show ( ∑ k ∈ Finset.range ( ( P - 1 ) / 2 ), Real.cos ( 2 * Real.pi * ( k + 1 ) * ( ( 8 * R - 5 ) / 4 ) / P ) ) = ( Real.sin ( P / 2 * ( 2 * Real.pi * ( ( 8 * R - 5 ) / 4 ) / P ) ) - Real.sin ( ( 2 * Real.pi * ( ( 8 * R - 5 ) / 4 ) / P ) / 2 ) ) / ( 2 * Real.sin ( ( 2 * Real.pi * ( ( 8 * R - 5 ) / 4 ) / P ) / 2 ) ) from ?_ ]
     · congr 2 <;> ring_nf <;> norm_num [ mul_assoc, mul_comm, mul_left_comm, hP.ne_zero ]
       · rw [ show Real.pi * ( 5 / 4 ) = Real.pi / 4 + Real.pi by ring, Real.sin_add ] ; norm_num ; ring
-      · norm_num [ Real.sin_add, mul_div ] ; ring
+      · norm_num [ Real.sin_add, mul_div ] ; ring_nf
         norm_num [ show Real.sin ( Real.pi * R * 2 ) = 0 from Real.sin_eq_zero_iff.mpr ⟨ R * 2, by push_cast; ring ⟩, show Real.cos ( Real.pi * R * 2 ) = 1 from by rw [ Real.cos_eq_one_iff ] ; use R; push_cast; ring, show Real.pi * ( 5 / 4 ) = Real.pi / 4 + Real.pi by ring ] ; ring
     · convert h_dirichlet ( 2 * Real.pi * ( ( 8 * R - 5 ) / 4 ) / P ) _ using 2
-      · ring
-      · refine' ne_of_gt ( Real.sin_pos_of_pos_of_lt_pi _ _ )
+      · ring_nf
+      · refine ne_of_gt ( Real.sin_pos_of_pos_of_lt_pi ?_ ?_ )
         · exact div_pos ( div_pos ( mul_pos ( by positivity ) ( div_pos ( sub_pos.mpr ( by linarith [ show ( R : ℝ ) ≥ 1 by exact_mod_cast hR.symm ▸ Nat.div_pos ( by linarith ) ( by norm_num ) ] ) ) ( by positivity ) ) ) ( by positivity ) ) ( by positivity )
         · rw [ div_div, div_lt_iff₀ ] <;> nlinarith only [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≤ ( P + 1 ) / 6 by exact_mod_cast hR.symm ▸ Nat.cast_div_le .. ]
-    · convert h_dirichlet ( 2 * Real.pi * ( 5 / 4 ) / P ) _ using 2 <;> ring
+    · convert h_dirichlet ( 2 * Real.pi * ( 5 / 4 ) / P ) _ using 2 <;> ring_nf
       exact ne_of_gt ( Real.sin_pos_of_pos_of_lt_pi ( by positivity ) ( by nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, mul_inv_cancel₀ ( by positivity : ( P : ℝ ) ≠ 0 ) ] ) )
   convert h_split using 1
-  rw [ h_simplify ] ; ring
+  rw [ h_simplify ] ; ring_nf
   rw [ mul_inv_cancel_right₀, mul_inv_cancel_right₀ ] <;> norm_num
   · ring
   · exact ne_of_gt ( Real.sin_pos_of_pos_of_lt_pi ( by positivity ) ( by nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, inv_mul_cancel₀ ( by positivity : ( P : ℝ ) ≠ 0 ) ] ) )
@@ -485,6 +497,7 @@ and both angles lie in `(0, π/2)`, so `sin((8R-5)π/(4P)) ≥ sin(5π/(4P))`. O
 (i.e. `P ∈ {5,7}`) is nontrivial, and there the bound follows from the Taylor `sin` bounds.
 -/
 set_option maxHeartbeats 4000000 in
+-- reason for change? we haven't tried to optimize yet, duh!
 theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6) :
     (Real.sqrt 2 / (2 * (P : ℝ))) * (1 / Real.sin ((8 * (R : ℝ) - 5) * Real.pi / (4 * P))
         - 1 / Real.sin (5 * Real.pi / (4 * P))) ≤ (0.12 : ℝ) := by
@@ -494,7 +507,7 @@ theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR :
       · exact le_trans ( by linarith [ Real.pi_pos ] ) ( div_nonneg ( by positivity ) ( by positivity ) )
       · rw [ div_le_iff₀ ] <;> nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≤ ( P + 1 ) / 6 by exact_mod_cast hR.symm ▸ Nat.cast_div_le .., mul_div_cancel₀ ( ( P + 1 : ℝ ) ) ( by norm_num : ( 6 : ℝ ) ≠ 0 ) ]
       · gcongr ; nlinarith [ Real.pi_pos, show ( R : ℝ ) ≥ 2 by norm_cast ]
-    refine' le_trans _ ( show 0 ≤ 0.12 by norm_num )
+    refine le_trans ?_ ( show 0 ≤ 0.12 by norm_num )
     exact mul_nonpos_of_nonneg_of_nonpos ( by positivity ) ( sub_nonpos_of_le <| one_div_le_one_div_of_le ( Real.sin_pos_of_pos_of_lt_pi ( by positivity ) <| by rw [ div_lt_iff₀ <| by positivity ] ; nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast ] ) h_sin_bound )
   · interval_cases _ : R <;> norm_num at *
     · omega
@@ -513,14 +526,14 @@ theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR :
       · -- Use the Taylor series bounds for sine to estimate the values.
         have h_sin_bounds : Real.sin (3 * Real.pi / 28) ≥ 3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96) ∧ Real.sin (5 * Real.pi / 28) ≤ 5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96) := by
           apply And.intro
-          · convert sin_taylor_ge _ _ _ using 1 <;> ring <;> norm_num [ Real.pi_pos ]
+          · convert sin_taylor_ge _ _ _ using 1 <;> ring_nf <;> norm_num [ Real.pi_pos ]
             linarith [ Real.pi_le_four ]
           · apply sin_taylor_le
             · positivity
             · linarith [ Real.pi_le_four ]
         -- Substitute the bounds into the expression.
         have h_subst : (Real.sqrt 2 / 14) * ((1 / (3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96)) - 1 / (5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96)))) ≤ 3 / 25 := by
-          rw [ div_sub_div, mul_div, div_le_iff₀ ] <;> ring <;> norm_num
+          rw [ div_sub_div, mul_div, div_le_iff₀ ] <;> ring_nf <;> norm_num
           · have h_pi_approx : Real.pi > 3.141592 ∧ Real.pi < 3.141593 := by
               grind +suggestions
             have h_sqrt2_approx : Real.sqrt 2 < 1.414214 := by
@@ -556,6 +569,7 @@ The arithmetic mean of the positive-root and negative-root evaluations at the qu
 `overshoot_closed_form_quarter`); the negative `1/sin(5π/(4P))` contributions add up and dominate.
 -/
 set_option maxHeartbeats 4000000 in
+-- reason for change? we haven't tried to optimize yet, duh!
 theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
     (Ypos Yneg : ℤ) (hpos : Ypos ≡ (R : ℤ) + 1 [ZMOD (P : ℤ)])
     (hneg : Yneg ≡ -(R : ℤ) + 1 [ZMOD (P : ℤ)]) :
@@ -578,11 +592,12 @@ theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
   by_cases hR_ge_2 : R ≥ 2
   · -- Since $R \geq 2$, we have $8R - 5 \geq 11$, so the angle of $\sin((8R-5)\pi/(4P))$ is $\geq$ that of $\sin(5\pi/(4P))$, both in $(0, \pi/2)$, giving $\sin((8R-5)\pi/(4P)) \geq \sin(5\pi/(4P))$.
     have h_sin_ge : Real.sin ((8 * R - 5) * Real.pi / (4 * P)) ≥ Real.sin (5 * Real.pi / (4 * P)) := by
-      rw [ ← Real.cos_pi_div_two_sub, ← Real.cos_pi_div_two_sub ] ; refine' Real.cos_le_cos_of_nonneg_of_le_pi _ _ _ <;> nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≥ 2 by norm_cast, mul_div_cancel₀ ( ( 8 * R - 5 ) * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), mul_div_cancel₀ ( 5 * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), show ( R : ℝ ) * 6 ≤ P + 1 by norm_cast; omega ]
+      rw [ ← Real.cos_pi_div_two_sub, ← Real.cos_pi_div_two_sub ]
+      refine Real.cos_le_cos_of_nonneg_of_le_pi ?_ ?_ ?_ <;> nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≥ 2 by norm_cast, mul_div_cancel₀ ( ( 8 * R - 5 ) * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), mul_div_cancel₀ ( 5 * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), show ( R : ℝ ) * 6 ≤ P + 1 by norm_cast; omega ]
     -- Therefore, $2 / \sin(5 \pi / (4P)) + 1 / \sin((8R + 5) \pi / (4P)) - 1 / \sin((8R - 5) \pi / (4P)) \geq 1 / \sin(5 \pi / (4P))$.
     have h_ineq : 2 / Real.sin (5 * Real.pi / (4 * P)) + 1 / Real.sin ((8 * R + 5) * Real.pi / (4 * P)) - 1 / Real.sin ((8 * R - 5) * Real.pi / (4 * P)) ≥ 1 / Real.sin (5 * Real.pi / (4 * P)) := by
       have h_pos : 0 < Real.sin (5 * Real.pi / (4 * P)) ∧ 0 < Real.sin ((8 * R + 5) * Real.pi / (4 * P)) ∧ 0 < Real.sin ((8 * R - 5) * Real.pi / (4 * P)) := by
-        refine' ⟨ Real.sin_pos_of_pos_of_lt_pi _ _, Real.sin_pos_of_pos_of_lt_pi _ _, Real.sin_pos_of_pos_of_lt_pi _ _ ⟩ <;> try positivity
+        refine ⟨ Real.sin_pos_of_pos_of_lt_pi ?_ ?_, Real.sin_pos_of_pos_of_lt_pi ?_ ?_, Real.sin_pos_of_pos_of_lt_pi ?_ ?_ ⟩ <;> try positivity
         · rw [ div_lt_iff₀ ] <;> nlinarith only [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast ]
         · rw [ div_lt_iff₀ ( by positivity ) ]
           rw [ mul_comm ] ; gcongr
@@ -606,7 +621,7 @@ theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
     · have : P ≤ 11 := Nat.le_of_lt_succ ( by omega ) ; interval_cases P <;> norm_num at *
       · rw [ show 5 * Real.pi / 20 = Real.pi / 4 by ring, show 13 * Real.pi / 20 = Real.pi - 7 * Real.pi / 20 by ring, show 3 * Real.pi / 20 = Real.pi / 4 - Real.pi / 10 by ring ] ; norm_num [ Real.sin_pi_sub, Real.sin_sub ] ; ring_nf ; norm_num
         rw [ show Real.pi * ( 7 / 20 ) = Real.pi / 2 - Real.pi * ( 3 / 20 ) by ring, Real.sin_pi_div_two_sub ] ; ring_nf ; norm_num
-        refine' le_add_of_le_of_nonneg _ _
+        refine le_add_of_le_of_nonneg ?_ ?_
         · field_simp
           rw [ add_div', div_mul_eq_mul_div, div_le_iff₀ ] <;> norm_num
           · -- We'll use that $\cos(\pi/10) \approx 0.9511$ and $\sin(\pi/10) \approx 0.3090$.
@@ -628,7 +643,7 @@ theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
       · -- Apply the Taylor bounds to each sine term.
         have h_sin_bounds : Real.sin (5 * Real.pi / 28) ≤ 5 * Real.pi / 28 - (5 * Real.pi / 28)^3 / 6 + (5 * Real.pi / 28)^4 * (5 / 96) ∧ Real.sin (3 * Real.pi / 28) ≥ 3 * Real.pi / 28 - (3 * Real.pi / 28)^3 / 6 - (3 * Real.pi / 28)^4 * (5 / 96) := by
           apply And.intro
-          · convert sin_taylor_le _ _ _ using 1 <;> ring <;> norm_num [ Real.pi_pos ]
+          · convert sin_taylor_le _ _ _ using 1 <;> ring_nf <;> norm_num [ Real.pi_pos ]
             linarith [ Real.pi_le_four ]
           · convert sin_taylor_ge ( 3 * Real.pi / 28 ) ( by positivity ) ( by linarith [ Real.pi_le_four ] ) using 1
         -- Substitute the Taylor bounds into the inequality.
