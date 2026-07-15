@@ -49,7 +49,7 @@ noncomputable def c_cont₀ (n : ℕ) : X₀ → ℝ :=
 /-- The reproducing degree of the continuous window: chosen large enough that every product of
 cosines appearing in the numerator/denominator quadratures has total (absolute) frequency at most
 `kernelDegree n`, so that the Dirichlet kernel reproduces it exactly. -/
-noncomputable def kernelDegree (n : ℕ) : ℕ := q n * (6 * w n + 1)
+noncomputable def kernelDegree (n : ℕ) : ℕ := q n * (8 * w n)
 
 /-- The continuous window function `Psi_cont`.
 
@@ -391,7 +391,7 @@ lemma basisCos_pair_freq_bound (n : ℕ) (S T : Finset (Fin (w n))) :
       _ = 3 * (w n * q n) := by ring
   have h1 := hbound S
   have h2 := hbound T
-  have hk : kernelDegree n = 6 * (w n * q n) + q n := by unfold kernelDegree; ring
+  have hk : kernelDegree n = 8 * (w n * q n) := by unfold kernelDegree; ring
   omega
 
 /-- **Key windowed quadrature (denominator).** The continuous integral of a product of two basis
@@ -672,7 +672,9 @@ theorem c_cont₀_basisCos_product_quadrature (n : ℕ) (S T : Finset (Fin (w n)
           (fun i => ((3 * (q n / p n i) : ℕ) : ℤ)) x).natAbs ≤ kernelDegree n := by
       have h1 := c_cont_term_natAbs_le n i k hk
       have h2 := basisCos_pair_freq_bound_tight n S T
-      have hk2 : kernelDegree n = 6 * (w n * q n) + q n := by unfold kernelDegree; ring
+      have hk2 : kernelDegree n = 8 * (w n * q n) := by unfold kernelDegree; ring
+      have hw : 1 ≤ w n := by have hi := i.isLt; omega
+      have hq : q n ≤ w n * q n := by nlinarith
       omega
     have he1 : (fun t : X₀ => Real.cos (2 * Real.pi * (k : ℝ) * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) *
           basisCos_cont n S t * basisCos_cont n T t * Psi_cont n t)

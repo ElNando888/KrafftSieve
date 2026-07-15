@@ -537,7 +537,8 @@ lemma weighted_finset_pigeonhole
     · exact fun x hx => le_of_lt ( hgold x hx )
     · by_cases hA : A = S
       · grind
-      · exact Exists.elim ( Finset.exists_of_ssubset ( lt_of_le_of_ne hAS hA ) ) fun x hx => ⟨ x, by aesop ⟩
+      · exact Exists.elim ( Finset.exists_of_ssubset ( lt_of_le_of_ne hAS hA ) ) fun x hx =>
+          ⟨ x, by aesop ⟩
   simp_all +decide [ Finset.card_sdiff ]
   rw [ Finset.inter_eq_left.mpr hAS ] at h_sum_bound
   rw [ Nat.cast_sub ( by linarith [ Finset.card_le_card hAS ] ) ] at h_sum_bound
@@ -632,22 +633,74 @@ lemma c_cont_0_valley_quarter (n : ℕ) (hn : 19 ≤ n) :
   exact (not_lt_of_ge htotal) hsum'
 
 /--
-For any CRT valley in the golden region, the reproducing window `Psi_cont`
-is strictly positive at the quarter-integer because the Dirichlet kernels transform into
-strictly positive cotangents.
-
-(Unproven; left as `sorry`.) `Psi_cont n` is `reproWindow (q n) (kernelDegree n) …`, i.e. a
-`(1/q)`-scaled sum of *shifted Dirichlet kernels* over the support of the discrete window `Psi n`.
-Dirichlet kernels are sign-oscillating, so positivity at the quarter-integer valley point is a
-genuine analytic fact (the windowed Dirichlet sum telescopes to a positive cotangent expression
-in the golden region). Formalizing this requires the exact `dirichletKernel` telescoping identity
-and is left for future work; it is used by `h_dip_unconditional` below.
+For any CRT valley in the golden region, the reproducing window `Psi_cont` is strictly positive
+at the quarter-integer. The reproducing degree is a multiple of `4 * q n`, so every shifted
+Dirichlet kernel in the window is exactly one at this offset.
 -/
 lemma Psi_cont_positive_quarter (n : ℕ) (hn : 19 ≤ n) (y_CRT : ℤ)
     (h_gt : (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3) < y_CRT) (h_lt : y_CRT < (q n : ℤ) - (6 * (n : ℤ) ^ 2 + 10 * (n : ℤ) + 3)) :
     0 < Psi_cont n ⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
       ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ := by
-  sorry
+  have hq : 0 < q n := NeZero.pos _
+  have hqR : (0 : ℝ) < q n := by exact_mod_cast hq
+  have hy0Z : (0 : ℤ) < y_CRT := by
+    have hn0 : (0 : ℤ) ≤ n := by positivity
+    nlinarith [h_gt]
+  have hy0 : (0 : ℝ) < (y_CRT : ℝ) + 0.25 := by
+    have : (0 : ℝ) < y_CRT := by exact_mod_cast hy0Z
+    linarith
+  have hyqZ : y_CRT + 1 ≤ (q n : ℤ) := by
+    have hn0 : (0 : ℤ) ≤ n := by positivity
+    nlinarith [h_lt]
+  have hyq : (y_CRT : ℝ) + 0.25 < q n := by
+    have : (y_CRT : ℝ) + 1 ≤ q n := by exact_mod_cast hyqZ
+    linarith
+  have hfloor : ⌊((y_CRT : ℝ) + 0.25) / (q n : ℝ)⌋ = 0 := by
+    rw [Int.floor_eq_zero_iff]
+    constructor
+    · positivity
+    · exact (div_lt_one hqR).2 hyq
+  let x : X₀ := ⟨((y_CRT : ℝ) + 0.25) / (q n : ℝ),
+    ⟨(div_nonneg hy0.le hqR.le), (div_lt_one hqR).2 hyq |>.le⟩⟩
+  have hx : (⟨(((y_CRT : ℝ) + 0.25) / (q n : ℝ)) -
+      ⌊(((y_CRT : ℝ) + 0.25) / (q n : ℝ))⌋,
+      ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩ : X₀) = x := by
+    apply Subtype.ext
+    simp [x, hfloor]
+  rw [hx]
+  unfold Psi_cont reproWindow
+  change 0 < (1 / (q n : ℝ)) * ∑ y ∈ Finset.range (q n),
+    Psi n (y : ZMod (q n)) * dirichletKernel (kernelDegree n)
+      (((y_CRT : ℝ) + 0.25) / (q n : ℝ) - (y : ℝ) / (q n : ℝ))
+  have hk : kernelDegree n = q n * (4 * (2 * w n)) := by
+    unfold kernelDegree
+    ring
+  rw [hk]
+  have hkern : ∀ y ∈ Finset.range (q n),
+      dirichletKernel (q n * (4 * (2 * w n)))
+        (((y_CRT : ℝ) + 0.25) / (q n : ℝ) - (y : ℝ) / (q n : ℝ)) = 1 := by
+    intro y _
+    convert dirichletKernel_quarter_grid_eq_one (q n) (2 * w n) hq (y_CRT - y) using 1
+    push_cast ; ring_nf
+  rw [Finset.sum_congr rfl (fun y hy => by rw [hkern y hy, mul_one])]
+  have hsum : 0 < ∑ y ∈ Finset.range (q n), Psi n (y : ZMod (q n)) := by
+    let y₀ := 6 * n ^ 2 + 10 * n + 3
+    have hy₀q : y₀ < q n := q_bound n (by omega)
+    have hy₀mem : y₀ ∈ Finset.range (q n) := Finset.mem_range.mpr hy₀q
+    have hy₀val : (y₀ : ZMod (q n)).val = y₀ := by
+      rw [ZMod.val_natCast, Nat.mod_eq_of_lt hy₀q]
+    have hterm : Psi n (y₀ : ZMod (q n)) = 1 := by
+      unfold Psi
+      rw [if_pos]
+      rw [hy₀val]
+      exact Finset.mem_Icc.mpr ⟨by omega, le_rfl⟩
+    refine Finset.sum_pos' ?_ ⟨y₀, hy₀mem, ?_⟩
+    · intro y _
+      unfold Psi
+      split_ifs <;> positivity
+    · rw [hterm]
+      norm_num
+  exact mul_pos (one_div_pos.mpr hqR) hsum
 
 /-- Every nonempty open subset of the unit interval `X₀` has positive volume. -/
 lemma volume_pos_of_isOpen_nonempty (s : Set X₀) (hs : IsOpen s) (hne : s.Nonempty) :
