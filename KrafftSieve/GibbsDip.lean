@@ -246,6 +246,98 @@ lemma w_ge_sqrt_of_ge_hundred (n : ℕ) (hn : 100 ≤ n) : Nat.sqrt n ≤ w n :=
     exact Nat.le_of_lt_succ <| by rw [ ← @Nat.cast_lt ℝ ] ; push_cast; linarith
   linarith [ w_eq_primeCounting_six_mul_add_one n ( by linarith ) ]
 
+lemma w_ge_three_sqrt_of_ge_64 (n : ℕ) (hn : 64 ≤ n) : 3 * Nat.sqrt n ≤ w n := by
+  have h_chebyshev : Nat.primeCounting (6 * n + 1) ≥ (6 * n + 1) * Real.log 2 / Real.log (6 * n + 1) - Real.log (6 * n + 2) / Real.log (6 * n + 1) := by
+    have h_chebyshev : ∀ m : ℕ, 2 ≤ m → (Nat.primeCounting m : ℝ) ≥ (m * Real.log 2 - Real.log (m + 1)) / Real.log m := by
+      intro m hm
+      have h_chebyshev : Real.log (Nat.choose m (m / 2)) ≤ (Nat.primeCounting m : ℝ) * Real.log m := by
+        have h_div : (∏ p ∈ Finset.filter Nat.Prime (Finset.range (m + 1)),
+            p ^ (Nat.factorization (Nat.choose m (m / 2)) p)) ≤ m ^ (Nat.primeCounting m) := by
+          refine le_trans ( Finset.prod_le_prod' fun p hp =>
+            Nat.pow_le_pow_right ( Nat.Prime.pos <| Finset.mem_filter.mp hp |>.2 ) <|
+            show Nat.factorization ( Nat.choose m ( m / 2 ) ) p ≤ Nat.log p m from ?_ ) ?_
+          · have := @Nat.factorization_choose_le_log p m ( m / 2 ) ; aesop
+          · refine le_trans ( Finset.prod_le_prod' fun p hp => Nat.pow_log_le_self p <|
+              by linarith [ Finset.mem_filter.mp hp ] ) ?_
+            norm_num [ Nat.primeCounting ]
+            rw [ Nat.primeCounting', Nat.count_eq_card_filter_range ]
+        have h_div : (Nat.choose m (m / 2) : ℝ) ≤ m ^ (Nat.primeCounting m) := by
+          refine mod_cast le_trans ?_ h_div
+          conv_lhs => rw [ ← Nat.prod_factorization_pow_eq_self
+            ( Nat.ne_of_gt ( Nat.choose_pos ( Nat.div_le_self m 2 ) ) ) ]
+          rw [ Finsupp.prod_of_support_subset ] <;> norm_num
+          intro p hp
+          simp_all +decide only [Nat.mem_primeFactors, ne_eq, Finset.mem_filter, Finset.mem_range,
+            Order.lt_add_one_iff, and_true]
+          exact hp.1.dvd_factorial.mp ( dvd_trans hp.2.1
+            ( Nat.choose_mul_factorial_mul_factorial
+              ( show m / 2 ≤ m from Nat.div_le_self _ _ ) ▸ dvd_mul_of_dvd_left ( dvd_mul_right _ _ ) _ ) )
+        simpa using Real.log_le_log
+          ( Nat.cast_pos.mpr <| Nat.choose_pos <| Nat.div_le_self _ _ ) h_div
+      have h_binom : (Nat.choose m (m / 2) : ℝ) ≥ (2 ^ m) / (m + 1) := by
+        rw [ ge_iff_le, div_le_iff₀ ] <;> norm_cast <;> try positivity
+        have := Nat.sum_range_choose m
+        exact this ▸ le_trans ( Finset.sum_le_sum fun _ _ => Nat.choose_le_middle _ _ )
+          ( by simp +decide [ mul_comm ] )
+      have := Real.log_le_log ( by positivity ) h_binom
+      rw [ Real.log_div ( by positivity ) ( by positivity ), Real.log_pow ] at this
+      rw [ ge_iff_le, div_le_iff₀ ( Real.log_pos <| by norm_cast ) ] ; linarith
+    convert h_chebyshev ( 6 * n + 1 ) ( by linarith ) using 1 ; push_cast ; ring_nf
+  have h_simplified : Nat.primeCounting (6 * n + 1) ≥ 3 * Nat.sqrt n + 3 := by
+    have h_log_ratio : Real.log (6 * n + 2) / Real.log (6 * n + 1) < 2 := by
+      rw [ div_lt_iff₀ ( Real.log_pos <| by norm_cast; linarith ) ]
+      erw [ ← Real.log_pow, Real.log_lt_log_iff ] <;> norm_cast <;> nlinarith
+    have h_log_bound : Real.log (6 * n + 1) < Real.sqrt (n) := by
+      rw [ Real.log_lt_iff_lt_exp ( by positivity ) ]
+      have h_exp_gt : Real.exp (Real.sqrt n) > 6 * n + 1 := by
+        have h_exp_gt : ∀ x : ℝ, 8 ≤ x → Real.exp x > 6 * x^2 + 1 := by
+          intro x hx; rw [ Real.exp_eq_exp_ℝ ] ; norm_num [ NormedSpace.exp_eq_tsum_div ]
+          refine lt_of_lt_of_le ?_ ( Summable.sum_le_tsum ( Finset.range 10 )
+            ( fun _ _ => by positivity ) ( by simpa using Real.summable_pow_div_factorial x ) )
+          norm_num [ Finset.sum_range_succ, Nat.factorial ]
+          nlinarith [ pow_pos ( by linarith : 0 < x ) 2, pow_pos ( by linarith : 0 < x ) 3,
+            pow_pos ( by linarith : 0 < x ) 4, pow_pos ( by linarith : 0 < x ) 5,
+            pow_pos ( by linarith : 0 < x ) 6, pow_pos ( by linarith : 0 < x ) 7,
+            pow_pos ( by linarith : 0 < x ) 8 ]
+        have hsq : Real.sqrt n ^ 2 = (n : ℝ) := Real.sq_sqrt (by positivity)
+        have := h_exp_gt (Real.sqrt n) (by exact Real.le_sqrt_of_sq_le <| mod_cast show 64 ≤ n from hn)
+        rwa [hsq] at this
+      exact h_exp_gt
+    have h_subst : (6 * n + 1) * Real.log 2 / Real.log (6 * n + 1) > 3 * Nat.sqrt n + 5 := by
+      rw [ gt_iff_lt, lt_div_iff₀ ( Real.log_pos <| by norm_cast; linarith ) ]
+      refine lt_of_lt_of_le ( mul_lt_mul_of_pos_left h_log_bound ( by positivity ) ) ?_
+      have := Real.log_two_gt_d9 ; norm_num at *
+      nlinarith only [ this, show ( n :ℝ ) ≥ 64 by norm_cast, Real.sqrt_nonneg n,
+        Real.sq_sqrt <| Nat.cast_nonneg n,
+        show ( Nat.sqrt n :ℝ ) ≤ Real.sqrt n by exact Real.le_sqrt_of_sq_le <| mod_cast Nat.sqrt_le' n,
+        pow_two_nonneg <| Real.sqrt n - 8 ]
+    exact Nat.le_of_lt_succ <| by rw [ ← @Nat.cast_lt ℝ ] ; push_cast; linarith
+  linarith [ w_eq_primeCounting_six_mul_add_one n ( by linarith ) ]
+
+lemma trap_exponential_dominates_from_64 (n : ℕ) (hn : 64 ≤ n) :
+    (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.01 * (2 ^ (3 * Nat.sqrt n) : ℝ) := by
+  set k : ℕ := Nat.sqrt n
+  have hk : 8 ≤ k := by
+    exact Nat.le_sqrt.2 ( by linarith )
+  have h_sub : (2 : ℝ) * (6 * ((k + 1) ^ 2) ^ 2 + 10 * ((k + 1) ^ 2) + 3) + 1 < 0.01 * 2 ^ (3 * k) := by
+    exact Nat.le_induction ( by norm_num ) ( fun k hk ih ↦ by
+      have h_pow : (2 : ℝ) ^ (3 * (k + 1)) = 8 * (2 : ℝ) ^ (3 * k) := by
+        rw [mul_add, mul_one, pow_add]
+        have h8 : (2 : ℝ) ^ 3 = 8 := by norm_num
+        rw [h8, mul_comm]
+      have h_poly : (2 : ℝ) * (6 * ((↑(k + 1) + 1) ^ 2) ^ 2 + 10 * ((↑(k + 1) + 1) ^ 2) + 3) + 1 ≤
+          8 * ((2 : ℝ) * (6 * ((↑k + 1) ^ 2) ^ 2 + 10 * ((↑k + 1) ^ 2) + 3) + 1) := by
+        have h1 : (2 : ℝ) * (6 * ((↑(k + 1) + 1) ^ 2) ^ 2 + 10 * ((↑(k + 1) + 1) ^ 2) + 3) + 1 = 12 * (k : ℝ)^4 + 96 * (k : ℝ)^3 + 308 * (k : ℝ)^2 + 464 * (k : ℝ) + 279 := by push_cast; ring
+        have h2 : 8 * ((2 : ℝ) * (6 * ((↑k + 1) ^ 2) ^ 2 + 10 * ((↑k + 1) ^ 2) + 3) + 1) = 96 * (k : ℝ)^4 + 384 * (k : ℝ)^3 + 736 * (k : ℝ)^2 + 704 * (k : ℝ) + 312 := by push_cast; ring
+        rw [h1, h2]
+        nlinarith [ ( by norm_cast : ( 8 :ℝ ) ≤ k ) ]
+      nlinarith [ ih, h_pow, h_poly ]
+    ) k hk
+  have hn_le : (n : ℝ) ≤ (k + 1) ^ 2 := by
+    have h1 := Nat.lt_succ_sqrt' n
+    exact_mod_cast h1.le
+  exact lt_of_le_of_lt (by nlinarith only [hn_le]) h_sub
+
 lemma trap_exponential_dominates_from_1024 (n : ℕ) (hn : 1024 ≤ n) :
     (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.01 * (2 ^ Nat.sqrt n : ℝ) := by
   -- Let $k = \sqrt{n}$. Then $k \geq 32$.
@@ -263,18 +355,21 @@ lemma trap_exponential_dominates_from_1024 (n : ℕ) (hn : 1024 ≤ n) :
   exact lt_of_le_of_lt (by nlinarith only [hn_le]) h_sub
 
 
+set_option maxRecDepth 2000 in
+set_option maxHeartbeats 1000000 in
+-- Needed to compute interval_cases for n ∈ [19, 63] with primeCounting
 /--
 For $n \ge 19$, the exponential growth of the solution space strictly dominates the polynomial
 capacity of the trap region.
 -/
 lemma trap_capacity_lt_exponential (n : ℕ) (hn : 19 ≤ n) :
     (2 * (6 * (n : ℝ) ^ 2 + 10 * (n : ℝ) + 3) + 1) < 0.01 * (2 ^ w n : ℝ) := by
-  by_cases hn1024 : n ≥ 1024
-  · convert trap_exponential_dominates_from_1024 n hn1024 |> lt_of_lt_of_le <| mul_le_mul_of_nonneg_left ( pow_le_pow_right₀ ( by norm_num : ( 1 : ℝ ) ≤ 2 ) <| show w n ≥ Nat.sqrt n from ?_ ) <| by norm_num using 1
-    exact w_ge_sqrt_of_ge_hundred n ( by linarith )
+  by_cases hn64 : n ≥ 64
+  · convert trap_exponential_dominates_from_64 n hn64 |> lt_of_lt_of_le <| mul_le_mul_of_nonneg_left ( pow_le_pow_right₀ ( by norm_num : ( 1 : ℝ ) ≤ 2 ) <| show w n ≥ 3 * Nat.sqrt n from ?_ ) <| by norm_num using 1
+    exact w_ge_three_sqrt_of_ge_64 n ( by linarith )
   · norm_num [ w ] at *
     field_simp
-    exact mod_cast by interval_cases n <;> native_decide
+    exact mod_cast by interval_cases n <;> decide
 
 lemma crt_map_int {m : ℕ} (a : Fin m → ℕ) (hcop : Pairwise (Nat.Coprime on a))
     (y : ℤ) (i : Fin m) :
