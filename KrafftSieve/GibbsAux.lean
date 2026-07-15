@@ -14,7 +14,14 @@ To cite Aristotle, tag @Aristotle-Harmonic on GitHub PRs/issues, and add as co-a
 Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 -/
 
-import Mathlib
+import Mathlib.Data.Rat.Cast.OfScientific
+import Mathlib.Data.Nat.ChineseRemainder
+import Mathlib.Tactic
+import Mathlib.Analysis.Real.Pi.Bounds
+import Mathlib.Algebra.Order.Star.Real
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Algebra.Order.Ring.Star
+import Mathlib.Data.Int.Star
 
 set_option linter.style.longLine false
 
@@ -365,7 +372,7 @@ theorem undershoot_bound_quarter (P R : ℕ) (hP5 : 5 ≤ P) (hR : R = (P + 1) /
 Let `P` be a prime `≥ 5`, `R = (P+1)/6`, and let `Y` be an integer with `Y ≡ R + 1 (mod P)`.
 The truncated symmetric cosine series (the Fourier partial sum of the local step function `g_i`),
 evaluated at the quarter-integer `Y + 1/4`, is at most `-0.1`. -/
-theorem undershoot_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
+public theorem undershoot_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
     (Y : ℤ) (hY : Y ≡ (R : ℤ) + 1 [ZMOD (P : ℤ)]) :
     ∑ k ∈ Finset.range ((P + 1) / 2),
         (if k = 0 then 2 / (P : ℝ)
@@ -618,7 +625,7 @@ theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR :
 Let `P` be a prime `≥ 5`, `R = (P+1)/6`, and let `Y` be an integer with `Y ≡ -R + 1 (mod P)`.
 The truncated symmetric cosine series, evaluated at the quarter-integer `Y + 1/4`, is at most
 `0.12`. -/
-theorem overshoot_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
+public theorem overshoot_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
     (Y : ℤ) (hY : Y ≡ -(R : ℤ) + 1 [ZMOD (P : ℤ)]) :
     ∑ k ∈ Finset.range ((P + 1) / 2),
         (if k = 0 then 2 / (P : ℝ)
@@ -634,7 +641,7 @@ The arithmetic mean of the positive-root and negative-root evaluations at the qu
 `≤ -0.04`. This uses the two closed forms (`undershoot_closed_form_quarter` and
 `overshoot_closed_form_quarter`); the negative `1/sin(5π/(4P))` contributions add up and dominate.
 -/
-theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
+public theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
     (Ypos Yneg : ℤ) (hpos : Ypos ≡ (R : ℤ) + 1 [ZMOD (P : ℤ)])
     (hneg : Yneg ≡ -(R : ℤ) + 1 [ZMOD (P : ℤ)]) :
     (1 / 2 : ℝ) * (

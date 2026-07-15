@@ -32,7 +32,7 @@ In a complete CRT period, fixing one coordinate of a family of two independent
 choices leaves exactly half of the Boolean choices.  This weighted form is the
 combinatorial summation identity needed by the Gibbs-dip expectation argument.
 -/
-public lemma crt_two_choices_coordinate_sum {m : ℕ} (a : Fin m → ℕ)
+lemma crt_two_choices_coordinate_sum {m : ℕ} (a : Fin m → ℕ)
     [NeZero (∏ i, a i)]
     (hcop : Pairwise (fun i j => Nat.Coprime (a i) (a j)))
     (u v : (i : Fin m) → ZMod (a i)) (hne : ∀ i, u i ≠ v i)
