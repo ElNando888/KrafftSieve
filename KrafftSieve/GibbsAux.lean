@@ -23,8 +23,6 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Algebra.Order.Ring.Star
 import Mathlib.Data.Int.Star
 
-set_option linter.style.longLine false
-
 /-!
 # Auxiliary self-contained lemmas for the Gibbs dip (`GibbsDip.lean`)
 

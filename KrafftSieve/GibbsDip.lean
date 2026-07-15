@@ -34,8 +34,6 @@ below `1.0`, entirely bypassing the discrete arithmetic barrier.
 The heavy self-contained analytic content lives in `KrafftSieve.GibbsAux`.
 -/
 
-set_option linter.style.longLine false
-
 namespace KrafftSieve
 
 open scoped unitInterval Function
