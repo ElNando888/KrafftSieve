@@ -16,6 +16,8 @@ Co-authored-by: Aristotle (Harmonic) <aristotle-harmonic@harmonic.fun>
 
 import KrafftSieve.Discretization
 import KrafftSieve.GibbsAux
+import KrafftSieve.CRTExpectation
+import KrafftSieve.LocalEval
 
 /-!
 # Lemma 5.1: The Unconditional Continuous Penalty Dip (`h_dip`)
@@ -156,19 +158,6 @@ lemma c_cont₀_ge (n : ℕ) (t : X₀) : -2 * (w n : ℝ) ≤ c_cont₀ n t := 
         g_coef n i k * Real.cos (2 * Real.pi * k * (t : ℝ) * (q n : ℝ) / (p n i : ℝ)) :=
         Finset.sum_le_sum (fun i _ => hinner i)
     _ = c_cont₀ n t := by simp only [c_cont₀]
-
-/--
-By the Chinese Remainder Theorem independence, the sum of the continuous penalty function evaluated
-at `y + 0.25` over all `2^{w(n)}` CRT roots factors exactly into the product of the expected values.
-Consequently, the total sum is bounded by `-0.04 * w(n) * 2^{w(n)}`.
--/
-lemma sum_c_cont_0_all_roots (n : ℕ) (hn : 4 ≤ n) :
-    let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
-               ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
-                                y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
-    ∑ y ∈ S, c_cont₀ n ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋, ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
-    ≤ -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) := by
-  sorry
 
 lemma w_eq_primeCounting_six_mul_add_one (n : ℕ) (hn : 1 ≤ n) : w n + 2 = Nat.primeCounting (6 * n + 1) := by
   rw [ Nat.primeCounting ]
@@ -357,6 +346,149 @@ lemma card_all_crt_roots (n : ℕ) :
       (fun i => by
         unfold krafftResidue
         exact krafft_residues_distinct (p n i) (p_prime n i) (p_ge_5 n i)))
+
+/-- The sum of one local interpolant over all simultaneous CRT sign choices is the
+half-sized fiber cardinality times its two residue values. -/
+lemma sum_local_over_all_crt_roots (n : ℕ) (i : Fin (w n)) :
+    let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+      ∀ j : Fin (w n), y ≡ (krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)] ∨
+        y ≡ -(krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)])
+    let E := fun y : ℤ => ∑ k ∈ Finset.range ((p n i + 1) / 2),
+      g_coef n i k * Real.cos (2 * Real.pi * k * ((y : ℝ) + 0.25) / (p n i : ℝ))
+    ∑ y ∈ S, E y = (2 ^ (w n - 1) : ℝ) *
+      (E ((krafftResidue n i : ℤ) + 1) + E (-(krafftResidue n i : ℤ) + 1)) := by
+  dsimp only
+  letI : NeZero (p n i) := ⟨p_ne_zero n i⟩
+  have hcop : Pairwise (fun j k : Fin (w n) => Nat.Coprime (p n j) (p n k)) := by
+    intro j k hjk
+    have hpne : p n j ≠ p n k := by
+      intro hp
+      have hnodup : (primesList n).Nodup := Finset.sort_nodup _ _
+      have hcast := List.nodup_iff_injective_get.mp hnodup hp
+      aesop
+    exact (Nat.coprime_primes (p_prime n j) (p_prime n k)).2 hpne
+  have hprod : (∏ j : Fin (w n), p n j) = q n := by
+    exact_mod_cast prod_p_eq_q n
+  letI : NeZero (∏ j : Fin (w n), p n j) :=
+    ⟨Finset.prod_ne_zero_iff.mpr (fun j _ => p_ne_zero n j)⟩
+  let E := fun y : ℤ => ∑ k ∈ Finset.range ((p n i + 1) / 2),
+    g_coef n i k * Real.cos (2 * Real.pi * k * ((y : ℝ) + 0.25) / (p n i : ℝ))
+  let F := fun z : ZMod (p n i) => E (z.val : ℤ)
+  have H := crt_two_choices_coordinate_sum (fun j : Fin (w n) => p n j) hcop
+    (fun j => (krafftResidue n j : ZMod (p n j)) + 1)
+    (fun j => -(krafftResidue n j : ZMod (p n j)) + 1)
+    (fun j => by
+      unfold krafftResidue
+      exact krafft_residues_distinct (p n j) (p_prime n j) (p_ge_5 n j)) i F
+  have hcastprod : (∏ j : Fin (w n), (p n j : ℤ)) = (q n : ℤ) := by
+    rw [← hprod]
+    push_cast
+    rfl
+  rw [hcastprod] at H
+  have hsum : ∑ y ∈ (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+      ∀ j : Fin (w n), y ≡ (krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)] ∨
+        y ≡ -(krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)]), E y =
+      ∑ y ∈ (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+      ∀ j : Fin (w n), y ≡ (krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)] ∨
+        y ≡ -(krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)]), F (y : ZMod (p n i)) := by
+    refine Finset.sum_congr rfl fun y hy => ?_
+    apply local_eval_eq_of_modEq
+    rw [← ZMod.intCast_eq_intCast_iff]
+    simp
+  rw [hsum]
+  have hfilters :
+      (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+        ∀ j : Fin (w n), y ≡ (krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)] ∨
+          y ≡ -(krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)]) =
+      (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+        ∀ j : Fin (w n), (y : ZMod (p n j)) = (krafftResidue n j : ZMod (p n j)) + 1 ∨
+          (y : ZMod (p n j)) = -(krafftResidue n j : ZMod (p n j)) + 1) := by
+    ext y
+    simp only [Finset.mem_filter, Finset.mem_Ico]
+    simp [← ZMod.intCast_eq_intCast_iff]
+  rw [hfilters]
+  rw [H]
+  congr 2
+  · apply local_eval_eq_of_modEq
+    rw [← ZMod.intCast_eq_intCast_iff]
+    simp
+  · apply local_eval_eq_of_modEq
+    rw [← ZMod.intCast_eq_intCast_iff]
+    simp
+
+/-- Each coordinate contributes at most `-0.04` times the full root-space cardinality. -/
+lemma sum_local_over_all_crt_roots_le (n : ℕ) (hn : 4 ≤ n) (i : Fin (w n)) :
+    let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+      ∀ j : Fin (w n), y ≡ (krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)] ∨
+        y ≡ -(krafftResidue n j : ℤ) + 1 [ZMOD (p n j : ℤ)])
+    let E := fun y : ℤ => ∑ k ∈ Finset.range ((p n i + 1) / 2),
+      g_coef n i k * Real.cos (2 * Real.pi * k * ((y : ℝ) + 0.25) / (p n i : ℝ))
+    ∑ y ∈ S, E y ≤ -0.04 * (2 ^ w n : ℝ) := by
+  dsimp only
+  rw [sum_local_over_all_crt_roots n i]
+  have hmean := g_i_expected_quarter n hn i
+    ((krafftResidue n i : ℤ) + 1) (-(krafftResidue n i : ℤ) + 1)
+    (Int.ModEq.refl _) (Int.ModEq.refl _)
+  have hw : 0 < w n := by
+    rw [w]
+    refine Finset.card_pos.mpr ⟨5, ?_⟩
+    simp only [primeWindow, Finset.mem_filter, Finset.mem_range]
+    constructor <;> norm_num
+    omega
+  have hpow : (2 ^ w n : ℝ) = 2 * (2 ^ (w n - 1) : ℝ) := by
+    have hw' : w n = (w n - 1) + 1 := by omega
+    conv_lhs => rw [hw']
+    rw [pow_succ]
+    ring
+  nlinarith [show (0 : ℝ) ≤ (2 ^ (w n - 1) : ℝ) by positivity]
+
+/--
+By the Chinese Remainder Theorem independence, the sum of the continuous penalty function evaluated
+at `y + 0.25` over all `2^{w(n)}` CRT roots factors exactly into the product of the expected values.
+Consequently, the total sum is bounded by `-0.04 * w(n) * 2^{w(n)}`.
+-/
+lemma sum_c_cont_0_all_roots (n : ℕ) (hn : 4 ≤ n) :
+    let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+               ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+                                y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
+    ∑ y ∈ S, c_cont₀ n ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) - ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋, ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩
+    ≤ -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) := by
+  dsimp only
+  let S := (Finset.Ico 0 (q n : ℤ)).filter (fun y =>
+    ∀ i : Fin (w n), y ≡ (krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)] ∨
+      y ≡ -(krafftResidue n i : ℤ) + 1 [ZMOD (p n i : ℤ)])
+  have hrewrite :
+      (∑ y ∈ S, c_cont₀ n
+        ⟨(((y : ℝ) + 0.25) / (q n : ℝ)) -
+          ⌊(((y : ℝ) + 0.25) / (q n : ℝ))⌋,
+          ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩⟩) =
+      ∑ i : Fin (w n), ∑ y ∈ S,
+        ∑ k ∈ Finset.range ((p n i + 1) / 2),
+          g_coef n i k * Real.cos
+            (2 * Real.pi * k * ((y : ℝ) + 0.25) / (p n i : ℝ)) := by
+    simp only [c_cont₀]
+    rw [Finset.sum_comm]
+    apply Finset.sum_congr rfl
+    intro i hi
+    apply Finset.sum_congr rfl
+    intro y hy
+    apply Finset.sum_congr rfl
+    intro k hk
+    congr 1
+    exact rootPt_local_cos n i y k
+  rw [hrewrite]
+  calc
+    (∑ i : Fin (w n), ∑ y ∈ S,
+        ∑ k ∈ Finset.range ((p n i + 1) / 2),
+          g_coef n i k * Real.cos
+            (2 * Real.pi * k * ((y : ℝ) + 0.25) / (p n i : ℝ)))
+        ≤ ∑ _i : Fin (w n), (-0.04 * (2 ^ w n : ℝ)) := by
+          apply Finset.sum_le_sum
+          intro i hi
+          simpa [S] using sum_local_over_all_crt_roots_le n hn i
+    _ = -0.04 * (w n : ℝ) * (2 ^ w n : ℝ) := by
+      rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+      ring
 
 lemma weighted_finset_pigeonhole
     (S A : Finset ℤ) (f : ℤ → ℝ) (W N : ℕ)
