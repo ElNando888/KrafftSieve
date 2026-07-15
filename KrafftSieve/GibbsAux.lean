@@ -124,10 +124,13 @@ theorem undershoot_closed_form (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
             rw [ ← Complex.ofReal_inj ] ; norm_num [ Complex.sin, Complex.cos ] ; ring_nf
             norm_num [ mul_assoc, ← Complex.exp_add ] ; ring_nf
         · norm_num [ Real.sin_eq_zero_iff ]
-          intro x hx; rw [ eq_div_iff ( by positivity ) ] at hx; replace hx := congr_arg ( fun y => y / Real.pi ) hx; ring_nf at hx; norm_num [ Real.pi_ne_zero ] at hx
+          intro x hx; rw [ eq_div_iff ( by positivity ) ] at hx
+          replace hx := congr_arg ( fun y => y / Real.pi ) hx
+          ring_nf at hx; norm_num [ Real.pi_ne_zero ] at hx
           norm_num [ mul_assoc, mul_comm Real.pi _, Real.pi_ne_zero ] at hx
           norm_cast at hx; have := congr_arg Even hx; norm_num [ parity_simps ] at this
-      convert h_dirichlet_simplified2 ( ( P - 1 ) / 2 ) using 2 ; rw [ Nat.cast_div ( show 2 ∣ P - 1 from even_iff_two_dvd.mp ( hP.even_sub_one <| by linarith ) ) ] <;> norm_num [ hP.pos ]
+      convert h_dirichlet_simplified2 ( ( P - 1 ) / 2 ) using 2
+      rw [ Nat.cast_div ( show 2 ∣ P - 1 from even_iff_two_dvd.mp ( hP.even_sub_one <| by linarith ) ) ] <;> norm_num [ hP.pos ]
     rw [ h_dirichlet, Finset.sum_add_distrib, h_dirichlet_simplified, h_dirichlet_simplified2 ]
     ring_nf
     norm_num [ hP.ne_zero, mul_assoc, mul_comm Real.pi ] ; ring_nf
@@ -201,7 +204,8 @@ theorem exists_crt {ι : Type*} [Fintype ι] (P : ι → ℕ) (A : ι → ℤ)
   have h_crt : ∃ k : ℕ, ∀ i, k ≡ (A i % (P i : ℤ)).toNat [MOD (P i : ℕ)] := by
     have := @Nat.chineseRemainderOfFinset
     specialize this ( fun i => ( A i % ( P i : ℤ ) |> Int.toNat ) ) ( fun i => P i ) Finset.univ ( fun i _ => hP i ) ( fun i _ j _ hij => hcop i j hij ) ; exact ⟨ this.1, fun i => this.2 i ( Finset.mem_univ i ) ⟩
-  obtain ⟨ k, hk ⟩ := h_crt; use k; intro i; specialize hk i; simp_all +decide [ ← Int.natCast_modEq_iff ]
+  obtain ⟨ k, hk ⟩ := h_crt; use k; intro i; specialize hk i
+  simp_all +decide [ ← Int.natCast_modEq_iff ]
   simp_all +decide [ Int.ModEq, Int.emod_nonneg _ ( Int.natCast_ne_zero.mpr ( hP i ) ) ]
 
 /-
@@ -285,7 +289,9 @@ theorem undershoot_closed_form_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P
             Int.add_modEq_left_iff, dvd_mul_right, Int.cast_add, Int.cast_one, Int.cast_mul,
             Int.cast_natCast, ite_mul, CharP.cast_eq_zero, mul_zero, zero_mul, zero_div,
             Real.cos_zero, mul_one, ne_eq, one_div, sum_range_succ, add_mul]
-          rw [ show ( ( _:ℝ ) + 1 - 2⁻¹ ) * θ = ( ( _:ℝ ) * θ ) + θ / 2 by ring ] ; rw [ show ( ( _:ℝ ) - 2⁻¹ ) * θ = ( ( _:ℝ ) * θ ) - θ / 2 by ring ] ; rw [ Real.sin_add, Real.sin_sub ] ; ring
+          rw [ show ( ( _:ℝ ) + 1 - 2⁻¹ ) * θ = ( ( _:ℝ ) * θ ) + θ / 2 by ring ]
+          rw [ show ( ( _:ℝ ) - 2⁻¹ ) * θ = ( ( _:ℝ ) * θ ) - θ / 2 by ring ]
+          rw [ Real.sin_add, Real.sin_sub ] ; ring
       convert h_dirichlet_sum ( ( P + 1 ) / 2 ) using 2 ; ring_nf
       rw [ Nat.cast_div ( show 2 ∣ 1 + P from even_iff_two_dvd.mp ( by simpa [ parity_simps ] using hP.eq_two_or_odd'.resolve_left ( by linarith ) ) ) ] <;> norm_num ; ring_nf
     rw [ Finset.sum_Ico_eq_sub _ ] <;> norm_num [ h_dirichlet_sum ]
@@ -336,7 +342,10 @@ theorem undershoot_bound_quarter (P R : ℕ) (hP5 : 5 ≤ P) (hR : R = (P + 1) /
   -- First, note that $b < \pi$ since $0 < \frac{(8R+5)\pi}{4P} < \pi$ for $P \geq 5$.
   have hb_lt_pi : (8 * R + 5) * Real.pi / (4 * P) < Real.pi := by
     rw [ div_lt_iff₀ ( by positivity ) ]
-    nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≤ ( P + 1 ) / 6 by rw [ le_div_iff₀ ] <;> norm_cast ; linarith [ Nat.div_mul_le_self ( P + 1 ) 6 ] ]
+    nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast,
+                show ( R : ℝ ) ≤ ( P + 1 ) / 6 by
+                  rw [ le_div_iff₀ ] <;> norm_cast
+                  linarith [ Nat.div_mul_le_self ( P + 1 ) 6 ] ]
   -- Next, show that $1/\sin b \geq 0$.
   have hb_pos : 0 < Real.sin ((8 * R + 5) * Real.pi / (4 * P)) := by
     exact Real.sin_pos_of_pos_of_lt_pi ( by positivity ) hb_lt_pi
@@ -382,8 +391,10 @@ theorem sum_valley_quarter {ι : Type*} [Fintype ι] (P : ι → ℕ) (Q : ℕ) 
     intro i
     convert hunder i using 3
     rw [Int.fract]
-    convert Real.cos_periodic.int_mul ( -⌊ ( Y + 0.25 : ℝ ) / Q⌋ * ‹ℕ› * ( Q / P i ) ) _ using 2 ; push_cast ; ring_nf
-    rw [ Int.cast_div ( mod_cast hdvd i ) ( by norm_cast; linarith [ Nat.pos_of_dvd_of_pos ( hdvd i ) hQ ] ) ] ; norm_num [ hQ.ne' ] ; ring
+    convert Real.cos_periodic.int_mul ( -⌊ ( Y + 0.25 : ℝ ) / Q⌋ * ‹ℕ› * ( Q / P i ) ) _ using 2
+    push_cast ; ring_nf
+    rw [ Int.cast_div ( mod_cast hdvd i ) ( by norm_cast; linarith [ Nat.pos_of_dvd_of_pos ( hdvd i ) hQ ] ) ]
+    norm_num [ hQ.ne' ] ; ring
   simpa [ mul_comm ] using Finset.sum_le_sum fun i ( hi : i ∈ Finset.univ ) => h_ineq i
 
 /-!
@@ -496,8 +507,6 @@ theorem overshoot_closed_form_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P)
 and both angles lie in `(0, π/2)`, so `sin((8R-5)π/(4P)) ≥ sin(5π/(4P))`. Only `R = 1`
 (i.e. `P ∈ {5,7}`) is nontrivial, and there the bound follows from the Taylor `sin` bounds.
 -/
-set_option maxHeartbeats 4000000 in
--- reason for change? we haven't tried to optimize yet, duh!
 theorem overshoot_bound_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6) :
     (Real.sqrt 2 / (2 * (P : ℝ))) * (1 / Real.sin ((8 * (R : ℝ) - 5) * Real.pi / (4 * P))
         - 1 / Real.sin (5 * Real.pi / (4 * P))) ≤ (0.12 : ℝ) := by
@@ -568,8 +577,6 @@ The arithmetic mean of the positive-root and negative-root evaluations at the qu
 `≤ -0.04`. This uses the two closed forms (`undershoot_closed_form_quarter` and
 `overshoot_closed_form_quarter`); the negative `1/sin(5π/(4P))` contributions add up and dominate.
 -/
-set_option maxHeartbeats 4000000 in
--- reason for change? we haven't tried to optimize yet, duh!
 theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : R = (P + 1) / 6)
     (Ypos Yneg : ℤ) (hpos : Ypos ≡ (R : ℤ) + 1 [ZMOD (P : ℤ)])
     (hneg : Yneg ≡ -(R : ℤ) + 1 [ZMOD (P : ℤ)]) :
@@ -583,18 +590,23 @@ theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
           else if k ≤ (P - 1) / 2 then 4 / (P : ℝ) * Real.cos (2 * Real.pi * k * (R : ℝ) / (P : ℝ))
           else 0) * Real.cos (2 * Real.pi * k * ((Yneg : ℝ) + 0.25) / (P : ℝ)))
     ) ≤ -(0.04 : ℝ) := by
-  -- After the rewrites the goal becomes `(1/2) * (-(√2/(2P))*(1/s1 + 1/s2) + (√2/(2P))*(1/s3 - 1/s1)) ≤ -0.04`, i.e. equivalently `(√2/(4P)) * (2/s1 + 1/s2 - 1/s3) ≥ 0.04`.
+  -- After the rewrites the goal becomes
+  -- `(1/2) * (-(√2/(2P))*(1/s1 + 1/s2) + (√2/(2P))*(1/s3 - 1/s1)) ≤ -0.04`, i.e. equivalently
+  -- `(√2/(4P)) * (2/s1 + 1/s2 - 1/s3) ≥ 0.04`.
   suffices h_suff : (Real.sqrt 2 / (4 * (P : ℝ))) * (2 / Real.sin (5 * Real.pi / (4 * P)) + 1 / Real.sin ((8 * R + 5) * Real.pi / (4 * P)) - 1 / Real.sin ((8 * R - 5) * Real.pi / (4 * P))) ≥ 0.04 by
     rw [undershoot_closed_form_quarter P R hP hP5 hR Ypos hpos,
         overshoot_closed_form_quarter P R hP hP5 hR Yneg hneg]
     refine le_trans (le_of_eq ?_) (neg_le_neg h_suff)
     ring
   by_cases hR_ge_2 : R ≥ 2
-  · -- Since $R \geq 2$, we have $8R - 5 \geq 11$, so the angle of $\sin((8R-5)\pi/(4P))$ is $\geq$ that of $\sin(5\pi/(4P))$, both in $(0, \pi/2)$, giving $\sin((8R-5)\pi/(4P)) \geq \sin(5\pi/(4P))$.
+  · -- Since $R \geq 2$, we have $8R - 5 \geq 11$, so the angle of $\sin((8R-5)\pi/(4P))$ is $\geq$
+    -- that of $\sin(5\pi/(4P))$, both in $(0, \pi/2)$, giving
+    -- $\sin((8R-5)\pi/(4P)) \geq \sin(5\pi/(4P))$.
     have h_sin_ge : Real.sin ((8 * R - 5) * Real.pi / (4 * P)) ≥ Real.sin (5 * Real.pi / (4 * P)) := by
       rw [ ← Real.cos_pi_div_two_sub, ← Real.cos_pi_div_two_sub ]
       refine Real.cos_le_cos_of_nonneg_of_le_pi ?_ ?_ ?_ <;> nlinarith [ Real.pi_pos, show ( P : ℝ ) ≥ 5 by norm_cast, show ( R : ℝ ) ≥ 2 by norm_cast, mul_div_cancel₀ ( ( 8 * R - 5 ) * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), mul_div_cancel₀ ( 5 * Real.pi ) ( by positivity : ( 4 * P : ℝ ) ≠ 0 ), show ( R : ℝ ) * 6 ≤ P + 1 by norm_cast; omega ]
-    -- Therefore, $2 / \sin(5 \pi / (4P)) + 1 / \sin((8R + 5) \pi / (4P)) - 1 / \sin((8R - 5) \pi / (4P)) \geq 1 / \sin(5 \pi / (4P))$.
+    -- Therefore, $2 / \sin(5 \pi / (4P)) + 1 / \sin((8R + 5) \pi / (4P))
+    -- - 1 / \sin((8R - 5) \pi / (4P)) \geq 1 / \sin(5 \pi / (4P))$.
     have h_ineq : 2 / Real.sin (5 * Real.pi / (4 * P)) + 1 / Real.sin ((8 * R + 5) * Real.pi / (4 * P)) - 1 / Real.sin ((8 * R - 5) * Real.pi / (4 * P)) ≥ 1 / Real.sin (5 * Real.pi / (4 * P)) := by
       have h_pos : 0 < Real.sin (5 * Real.pi / (4 * P)) ∧ 0 < Real.sin ((8 * R + 5) * Real.pi / (4 * P)) ∧ 0 < Real.sin ((8 * R - 5) * Real.pi / (4 * P)) := by
         refine ⟨ Real.sin_pos_of_pos_of_lt_pi ?_ ?_, Real.sin_pos_of_pos_of_lt_pi ?_ ?_, Real.sin_pos_of_pos_of_lt_pi ?_ ?_ ⟩ <;> try positivity
@@ -627,7 +639,8 @@ theorem expected_value_quarter (P R : ℕ) (hP : P.Prime) (hP5 : 5 ≤ P) (hR : 
           · -- We'll use that $\cos(\pi/10) \approx 0.9511$ and $\sin(\pi/10) \approx 0.3090$.
             have h_cos_sin : Real.cos (Real.pi / 10) > 0.95 ∧ Real.sin (Real.pi / 10) < 0.31 := by
               constructor
-              · -- Using the double-angle identity, we have $\cos(\pi/10) = \sqrt{\frac{1 + \cos(\pi/5)}{2}}$.
+              · -- Using the double-angle identity, we have
+                -- $\cos(\pi/10) = \sqrt{\frac{1 + \cos(\pi/5)}{2}}$.
                 have h_cos_double_angle : Real.cos (Real.pi / 10) = Real.sqrt ((1 + Real.cos (Real.pi / 5)) / 2) := by
                   rw [ Real.cos_eq_sqrt_one_sub_sin_sq, Real.sin_sq, Real.cos_sq ] <;> ring_nf <;> linarith [ Real.pi_pos ]
                 rw [ h_cos_double_angle, gt_iff_lt, Real.lt_sqrt ] <;> norm_num
