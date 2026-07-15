@@ -35,7 +35,8 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
     (hf : ∀ i x, f i (x + p n i) = f i x) :
     ∑ x ∈ Finset.range (q n), ∏ i : Fin (w n), f i x =
       ∏ i : Fin (w n), ∑ y ∈ Finset.range (p n i), f i y := by
-  have h_crt : ∑ x ∈ Finset.range (∏ i : Fin (w n), p n i), ∏ i : Fin (w n), f i x = ∏ i : Fin (w n), ∑ y ∈ Finset.range (p n i), f i y := by
+  have h_crt : ∑ x ∈ Finset.range (∏ i : Fin (w n), p n i),
+      ∏ i : Fin (w n), f i x = ∏ i : Fin (w n), ∑ y ∈ Finset.range (p n i), f i y := by
     have h_coprime : ∀ i j : Fin (w n), i ≠ j → Nat.Coprime (p n i) (p n j) := by
       intros i j hij
       have h_prime : Nat.Prime (p n i) ∧ Nat.Prime (p n j) := by
@@ -47,17 +48,25 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
       exact Nat.coprime_primes h_prime.left h_prime.right |>.2 h_distinct
     -- By the Chinese Remainder Theorem, there is a bijection between the elements of the range of
     -- $q_n$ and the elements of the product of the ranges of $p_n i$.
-    have h_crt_bij : ∃ g : (Fin (w n) → ℕ) → ℕ, ∀ x : (Fin (w n) → ℕ), (∀ i, x i < p n i) → g x < ∏ i, p n i ∧ ∀ i, g x % p n i = x i := by
-      have h_crt_bij : ∀ x : Fin (w n) → ℕ, (∀ i, x i < p n i) → ∃ y, y < ∏ i, p n i ∧ ∀ i, y % p n i = x i := by
+    have h_crt_bij : ∃ g : (Fin (w n) → ℕ) → ℕ,
+        ∀ x : (Fin (w n) → ℕ), (∀ i, x i < p n i) → g x < ∏ i, p n i ∧ ∀ i, g x % p n i = x i := by
+      have h_crt_bij : ∀ x : Fin (w n) → ℕ,
+          (∀ i, x i < p n i) → ∃ y, y < ∏ i, p n i ∧ ∀ i, y % p n i = x i := by
         intro x hx
         have h_crt : ∃ y, ∀ i, y ≡ x i [MOD p n i] := by
-          have h_crt : ∀ i : Fin (w n), ∃ y, y ≡ x i [MOD p n i] ∧ ∀ j : Fin (w n), j ≠ i → y ≡ 0 [MOD p n j] := by
+          have h_crt : ∀ i : Fin (w n), ∃ y, y ≡ x i [MOD p n i] ∧
+                       ∀ j : Fin (w n), j ≠ i → y ≡ 0 [MOD p n j] := by
             intro i
-            obtain ⟨y, hy⟩ : ∃ y, y ≡ 1 [MOD p n i] ∧ y ≡ 0 [MOD (∏ j ∈ Finset.univ.erase i, p n j)] := by
-              have := Nat.chineseRemainder ( show Nat.Coprime ( p n i ) ( ∏ j ∈ Finset.univ.erase i, p n j ) from Nat.Coprime.prod_right fun j hj => h_coprime i j <| by aesop )
+            obtain ⟨y, hy⟩ : ∃ y, y ≡ 1 [MOD p n i] ∧
+                                  y ≡ 0 [MOD (∏ j ∈ Finset.univ.erase i, p n j)] := by
+              have := Nat.chineseRemainder ( show
+                Nat.Coprime ( p n i ) ( ∏ j ∈ Finset.univ.erase i, p n j ) from
+                Nat.Coprime.prod_right fun j hj => h_coprime i j <| by aesop )
               exact ⟨ _, this 1 0 |>.2 ⟩
             use y * x i
-            exact ⟨ by simpa using hy.1.mul_right _, fun j hj => Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩
+            exact ⟨ by simpa using hy.1.mul_right _, fun j hj =>
+              Nat.modEq_zero_iff_dvd.mpr <| dvd_mul_of_dvd_left
+              ( Nat.dvd_of_mod_eq_zero <| hy.2.of_dvd <| Finset.dvd_prod_of_mem _ <| by aesop ) _ ⟩
           choose y hy₁ hy₂ using h_crt
           use ∑ i, y i
           intro i
@@ -78,9 +87,11 @@ theorem crt_product_sum_factorization (n : ℕ) (f : Fin (w n) → ℕ → ℝ)
         rw [Nat.mod_mod_of_dvd y h_div]
         have hyi := hy i
         rwa [Nat.ModEq, Nat.mod_eq_of_lt (hx i)] at hyi
-      exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0, fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩
+      exact ⟨ fun x => if hx : ∀ i, x i < p n i then Classical.choose ( h_crt_bij x hx ) else 0,
+        fun x hx => by simpa [ hx ] using Classical.choose_spec ( h_crt_bij x hx ) ⟩
     obtain ⟨g, hg⟩ := h_crt_bij
-    have h_crt_bij : Finset.image g (Finset.Iic (fun i => p n i - 1)) = Finset.range (∏ i, p n i) := by
+    have h_crt_bij : Finset.image g (Finset.Iic (fun i => p n i - 1)) =
+                     Finset.range (∏ i, p n i) := by
       refine Finset.eq_of_subset_of_card_le ( Finset.image_subset_iff.mpr ?_ ) ?_
       · exact fun x hx => Finset.mem_range.mpr ( hg x ( fun i =>
           Nat.lt_of_le_of_lt ( Finset.mem_Iic.mp hx i )

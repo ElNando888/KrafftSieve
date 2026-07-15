@@ -118,24 +118,33 @@ full grid periods is exactly one.
 lemma dirichletKernel_quarter_grid_eq_one (N L : ℕ) (hN : 0 < N) (z : ℤ) :
     dirichletKernel (N * (4 * L)) (((z : ℝ) + 0.25) / (N : ℝ)) = 1 := by
   -- The sum of the cosines is zero because it is a full period of the cosine function.
-  have h_sum_zero : ∑ k ∈ Finset.range (N * (4 * L)), Real.cos (2 * Real.pi * (↑k + 1) * ((↑z + 0.25) / ↑N)) = 0 := by
-    have h_cos_sum_zero : ∀ k : ℕ, ∑ j ∈ Finset.range (4 * N), Real.cos (2 * Real.pi * (k * 4 * N + j + 1) * ((z + 0.25) / N)) = 0 := by
+  have h_sum_zero : ∑ k ∈ Finset.range (N * (4 * L)),
+      Real.cos (2 * Real.pi * (↑k + 1) * ((↑z + 0.25) / ↑N)) = 0 := by
+    have h_cos_sum_zero : ∀ k : ℕ, ∑ j ∈ Finset.range (4 * N),
+        Real.cos (2 * Real.pi * (k * 4 * N + j + 1) * ((z + 0.25) / N)) = 0 := by
       intro k
-      have h_cos_sum_zero : ∑ j ∈ Finset.range (4 * N), Real.cos (2 * Real.pi * (j + 1) * ((z + 0.25) / N)) = 0 := by
+      have h_cos_sum_zero : ∑ j ∈ Finset.range (4 * N),
+          Real.cos (2 * Real.pi * (j + 1) * ((z + 0.25) / N)) = 0 := by
         -- We can pair each cosine term with its negative counterpart, resulting in a sum of zero.
-        have h_pair : ∀ j ∈ Finset.range (2 * N), Real.cos (2 * Real.pi * (j + 1) * ((z + 0.25) / N)) + Real.cos (2 * Real.pi * (j + 1 + 2 * N) * ((z + 0.25) / N)) = 0 := by
-          intro j hj; rw [ add_eq_zero_iff_eq_neg ] ; rw [ ← Real.cos_sub_pi ] ; ring_nf; norm_num [ hN.ne' ] ;
-          convert Real.cos_periodic.int_mul ( -z * 2 ) _ using 2 ; push_cast ; ring;
-        rw [ show 4 * N = 2 * N + 2 * N by ring, Finset.sum_range_add ];
-        rw [ ← Finset.sum_add_distrib ] ; exact Finset.sum_eq_zero fun x hx => by convert h_pair x hx using 1 ; push_cast ; ring;
-      convert h_cos_sum_zero using 2 ; ring;
-      convert Real.cos_periodic.int_mul ( k * z * 4 + k * 1 ) _ using 2 ; push_cast ; ring;
-      simpa [ hN.ne', mul_assoc, mul_comm, mul_left_comm ] using by ring;
-    induction' L with L ih;
-    · norm_num;
-    · rw [ show N * ( 4 * ( L + 1 ) ) = N * ( 4 * L ) + 4 * N by ring, Finset.sum_range_add ];
-      simp_all +decide [ add_assoc, mul_assoc, mul_comm, mul_left_comm ];
-  unfold dirichletKernel;
+        have h_pair : ∀ j ∈ Finset.range (2 * N),
+            Real.cos (2 * Real.pi * (j + 1) * ((z + 0.25) / N)) +
+            Real.cos (2 * Real.pi * (j + 1 + 2 * N) * ((z + 0.25) / N)) = 0 := by
+          intro j hj; rw [ add_eq_zero_iff_eq_neg ] ; rw [ ← Real.cos_sub_pi ] ; ring_nf
+          norm_num [ hN.ne' ]
+          convert Real.cos_periodic.int_mul ( -z * 2 ) _ using 2 ; push_cast ; ring
+        rw [ show 4 * N = 2 * N + 2 * N by ring, Finset.sum_range_add ]
+        rw [ ← Finset.sum_add_distrib ] ; exact Finset.sum_eq_zero fun x hx => by
+          convert h_pair x hx using 1 ; push_cast ; ring_nf
+      convert h_cos_sum_zero using 2 ; ring_nf
+      convert Real.cos_periodic.int_mul ( k * z * 4 + k * 1 ) _ using 2 ; push_cast ; ring_nf
+      simpa [ hN.ne', mul_assoc, mul_comm, mul_left_comm ] using by ring
+    induction L with
+    | zero =>
+      norm_num
+    | succ L ih =>
+      rw [ show N * ( 4 * ( L + 1 ) ) = N * ( 4 * L ) + 4 * N by ring, Finset.sum_range_add ]
+      simp_all +decide [ add_assoc, mul_assoc, mul_comm, mul_left_comm ]
+  unfold dirichletKernel
   erw [ Finset.sum_Ico_eq_sum_range ] ; norm_num [ add_comm, mul_comm ] at * ; linarith
 
 /-- The Dirichlet kernel is continuous in its argument. -/
