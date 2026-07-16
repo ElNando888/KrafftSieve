@@ -81,12 +81,23 @@ lemma crt_two_choices_coordinate_sum {m : ℕ} (a : Fin m → ℕ)
         specialize hg j ( fun j => if b j = true then v j else u j ) ; aesop ⟩
   -- By definition of $S$, we know that every element in $S$ is of the form $g(b)$ for some
   -- $b : (j : Fin m) → Bool$. Therefore, we can rewrite the sum as:
-  have h_sum : ∑ y ∈ Finset.filter (fun y : ℕ => ∀ j, (y : ZMod (a j)) = u j ∨ (y : ZMod (a j)) = v j) (Finset.Ico 0 (∏ j, (a j))), f (y : ZMod (a i)) = ∑ b : (j : Fin m) → Bool, f (if b i then v i else u i) := by
-    rw [ show ( Finset.filter ( fun y : ℕ => ∀ j : Fin m, ( y : ZMod ( a j ) ) = u j ∨ ( y : ZMod ( a j ) ) = v j ) ( Finset.Ico 0 ( ∏ j : Fin m, a j ) ) ) = Finset.image ( fun b : ( j : Fin m ) → Bool => ( g fun j => if b j = true then v j else u j ).val ) Finset.univ from ?_ ]
+  have h_sum : ∑ y ∈ Finset.filter
+        (fun y : ℕ => ∀ j, (y : ZMod (a j)) = u j ∨ (y : ZMod (a j)) = v j)
+        (Finset.Ico 0 (∏ j, (a j))),
+      f (y : ZMod (a i)) = ∑ b : (j : Fin m) → Bool,
+      f (if b i then v i else u i) := by
+    rw [ show ( Finset.filter
+        ( fun y : ℕ => ∀ j : Fin m, ( y : ZMod ( a j ) ) = u j ∨ ( y : ZMod ( a j ) ) = v j )
+        ( Finset.Ico 0 ( ∏ j : Fin m, a j ) ) ) = Finset.image
+      ( fun b : ( j : Fin m ) → Bool => ( g fun j => if b j = true then v j else u j ).val )
+        Finset.univ from ?_ ]
     · rw [ Finset.sum_image ]
-      · exact Finset.sum_congr rfl fun x hx => by specialize hg i ( fun j => if x j = true then v j else u j ) ; aesop
-      · intro b hb b' hb' h; have := hg i ( fun j => if b j then v j else u j ) ; have := hg i ( fun j => if b' j then v j else u j ) ; simp_all +decide [ funext_iff ]
-        have := g.injective ( show g ( fun k => if b k then v k else u k ) = g ( fun k => if b' k then v k else u k ) from by
+      · exact Finset.sum_congr rfl fun x hx => by
+          specialize hg i ( fun j => if x j = true then v j else u j ) ; aesop
+      · intro b hb b' hb' h; have := hg i ( fun j => if b j then v j else u j )
+        have := hg i ( fun j => if b' j then v j else u j ) ; simp_all +decide [ funext_iff ]
+        have := g.injective ( show g ( fun k => if b k then v k else u k ) =
+                                   g ( fun k => if b' k then v k else u k ) from by
                                 exact ZMod.val_injective _ h ) ; simp_all +decide [ funext_iff ]
         grind
     · aesop
@@ -108,13 +119,15 @@ lemma crt_two_choices_coordinate_sum {m : ℕ} (a : Fin m → ℕ)
       rw [ ← Finset.sum_add_distrib ] ; congr ; ext b ; split_ifs <;> ring
     -- Let's simplify the sum
     have h_sum_indicator : ∑ b : (j : Fin m) → Bool, (if b i then 1 else 0) = 2 ^ (m - 1) := by
-      have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) =
-          Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) / 2 := by
-        have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) =
-            Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) := by
+      have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true)
+          Finset.univ) = Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) / 2 := by
+        have h_sum_indicator : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true)
+            Finset.univ) = Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false)
+              Finset.univ) := by
           rw [ Finset.card_filter, Finset.card_filter ]
           rw [ ← Equiv.sum_comp ( Equiv.addRight ( Pi.single i true ) ) ] ; aesop
-        have h_sum_indicator2 : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = true) Finset.univ) +
+        have h_sum_indicator2 : Finset.card (Finset.filter (fun b : (j : Fin m) → Bool =>
+            b i = true) Finset.univ) +
             Finset.card (Finset.filter (fun b : (j : Fin m) → Bool => b i = false) Finset.univ) =
             Finset.card (Finset.univ : Finset ((j : Fin m) → Bool)) := by
           rw [ Finset.card_filter, Finset.card_filter ]
