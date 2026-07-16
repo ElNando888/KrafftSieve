@@ -49,5 +49,3 @@ Running Lean default kernel on solution.
 Lean default kernel accepts the solution
 Your solution is okay!
 ```
-
-Update (07/07/2026): The comparator setup is probably out of sync with the rest of the repo, as we have been advancing with the code. We will fix it when we are done closing all the sorry-ed stubs (5 left as of this writing).
