@@ -942,4 +942,14 @@ theorem krafft_quadrature_holds (n : ℕ) (h : H₀ n)
     le_trans hstep (le_trans hsieve (le_trans hSc_le_Scc hnum_le))
   nlinarith [hbig]
 
+/-- Bridge from the concrete exact quadrature development to the abstract
+`h_quadrature` hypothesis used by `MainTheorem`. -/
+theorem H₀_quadrature_bridge : ∀ n (h : H₀ n),
+    (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) > 0 →
+      muMin n ≤ continuousRatio μ₀ (c_cont₀ n) (Psi_cont n) (coeCLM₀ n h) +
+        (numerator_error n + muMin n * denominator_error n) * ‖coeCLM₀ n h‖ ^ 2 /
+          (∫ x, ((coeCLM₀ n h : X₀ → ℝ) x) ^ 2 * Psi_cont n x ∂μ₀) := by
+  intro n h hn
+  exact krafft_quadrature_holds n h hn
+
 end KrafftSieve
