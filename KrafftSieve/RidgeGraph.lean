@@ -80,6 +80,79 @@ by the ridge threshold. -/
 theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n))))) :
     testMass n C ≥ (C.card : ℝ) * (C.card - 1 : ℝ) * (ridgeThreshold n) := by
+  have h_split : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T = massMatrixEntry n S S + ∑ T ∈ C \ {S}, massMatrixEntry n S T := by
+    intro S hS
+    have h_sub : {S} ⊆ C := Finset.singleton_subset_iff.mpr hS
+    have h_eq := Finset.sum_sdiff (f := fun T => massMatrixEntry n S T) h_sub
+    rw [Finset.sum_singleton] at h_eq
+    linarith
+
+  have h_diag : ∀ S ∈ C, massMatrixEntry n S S ≥ 0 := by
+    intro S _
+    unfold massMatrixEntry
+    refine Finset.sum_nonneg fun x _ => ?_
+    nlinarith
+
+  have h_offdiag : ∀ S ∈ C, ∀ T ∈ C \ {S}, massMatrixEntry n S T > ridgeThreshold n := by
+    intro S hS T hT
+    have h_sdiff := Finset.mem_sdiff.mp hT
+    have hT_C : T ∈ C := h_sdiff.1
+    have h_neq : S ≠ T := by
+      intro h_eq
+      have h_mem : T ∈ ({S} : Finset (Finset (Fin (w n)))) := by rw [h_eq]; exact Finset.mem_singleton_self T
+      exact h_sdiff.2 h_mem
+    have h_adj : (ridgeGraph n).Adj S T := h_clique hS hT_C h_neq
+    exact h_adj.2.2
+
+  have h_inner : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥ ((C.card : ℝ) - 1) * ridgeThreshold n := by
+    intro S hS
+    rw [h_split S hS]
+    have h1 : massMatrixEntry n S S ≥ 0 := h_diag S hS
+    have h2 : ∑ T ∈ C \ {S}, massMatrixEntry n S T ≥ ∑ T ∈ C \ {S}, ridgeThreshold n := by
+      refine Finset.sum_le_sum fun T hT => ?_
+      exact le_of_lt (h_offdiag S hS T hT)
+    have h3 : ∑ T ∈ C \ {S}, ridgeThreshold n = (((C \ {S}).card) : ℝ) * ridgeThreshold n := by
+      simp only [Finset.sum_const, nsmul_eq_mul]
+    have h4 : (C \ {S}).card = C.card - 1 := by
+      rw [Finset.card_sdiff]
+      have h_inter2 : C ∩ {S} = {S} := Finset.inter_eq_right.mpr (Finset.singleton_subset_iff.mpr hS)
+      rw [Finset.inter_comm] at h_inter2
+      rw [h_inter2, Finset.card_singleton]
+    have h5 : (((C \ {S}).card) : ℝ) = (C.card : ℝ) - 1 := by
+      rw [h4]
+      have hcard : 1 ≤ C.card := Finset.one_le_card.mpr ⟨S, hS⟩
+      norm_num [Nat.cast_sub hcard]
+    rw [h5] at h3
+    calc
+      massMatrixEntry n S S + ∑ T ∈ C \ {S}, massMatrixEntry n S T ≥
+          0 + ∑ T ∈ C \ {S}, ridgeThreshold n := add_le_add h1 h2
+      _ = ((C.card : ℝ) - 1) * ridgeThreshold n := by rw [h3]; ring
+
+  unfold testMass
+  have h_total : ∑ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥ ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) := by
+    refine Finset.sum_le_sum fun S hS => h_inner S hS
+  have h_final : ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) = (C.card : ℝ) * ((C.card : ℝ) - 1) * ridgeThreshold n := by
+    simp only [Finset.sum_const, nsmul_eq_mul]
+    ring
+  rw [h_final] at h_total
+  linarith
+
+/-- The total penalty $Q_2 = \lambda^T A \lambda$ is bounded from above because
+off-diagonal penalty terms undergo destructive interference (assumed $\le 0$ for this bound), 
+leaving mostly the diagonal mass which is bounded by the total sum of hits. -/
+theorem testPenalty_upper_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
+    (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n))))) :
+    testPenalty n C ≤ (C.card : ℝ) * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) := by
+  -- Proof by destructive interference of non-active primes
+  sorry
+
+/-- The Rayleigh Quotient \mu = Q_2 / Q_1 can be driven strictly below 1
+for a sufficiently large clique C in the Ridge Graph. -/
+theorem rayleigh_quotient_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
+    (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))))
+    (h_large : (C.card : ℝ) > 1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
+    testPenalty n C / testMass n C < 1 := by
+  -- Combines testMass_lower_bound and testPenalty_upper_bound
   sorry
 
 /-- Product-to-sum expansion of a product of cosines over a `Finset`, indexed by a
