@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fernando Portela, Gemini 3.1 Pro (Google DeepMind)
 -/
 
-import KrafftSieve.Defs
+import KrafftSieve.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Clique
@@ -47,10 +47,118 @@ constructive. -/
 def isRidge (n : ℕ) (S T : Finset (Fin (w n))) : Prop :=
   S ≠ T ∧ Disjoint S T ∧ massMatrixEntry n S T > ridgeThreshold n
 
+/-
+Finite cosine orthogonality over a complete residue system.
+-/
+private lemma sum_cos_mul_cos_mod (p a b : ℕ) (hp : 0 < p) :
+    ∑ k ∈ Finset.range p,
+        Real.cos (2 * Real.pi * (k : ℝ) * (a : ℝ) / (p : ℝ)) *
+        Real.cos (2 * Real.pi * (k : ℝ) * (b : ℝ) / (p : ℝ)) =
+      (p : ℝ) / 2 *
+        ((if (a : ZMod p) = (b : ZMod p) then 1 else 0) +
+         (if (a : ZMod p) = -(b : ZMod p) then 1 else 0)) := by
+  -- Use the trigonometric identity $2 \cos A \cos B = \cos(A+B) + \cos(A-B)$ to rewrite the sum.
+  have h_trig : ∑ k ∈ Finset.range p, Real.cos (2 * Real.pi * k * a / p) *
+                Real.cos (2 * Real.pi * k * b / p) =
+                (1 / 2) * (∑ k ∈ Finset.range p, Real.cos (2 * Real.pi * k * (a + b) / p) +
+                  ∑ k ∈ Finset.range p, Real.cos (2 * Real.pi * k * (a - b) / p)) := by
+    rw [ ← Finset.sum_add_distrib, Finset.mul_sum ] ; congr ; ext k ; rw [ Real.cos_add_cos ]
+    ring_nf
+  -- Use the fact that $\sum_{k=0}^{p-1} \cos(2\pi k m / p)$ is zero
+  -- unless $m$ is a multiple of $p$, in which case it is $p$.
+  have h_cos_sum : ∀ m : ℤ, (∑ k ∈ Finset.range p, Real.cos (2 * Real.pi * k * m / p)) =
+                            if m % p = 0 then p else 0 := by
+    intro m
+    split_ifs
+    · simp_all +decide only [one_div, EuclideanDomain.mod_eq_zero,
+      ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+      rw [ ZMod.intCast_zmod_eq_zero_iff_dvd ] at *
+      obtain ⟨ k, rfl ⟩ := ‹ ( p : ℤ ) ∣ m ›
+      norm_num [ mul_assoc, mul_comm Real.pi _, mul_div_assoc, hp.ne' ]
+      exact Eq.trans ( Finset.sum_congr rfl fun _ _ => by
+        convert Real.cos_int_mul_two_pi ( k * ‹ℕ› ) using 2; push_cast; ring ) ( by norm_num )
+    · simp_all +decide only [one_div, EuclideanDomain.mod_eq_zero,
+      ← ZMod.intCast_zmod_eq_zero_iff_dvd, CharP.cast_eq_zero]
+      -- Let $z = e^{2 \pi i m / p}$. Since $m$ is not divisible by $p$,
+      -- $z$ is a primitive $p$-th root of unity.
+      set z : ℂ := Complex.exp (2 * Real.pi * Complex.I * m / p)
+      have hz : ∑ k ∈ Finset.range p, z ^ k = 0 := by
+        rw [ geom_sum_eq ]
+        · rw [ ← Complex.exp_nat_mul, mul_comm,
+               Complex.exp_eq_one_iff.mpr ⟨ m, by ring_nf; norm_num [ hp.ne' ] ⟩ ]
+          norm_num
+        · rw [ Ne.eq_def, Complex.exp_eq_one_iff ]
+          field_simp
+          exact fun ⟨ n, hn ⟩ => ‹¬ ( m : ZMod p ) = 0› <| by
+            rw [ ZMod.intCast_zmod_eq_zero_iff_dvd ]
+            exact ⟨ n, by
+              rw [ div_eq_iff ( Nat.cast_ne_zero.mpr hp.ne' ) ] at hn; norm_cast at *; linarith ⟩
+      convert congr_arg Complex.re hz using 2
+      · norm_num [← Complex.exp_nat_mul, Complex.exp_re]
+        exact Finset.sum_congr rfl fun _ _ => by
+          rw [← Complex.exp_nat_mul]
+          norm_num [Complex.exp_re]
+          ring_nf
+      · norm_num
+  simp_all +decide only [one_div, EuclideanDomain.mod_eq_zero, ← ZMod.intCast_zmod_eq_zero_iff_dvd,
+    Nat.cast_ite, CharP.cast_eq_zero]
+  convert congr_arg₂ ( fun x y : ℝ => 2⁻¹ * ( x + y ) ) ( h_cos_sum ( a + b ) )
+    ( h_cos_sum ( a - b ) ) using 1 <;> norm_num ; ring_nf
+  grind
+
+/-
+For any prime index i, the local indicator function g_i(x) can be expanded exactly
+as a normalized sum of cosines.
+-/
+theorem g_eq_sum_cos (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) :
+    g n i x = (2 / (p n i : ℝ)) * ∑ k ∈ Finset.range (p n i),
+      Real.cos (2 * Real.pi * ↑k * (krafftResidue n i : ℝ) / (p n i : ℝ)) *
+      Real.cos (2 * Real.pi * ↑k * (x.val : ℝ) / (p n i : ℝ)) := by
+  rw [ sum_cos_mul_cos_mod ]
+  · have h_cast_eq_val : (x.cast : ZMod (p n i)) = x.val := by
+      exact ZMod.cast_eq_val x
+    split_ifs
+    · have hlt : (2 * krafftResidue n i : ℕ) < p n i := by
+        have hp5 : p n i ≥ 5 := p_ge_5 n i
+        unfold krafftResidue
+        omega
+      have hz : (2 * krafftResidue n i : ZMod (p n i)) = 0 := by
+        grind
+      have hz' : ((2 * krafftResidue n i : ℕ) : ZMod (p n i)) = 0 := by
+        push_cast
+        exact hz
+      rw [ZMod.natCast_eq_zero_iff] at hz'
+      have hrpos : 0 < krafftResidue n i := by
+        have hp5 : p n i ≥ 5 := p_ge_5 n i
+        unfold krafftResidue
+        omega
+      exact absurd hz' (Nat.not_dvd_of_pos_of_lt (Nat.mul_pos zero_lt_two hrpos) hlt)
+    · simp_all +decide only [ZMod.natCast_val, g, or_false, ↓reduceIte, add_zero, mul_one, ne_eq,
+      OfNat.ofNat_ne_zero, not_false_eq_true, div_mul_div_cancel₀']
+      rw [div_self]
+      exact_mod_cast p_ne_zero n i
+    · simp_all +decide only [ZMod.natCast_val, g, neg_neg, or_true, ↓reduceIte, zero_add, mul_one,
+      ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, div_mul_div_cancel₀']
+      rw [div_self]
+      exact_mod_cast p_ne_zero n i
+    · simp_all +decide [ g ]
+      grind
+  · exact p_pos n i
+
+/-
+The global additive hit counter c(x) is the sum of the cosine expansions of g_i.
+-/
+theorem c_eq_sum_cos (n : ℕ) (x : ZMod (q n)) :
+    c n x = ∑ i : Fin (w n), (2 / (p n i : ℝ)) * ∑ k ∈ Finset.range (p n i),
+      Real.cos (2 * Real.pi * ↑k * (krafftResidue n i : ℝ) / (p n i : ℝ)) *
+      Real.cos (2 * Real.pi * ↑k * (x.val : ℝ) / (p n i : ℝ)) := by
+  unfold c
+  exact Finset.sum_congr rfl fun i _ => g_eq_sum_cos n i x
+
 /-- The Ridge Graph, where vertices are basis sets and edges are phase-locked ridges. -/
 def ridgeGraph (n : ℕ) : SimpleGraph (Finset (Fin (w n))) where
   Adj S T := isRidge n S T
-  symm := ⟨fun {S T} h => by
+  symm := Std.Symm.mk (fun S T h => by
     unfold isRidge at *
     refine ⟨h.1.symm, h.2.1.symm, ?_⟩
     have h_comm : massMatrixEntry n S T = massMatrixEntry n T S := by
@@ -58,10 +166,10 @@ def ridgeGraph (n : ℕ) : SimpleGraph (Finset (Fin (w n))) where
       refine Finset.sum_congr rfl fun x _ => ?_
       rw [mul_comm]
     rw [← h_comm]
-    exact h.2.2⟩
-  loopless := ⟨fun S h => by
+    exact h.2.2)
+  loopless := Std.Irrefl.mk (fun S h => by
     unfold isRidge at h
-    exact h.1 rfl⟩
+    exact h.1 rfl)
 
 /-- A test vector based on a clique in the Ridge Graph.
 It assigns weight 1 to vertices in the clique, and 0 otherwise. -/
