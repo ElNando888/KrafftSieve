@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Fernando Portela, Gemini 3.1 Pro (Google DeepMind)
 -/
 
-import KrafftSieve.Basic
+import KrafftSieve.OptimalWeights
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Combinatorics.SimpleGraph.Basic
 import Mathlib.Combinatorics.SimpleGraph.Clique
@@ -248,13 +248,6 @@ theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
   rw [h_final] at h_total
   linarith
 
-theorem g_nonneg (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : 0 ≤ g n i x := by
-  unfold g
-  split_ifs <;> norm_num
-
-theorem c_nonneg (n : ℕ) (x : ZMod (q n)) : 0 ≤ c n x := by
-  unfold c
-  refine Finset.sum_nonneg fun i _ => g_nonneg n i x
 
 theorem basisFunction_sq_le_one (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
     basisFunction n S x * basisFunction n S x ≤ 1 := by
@@ -278,24 +271,107 @@ theorem penaltyMatrixEntry_diag_le (n : ℕ) (S : Finset (Fin (w n))) :
   have h_b := basisFunction_sq_le_one n S x
   nlinarith
 
-/-- The total penalty $Q_2 = \lambda^T A \lambda$ is bounded from above because
-off-diagonal penalty terms undergo destructive interference (assumed $\le 0$ for this bound),
-leaving mostly the diagonal mass which is bounded by the total sum of hits. -/
+/-
+The originally proposed statement was:
+
+```
 theorem testPenalty_upper_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n))))) :
+    testPenalty n C ≤
+      (C.card : ℝ) * (∑ x ∈ evalInterval n, c n (x : ZMod (q n)))
+```
+
+It is not valid with the present definitions.  In particular, `evalInterval n` is a short
+interval of cardinality `12 * n + 4`, not a complete residue system modulo the generally much
+larger `q n`.  Consequently, full-period cosine orthogonality cannot be used on this sum, and the
+ridge condition (which only asserts a positive mass correlation) does not imply that the
+corresponding penalty entry is nonpositive.  The corrected theorem below makes the destructive
+interference condition explicit.
+-/
+
+/-- The total penalty $Q_2 = \lambda^T A \lambda$ is bounded from above when all off-diagonal
+penalty entries in the chosen clique are nonpositive.  The clique hypothesis is retained to match
+the intended application, although the explicit off-diagonal hypothesis alone implies the bound. -/
+theorem testPenalty_upper_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
+    (_h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))))
+    (h_offdiag : ∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0) :
     testPenalty n C ≤ (C.card : ℝ) * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) := by
-  -- Proof by destructive interference of non-active primes
-  sorry
+  have h_inner : ∀ S ∈ C, ∑ T ∈ C, penaltyMatrixEntry n S T ≤
+      ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) := by
+    intro S hS
+    have hsplit := Finset.sum_erase_add C (fun T => penaltyMatrixEntry n S T) hS
+    have hoff : ∑ T ∈ C.erase S, penaltyMatrixEntry n S T ≤ 0 := by
+      refine Finset.sum_nonpos fun T hT => h_offdiag S hS T (Finset.mem_of_mem_erase hT) ?_
+      exact fun h => Finset.ne_of_mem_erase hT h.symm
+    have hdiag := penaltyMatrixEntry_diag_le n S
+    linarith
+  unfold testPenalty
+  calc
+    ∑ S ∈ C, ∑ T ∈ C, penaltyMatrixEntry n S T ≤
+        ∑ S ∈ C, ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) :=
+      Finset.sum_le_sum fun S hS => h_inner S hS
+    _ = (C.card : ℝ) * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) := by
+      simp
 
 /-- The Rayleigh Quotient \mu = Q_2 / Q_1 can be driven strictly below 1
 for a sufficiently large clique C in the Ridge Graph. -/
 theorem rayleigh_quotient_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))))
+    (h_offdiag : ∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0)
     (h_large : (C.card : ℝ) >
       1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
     testPenalty n C / testMass n C < 1 := by
-  -- Combines testMass_lower_bound and testPenalty_upper_bound
-  sorry
+  have h_mass := testMass_lower_bound n C h_clique
+  have h_pen := testPenalty_upper_bound n C h_clique h_offdiag
+  have hp : (evalInterval n).card > 0 := by
+    unfold evalInterval
+    have : 6 * n ^ 2 - 2 * n < 6 * n ^ 2 + 10 * n + 4 := by omega
+    exact Finset.card_pos.mpr (Finset.nonempty_Ico.mpr this)
+  have hp_r : ((evalInterval n).card : ℝ) > 0 := Nat.cast_pos.mpr hp
+  have h_sum_c_nonneg : 0 ≤ ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) := by
+    refine Finset.sum_nonneg fun x _ => c_nonneg n (x : ZMod (q n))
+  have hc_large : (C.card : ℝ) > 1 := by
+    have h_div_nonneg : 0 ≤
+        2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
+      refine div_nonneg ?_ hp_r.le
+      linarith
+    linarith
+  have hc_pos : (C.card : ℝ) > 0 := by linarith
+  have h_mass_pos : 0 < testMass n C := by
+    have h_thresh : 0 < ridgeThreshold n := by
+      unfold ridgeThreshold
+      positivity
+    have : 0 < (C.card : ℝ) * ((C.card : ℝ) - 1) * ridgeThreshold n := by positivity
+    linarith
+  rw [div_lt_one h_mass_pos]
+  have h_thresh_eq : ridgeThreshold n = (evalInterval n).card / 2 := rfl
+  have h1 : 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card <
+            (C.card : ℝ) - 1 := by linarith
+  have h2 : (2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) *
+            ((evalInterval n).card / 2) < ((C.card : ℝ) - 1) * ((evalInterval n).card / 2) := by
+    refine mul_lt_mul_of_pos_right h1 (by positivity)
+  have h3 : (2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) *
+            ((evalInterval n).card / 2) = ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) := by
+    have : ((evalInterval n).card : ℝ) / 2 = ((evalInterval n).card : ℝ) * (1 / 2) := by ring
+    rw [this]
+    calc
+      _ = (2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n)))) * (((evalInterval n).card : ℝ)⁻¹) *
+          ((evalInterval n).card : ℝ) * (1 / 2) := by ring
+      _ = (2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n)))) * (((evalInterval n).card : ℝ)⁻¹ *
+          ((evalInterval n).card : ℝ)) * (1 / 2) := by ring
+      _ = (2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n)))) * 1 * (1 / 2) := by
+          rw [inv_mul_cancel₀ hp_r.ne']
+      _ = ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) := by ring
+  rw [h3] at h2
+  have h4 : (C.card : ℝ) * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) < (C.card : ℝ) *
+            (((C.card : ℝ) - 1) * ((evalInterval n).card / 2)) := by
+    refine mul_lt_mul_of_pos_left h2 hc_pos
+  have h5 : (C.card : ℝ) * (((C.card : ℝ) - 1) * ((evalInterval n).card / 2)) = (C.card : ℝ) *
+            ((C.card : ℝ) - 1) * ridgeThreshold n := by
+    rw [h_thresh_eq]
+    ring
+  rw [h5] at h4
+  linarith
 
 /-- Product-to-sum expansion of a product of cosines over a `Finset`, indexed by a
 powerset of sign choices. -/
