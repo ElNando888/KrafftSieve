@@ -250,9 +250,7 @@ theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
 
 theorem g_nonneg (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : 0 ≤ g n i x := by
   unfold g
-  split_ifs
-  · norm_num
-  · norm_num
+  split_ifs <;> norm_num
 
 theorem c_nonneg (n : ℕ) (x : ZMod (q n)) : 0 ≤ c n x := by
   unfold c
@@ -266,11 +264,9 @@ theorem basisFunction_sq_le_one (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
       ∏ i ∈ S, (Real.cos (6 * Real.pi * ↑x / ↑(p n i)) ^ 2) := by
     rw [← pow_two, ← Finset.prod_pow]
   rw [h1]
-  refine Finset.prod_le_one ?_ ?_
-  · intro i _
-    positivity
-  · intro i _
-    have h2 : Real.cos (6 * Real.pi * ↑x / ↑(p n i)) ≤ 1 := Real.cos_le_one _
+  refine Finset.prod_le_one ?_ ?_ <;> intro i _
+  · positivity
+  · have h2 : Real.cos (6 * Real.pi * ↑x / ↑(p n i)) ≤ 1 := Real.cos_le_one _
     have h3 : -1 ≤ Real.cos (6 * Real.pi * ↑x / ↑(p n i)) := Real.neg_one_le_cos _
     nlinarith
 
