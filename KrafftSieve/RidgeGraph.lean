@@ -42,7 +42,8 @@ def discreteDirichletKernel (n : ℕ) (ω : ℝ) : ℝ :=
 /-- The threshold for a phase-locked ridge. -/
 def ridgeThreshold (n : ℕ) : ℝ := (evalInterval n).card / 2
 
-/-- An edge exists between S and T if they are distinct, disjoint and their inner product is highly constructive. -/
+/-- An edge exists between S and T if they are distinct, disjoint and their inner product is highly
+constructive. -/
 def isRidge (n : ℕ) (S T : Finset (Fin (w n))) : Prop :=
   S ≠ T ∧ Disjoint S T ∧ massMatrixEntry n S T > ridgeThreshold n
 
@@ -80,31 +81,31 @@ by the ridge threshold. -/
 theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n))))) :
     testMass n C ≥ (C.card : ℝ) * (C.card - 1 : ℝ) * (ridgeThreshold n) := by
-  have h_split : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T = massMatrixEntry n S S + ∑ T ∈ C \ {S}, massMatrixEntry n S T := by
+  have h_split : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T =
+                          massMatrixEntry n S S + ∑ T ∈ C \ {S}, massMatrixEntry n S T := by
     intro S hS
     have h_sub : {S} ⊆ C := Finset.singleton_subset_iff.mpr hS
     have h_eq := Finset.sum_sdiff (f := fun T => massMatrixEntry n S T) h_sub
     rw [Finset.sum_singleton] at h_eq
     linarith
-
   have h_diag : ∀ S ∈ C, massMatrixEntry n S S ≥ 0 := by
     intro S _
     unfold massMatrixEntry
     refine Finset.sum_nonneg fun x _ => ?_
     nlinarith
-
   have h_offdiag : ∀ S ∈ C, ∀ T ∈ C \ {S}, massMatrixEntry n S T > ridgeThreshold n := by
     intro S hS T hT
     have h_sdiff := Finset.mem_sdiff.mp hT
     have hT_C : T ∈ C := h_sdiff.1
     have h_neq : S ≠ T := by
       intro h_eq
-      have h_mem : T ∈ ({S} : Finset (Finset (Fin (w n)))) := by rw [h_eq]; exact Finset.mem_singleton_self T
+      have h_mem : T ∈ ({S} : Finset (Finset (Fin (w n)))) := by
+        rw [h_eq]; exact Finset.mem_singleton_self T
       exact h_sdiff.2 h_mem
     have h_adj : (ridgeGraph n).Adj S T := h_clique hS hT_C h_neq
     exact h_adj.2.2
-
-  have h_inner : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥ ((C.card : ℝ) - 1) * ridgeThreshold n := by
+  have h_inner : ∀ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥
+                          ((C.card : ℝ) - 1) * ridgeThreshold n := by
     intro S hS
     rw [h_split S hS]
     have h1 : massMatrixEntry n S S ≥ 0 := h_diag S hS
@@ -115,7 +116,8 @@ theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
       simp only [Finset.sum_const, nsmul_eq_mul]
     have h4 : (C \ {S}).card = C.card - 1 := by
       rw [Finset.card_sdiff]
-      have h_inter2 : C ∩ {S} = {S} := Finset.inter_eq_right.mpr (Finset.singleton_subset_iff.mpr hS)
+      have h_inter2 : C ∩ {S} = {S} :=
+        Finset.inter_eq_right.mpr (Finset.singleton_subset_iff.mpr hS)
       rw [Finset.inter_comm] at h_inter2
       rw [h_inter2, Finset.card_singleton]
     have h5 : (((C \ {S}).card) : ℝ) = (C.card : ℝ) - 1 := by
@@ -127,18 +129,19 @@ theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
       massMatrixEntry n S S + ∑ T ∈ C \ {S}, massMatrixEntry n S T ≥
           0 + ∑ T ∈ C \ {S}, ridgeThreshold n := add_le_add h1 h2
       _ = ((C.card : ℝ) - 1) * ridgeThreshold n := by rw [h3]; ring
-
   unfold testMass
-  have h_total : ∑ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥ ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) := by
+  have h_total : ∑ S ∈ C, ∑ T ∈ C, massMatrixEntry n S T ≥
+                 ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) := by
     refine Finset.sum_le_sum fun S hS => h_inner S hS
-  have h_final : ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) = (C.card : ℝ) * ((C.card : ℝ) - 1) * ridgeThreshold n := by
+  have h_final : ∑ S ∈ C, (((C.card : ℝ) - 1) * ridgeThreshold n) =
+                 (C.card : ℝ) * ((C.card : ℝ) - 1) * ridgeThreshold n := by
     simp only [Finset.sum_const, nsmul_eq_mul]
     ring
   rw [h_final] at h_total
   linarith
 
 /-- The total penalty $Q_2 = \lambda^T A \lambda$ is bounded from above because
-off-diagonal penalty terms undergo destructive interference (assumed $\le 0$ for this bound), 
+off-diagonal penalty terms undergo destructive interference (assumed $\le 0$ for this bound),
 leaving mostly the diagonal mass which is bounded by the total sum of hits. -/
 theorem testPenalty_upper_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n))))) :
@@ -150,7 +153,8 @@ theorem testPenalty_upper_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
 for a sufficiently large clique C in the Ridge Graph. -/
 theorem rayleigh_quotient_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
     (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))))
-    (h_large : (C.card : ℝ) > 1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
+    (h_large : (C.card : ℝ) >
+      1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
     testPenalty n C / testMass n C < 1 := by
   -- Combines testMass_lower_bound and testPenalty_upper_bound
   sorry
@@ -209,11 +213,13 @@ theorem massMatrixEntry_eq_dirichlet_sum_of_disjoint (n : ℕ) (S T : Finset (Fi
   simp_rw [h_prod]
   have h_expand : ∀ x : ℕ, ∏ i ∈ S ∪ T, Real.cos (6 * Real.pi * ↑x / ↑(p n i)) =
       (2 ^ (S ∪ T).card : ℝ)⁻¹ *
-        ∑ B ∈ (S ∪ T).powerset, Real.cos ((∑ i ∈ B, 6 * Real.pi * ↑x / ↑(p n i)) - ∑ i ∈ (S ∪ T) \ B, 6 * Real.pi * ↑x / ↑(p n i)) := by
+        ∑ B ∈ (S ∪ T).powerset, Real.cos ((∑ i ∈ B, 6 * Real.pi * ↑x / ↑(p n i)) -
+                                           ∑ i ∈ (S ∪ T) \ B, 6 * Real.pi * ↑x / ↑(p n i)) := by
     intro x
     exact dirichlet_prod_cos_expand (S ∪ T) (fun i => 6 * Real.pi * (x : ℝ) / (p n i : ℝ))
   simp_rw [h_expand]
-  have h_mul_sum : ∀ (c : ℝ) (s : Finset ℕ) (f : ℕ → ℝ), ∑ x ∈ s, c * f x = c * ∑ x ∈ s, f x := fun c s f => (Finset.mul_sum (s:=s) (f:=f) (a:=c)).symm
+  have h_mul_sum : ∀ (c : ℝ) (s : Finset ℕ) (f : ℕ → ℝ), ∑ x ∈ s, c * f x = c * ∑ x ∈ s, f x :=
+    fun c s f => (Finset.mul_sum (s:=s) (f:=f) (a:=c)).symm
   rw [h_mul_sum]
   congr 1
   rw [Finset.sum_comm]
@@ -221,14 +227,20 @@ theorem massMatrixEntry_eq_dirichlet_sum_of_disjoint (n : ℕ) (S T : Finset (Fi
   refine Finset.sum_congr rfl fun x _ => ?_
   congr 1
   simp_rw [div_eq_mul_inv]
-  have e1 : ∑ i ∈ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ = (6 * Real.pi * (x : ℝ)) * ∑ i ∈ B, (p n i : ℝ)⁻¹ := by
-    have h : ∀ i ∈ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ = (6 * Real.pi * (x : ℝ)) * (p n i : ℝ)⁻¹ := fun _ _ => by ring
+  have e1 : ∑ i ∈ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ =
+            (6 * Real.pi * (x : ℝ)) * ∑ i ∈ B, (p n i : ℝ)⁻¹ := by
+    have h : ∀ i ∈ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ =
+                      (6 * Real.pi * (x : ℝ)) * (p n i : ℝ)⁻¹ := fun _ _ => by ring
     rw [Finset.sum_congr rfl h]
     exact (Finset.mul_sum (s:=B) (f:=fun i => (p n i : ℝ)⁻¹) (a:=(6 * Real.pi * (x : ℝ)))).symm
-  have e2 : ∑ i ∈ (S ∪ T) \ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ = (6 * Real.pi * (x : ℝ)) * ∑ i ∈ (S ∪ T) \ B, (p n i : ℝ)⁻¹ := by
-    have h : ∀ i ∈ (S ∪ T) \ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ = (6 * Real.pi * (x : ℝ)) * (p n i : ℝ)⁻¹ := fun _ _ => by ring
+  have e2 : ∑ i ∈ (S ∪ T) \ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ =
+            (6 * Real.pi * (x : ℝ)) * ∑ i ∈ (S ∪ T) \ B, (p n i : ℝ)⁻¹ := by
+    have h : ∀ i ∈ (S ∪ T) \ B, 6 * Real.pi * (x : ℝ) * (p n i : ℝ)⁻¹ =
+                                (6 * Real.pi * (x : ℝ)) * (p n i : ℝ)⁻¹ := fun _ _ => by ring
     rw [Finset.sum_congr rfl h]
-    exact (Finset.mul_sum (s:=(S ∪ T) \ B) (f:=fun i => (p n i : ℝ)⁻¹) (a:=(6 * Real.pi * (x : ℝ)))).symm
+    exact (Finset.mul_sum (s:=(S ∪ T) \ B)
+                          (f := fun i => (p n i : ℝ)⁻¹)
+                          (a := (6 * Real.pi * (x : ℝ)))).symm
   rw [e1, e2]
   ring
 
