@@ -140,6 +140,40 @@ theorem testMass_lower_bound (n : ℕ) (C : Finset (Finset (Fin (w n))))
   rw [h_final] at h_total
   linarith
 
+theorem g_nonneg (n : ℕ) (i : Fin (w n)) (x : ZMod (q n)) : 0 ≤ g n i x := by
+  unfold g
+  split_ifs
+  · norm_num
+  · norm_num
+
+theorem c_nonneg (n : ℕ) (x : ZMod (q n)) : 0 ≤ c n x := by
+  unfold c
+  refine Finset.sum_nonneg fun i _ => g_nonneg n i x
+
+theorem basisFunction_sq_le_one (n : ℕ) (S : Finset (Fin (w n))) (x : ℕ) :
+    basisFunction n S x * basisFunction n S x ≤ 1 := by
+  unfold basisFunction
+  have h1 : (∏ i ∈ S, Real.cos (6 * Real.pi * ↑x / ↑(p n i))) *
+            (∏ i ∈ S, Real.cos (6 * Real.pi * ↑x / ↑(p n i))) =
+      ∏ i ∈ S, (Real.cos (6 * Real.pi * ↑x / ↑(p n i)) ^ 2) := by
+    rw [← pow_two, ← Finset.prod_pow]
+  rw [h1]
+  refine Finset.prod_le_one ?_ ?_
+  · intro i _
+    positivity
+  · intro i _
+    have h2 : Real.cos (6 * Real.pi * ↑x / ↑(p n i)) ≤ 1 := Real.cos_le_one _
+    have h3 : -1 ≤ Real.cos (6 * Real.pi * ↑x / ↑(p n i)) := Real.neg_one_le_cos _
+    nlinarith
+
+theorem penaltyMatrixEntry_diag_le (n : ℕ) (S : Finset (Fin (w n))) :
+    penaltyMatrixEntry n S S ≤ ∑ x ∈ evalInterval n, c n (x : ZMod (q n)) := by
+  unfold penaltyMatrixEntry
+  refine Finset.sum_le_sum fun x _ => ?_
+  have h_c := c_nonneg n (x : ZMod (q n))
+  have h_b := basisFunction_sq_le_one n S x
+  nlinarith
+
 /-- The total penalty $Q_2 = \lambda^T A \lambda$ is bounded from above because
 off-diagonal penalty terms undergo destructive interference (assumed $\le 0$ for this bound),
 leaving mostly the diagonal mass which is bounded by the total sum of hits. -/
