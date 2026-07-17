@@ -9,6 +9,7 @@
 /manuscripts/AoM
 /KrafftSieve/_retired
 /Old
+/scratch
 /venv
 GetDeps.lean
 *.aux

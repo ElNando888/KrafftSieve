@@ -130,6 +130,8 @@ non-zero $\lambda$ if the basis is linearly independent on $evalInterval$).
 noncomputable def Ratio (n : ℕ) (lambda : Finset (Fin (w n)) → ℝ) : ℝ :=
   if q1 n lambda = 0 then 0 else (q2 n lambda) / (q1 n lambda)
 
+
+
 /--
 Helper: q1 equals the sum of squares of pMulti over range (q n).
 -/
@@ -343,6 +345,9 @@ theorem mu_min_lt_one_implies_sufficiency (n : ℕ) (h : muMin n < 1) :
 Abbreviation for the index set of the coefficients, which is the power set of prime indices.
 -/
 abbrev Idx (n : ℕ) := Finset (Fin (w n))
+
+/-- The all-ones vector evaluates to the uniform continuous density function. -/
+def allOnesVector (n : ℕ) : Idx n → ℝ := fun _ => 1
 
 /--
 The kernel of the quadratic form $q1$.
