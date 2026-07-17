@@ -20,10 +20,10 @@ lemma sum_powerset_prod_eq_prod_add_one {ι : Type*} (I : Finset ι) (f : ι →
 
 /-- The Fourier expansion of g n i x. -/
 lemma g_fourier_expansion (n : ℕ) (i : Fin (w n)) (x : ℕ) :
-    g n i (x : ZMod (q n)) = 
-      2 / (p n i : ℝ) + 
+    g n i (x : ZMod (q n)) =
+      2 / (p n i : ℝ) +
       (4 / (p n i : ℝ)) * ∑ k ∈ Finset.Ico 1 (((p n i) + 1) / 2),
-        Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ)) * 
+        Real.cos (2 * Real.pi * (k : ℝ) * (krafftResidue n i : ℝ) / (p n i : ℝ)) *
         Real.cos (2 * Real.pi * (k : ℝ) * (x : ℝ) / (p n i : ℝ)) := by
   sorry
 
@@ -97,27 +97,34 @@ lemma totalOffDiagonalPenalty_eq (n : ℕ) :
   ring
 
 lemma totalOffDiagonalPenalty_decomp (n : ℕ) :
-    totalOffDiagonalPenalty n = 
-      ∑ i : Fin (w n), ∑ x ∈ evalInterval n, g n i (x : ZMod (q n)) * 
-        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 - 
-         (∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) := by
+    totalOffDiagonalPenalty n =
+      ∑ i : Fin (w n), ∑ x ∈ evalInterval n, g n i (x : ZMod (q n)) *
+        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+          (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 -
+         (∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+           (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) := by
   rw [totalOffDiagonalPenalty_eq]
   unfold c
-  have : ∀ x ∈ evalInterval n, (∑ i : Fin (w n), g n i (x : ZMod (q n))) * 
-        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 - 
-         (∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) =
-        ∑ i : Fin (w n), g n i (x : ZMod (q n)) * 
-        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 - 
-         (∏ j ∈ (Finset.univ : Finset (Fin (w n))), (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) := by
+  have : ∀ x ∈ evalInterval n, (∑ i : Fin (w n), g n i (x : ZMod (q n))) *
+        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+          (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 -
+         (∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+           (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) =
+        ∑ i : Fin (w n), g n i (x : ZMod (q n)) *
+        ((∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+          (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))))^2 -
+         (∏ j ∈ (Finset.univ : Finset (Fin (w n))),
+           (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n j : ℝ))^2))) := by
     intro x _
     exact Finset.sum_mul (Finset.univ : Finset (Fin (w n))) (fun i => g n i (x : ZMod (q n))) _
   rw [Finset.sum_congr rfl this]
   exact Finset.sum_comm
 
-/-- The standard Dirichlet kernel bound for the sum of cosines over an interval. 
+/-- The standard Dirichlet kernel bound for the sum of cosines over an interval.
     This shows that the oscillatory components grow at most as O(1/θ). -/
 lemma dirichlet_kernel_bound (A B : ℕ) (θ : ℝ) (h_not_int : ∀ k : ℤ, θ ≠ k) :
-    |∑ x ∈ Finset.Icc A B, Real.cos (2 * Real.pi * θ * (x : ℝ))| ≤ 1 / |Real.sin (Real.pi * θ)| := by
+    |∑ x ∈ Finset.Icc A B, Real.cos (2 * Real.pi * θ * (x : ℝ))| ≤
+    1 / |Real.sin (Real.pi * θ)| := by
   sorry
 
 /-- The largest prime used in the Krafft Sieve is bounded by O(log n).
@@ -130,13 +137,13 @@ lemma max_prime_bound (n : ℕ) (h_large : 1000 ≤ n) :
 /-- The oscillatory error terms are strictly bounded by O(log n), which is
     asymptotically crushed by the O(n) negative constant term. -/
 lemma oscillatory_error_bound (n : ℕ) (h_large : 1000 ≤ n) :
-    ∃ C > 0, |totalOffDiagonalPenalty n - 
-      (- (∑ i : Fin (w n), 4 / (p n i : ℝ) * (3/2)^(w n - 1)) * ((evalInterval n).card : ℝ))| 
+    ∃ C > 0, |totalOffDiagonalPenalty n -
+      (- (∑ i : Fin (w n), 4 / (p n i : ℝ) * (3/2)^(w n - 1)) * ((evalInterval n).card : ℝ))|
       ≤ C * Real.log (n : ℝ) := by
   sorry
 
 /-- For sufficiently large n, the massive O(n) negative constant term dominates
-    the O(log n) oscillatory errors, making the total off-diagonal penalty 
+    the O(log n) oscillatory errors, making the total off-diagonal penalty
     strictly negative. -/
 lemma totalOffDiagonalPenalty_neg_of_large_n {n : ℕ} (h_large : 1000 ≤ n) :
     totalOffDiagonalPenalty n < 0 := by
@@ -160,13 +167,14 @@ lemma one_add_cos_sq_expand' (y : ℝ) :
     _ = 3/2 + 1/2 * Real.cos (2 * y) := by ring
 
 /-- The strictly negative total off-diagonal penalty implies the existence
-    of a clique C in the ridge graph of sufficient size to drive the 
+    of a clique C in the ridge graph of sufficient size to drive the
     Rayleigh quotient strictly below 1, satisfying the requirements of
     `rayleigh_quotient_bound`. -/
 lemma exists_large_clique_of_neg_penalty (n : ℕ) (h_large : 1000 ≤ n) :
     ∃ C : Finset (Finset (Fin (w n))),
       (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))) ∧
-      (C.card : ℝ) > 1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
+      (C.card : ℝ) >
+        1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
   sorry
 
 end KrafftSieve
