@@ -6,7 +6,7 @@ Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RidgeGraph
-import KrafftSieve.PhaseLock
+import KrafftSieve.RidgeClique
 
 /-!
 # Main Sieve Admissibility and Twin Prime Conjecture

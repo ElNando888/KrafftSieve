@@ -215,6 +215,52 @@ lemma basis_cos_natCast_eq (n x : ℕ) (i : Fin (w n)) :
   exact Real.cos_add_int_mul_two_pi _ _
 
 /--
+The continuous phase associated with a subset of primes.
+This is the dominant frequency component in the Dirichlet expansion.
+-/
+noncomputable def subsetPhase (n : ℕ) (S : Finset (Fin (w n))) : ℝ :=
+  ∑ i ∈ S, (p n i : ℝ)⁻¹
+
+/--
+A target interval for the phase that guarantees both positive mass and negative penalty.
+These bounds rely on the valley of c(x) and the Dirichlet kernel evaluated at the center
+of the Sieve interval.
+-/
+def isGoodPhaseInterval (n : ℕ) (a b : ℝ) : Prop :=
+  a < b ∧
+  ∀ S T : Finset (Fin (w n)), Disjoint S T →
+    (subsetPhase n S + subsetPhase n T) ∈ Set.Icc a b →
+    isRidge n S T ∧ penaltyMatrixEntry n S T ≤ 0
+
+/--
+Greedy Sequence Accumulation:
+Given a sequence of positive reals that diverges to infinity and decays to 0, we can
+always find a finite subset of disjoint indices whose sum falls into any target interval [a, b],
+provided we start with an index sufficiently large such that the step size is smaller than b - a.
+-/
+lemma exists_subset_sum_in_interval {ι : Type*} (seq : ι → ℝ) (available : Finset ι)
+    (a b : ℝ) (hab : a < b)
+    (h_pos : ∀ i ∈ available, 0 < seq i)
+    (h_step : ∀ i ∈ available, seq i < b - a)
+    (h_mass : ∑ i ∈ available, seq i > b) :
+    ∃ S ⊆ available, ∑ i ∈ S, seq i ∈ Set.Icc a b := by
+  sorry
+
+/--
+The Halved Target Strategy:
+If every individual vertex has its phase in [a/2, b/2], then every pairwise sum
+is in [a, b], guaranteeing they all perfectly phase-lock into a clique.
+-/
+lemma ridge_clique_of_halved_phases (n : ℕ) (M : ℕ) (a b : ℝ) (hab : a < b)
+    (h_good : isGoodPhaseInterval n a b)
+    (vertices : Fin M → Finset (Fin (w n)))
+    (h_disj : ∀ i j, i ≠ j → Disjoint (vertices i) (vertices j))
+    (h_phases : ∀ i, subsetPhase n (vertices i) ∈ Set.Icc (a / 2) (b / 2)) :
+    (ridgeGraph n).IsClique (Set.range vertices) ∧
+    (∀ S ∈ Set.range vertices, ∀ T ∈ Set.range vertices, S ≠ T → penaltyMatrixEntry n S T ≤ 0) := by
+  sorry
+
+/--
 Phase 6 Main Theorem: For sufficiently large n, there exists a large clique in the Ridge Graph
 whose off-diagonal penalties are non-positive.
 -/
@@ -224,6 +270,9 @@ theorem exists_large_ridge_clique (n : ℕ) (hn : 1000 ≤ n) :
       (∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0) ∧
       (C.card : ℝ) >
         1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
+  -- 1. Identify the good phase interval [a, b] for this n.
+  -- 2. Use exists_subset_sum_in_interval M times repeatedly to pluck out disjoint vertices.
+  -- 3. Apply ridge_clique_of_halved_phases to conclude the clique properties.
   sorry
 
 /-
