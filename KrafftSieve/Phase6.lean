@@ -1,5 +1,6 @@
 
 import KrafftSieve.OptimalWeights
+import KrafftSieve.RidgeGraph
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 namespace KrafftSieve
@@ -191,23 +192,37 @@ lemma dc_component_cancellation (p : ℝ) :
     _ = (2 / p) * (1 - 2 * Real.cos (Real.pi / p) + Real.cos (Real.pi / p)^2) := by ring
     _ = (2 / p) * (1 - Real.cos (Real.pi / p))^2 := by ring
 
-/-- The all-ones vector evaluates to the full continuous density function. -/
-lemma sum_basis_all_ones (n : ℕ) (x : ℕ) :
-    ∑ S ∈ (Finset.univ : Finset (Fin (w n))).powerset, basisCos n S x =
-      ∏ i ∈ (Finset.univ : Finset (Fin (w n))),
-        (1 + Real.cos (6 * Real.pi * (x : ℝ) / (p n i : ℝ))) := by
-  sorry
+/-- Reduction modulo `q n` does not change a basis cosine, since every `p n i`
+divides `q n`. -/
+lemma basis_cos_natCast_eq (n x : ℕ) (i : Fin (w n)) :
+    Real.cos (2 * Real.pi * 3 * (((x : ZMod (q n)).val : ℝ)) / (p n i : ℝ)) =
+      Real.cos (6 * Real.pi * (x : ℝ) / (p n i : ℝ)) := by
+  rw [ZMod.val_natCast]
+  have hp : p n i ∣ q n := p_dvd_q n i
+  have hq : (q n : ℝ) = (p n i : ℝ) * (q n / p n i : ℕ) := by
+    exact_mod_cast (Nat.mul_div_cancel' hp).symm
+  have hx : (x : ℝ) = (x % q n : ℕ) + (q n : ℝ) * (x / q n : ℕ) := by
+    exact_mod_cast (Nat.mod_add_div x (q n)).symm
+  have heq : 6 * Real.pi * (x : ℝ) / (p n i : ℝ) =
+      2 * Real.pi * 3 * (x % q n : ℕ) / (p n i : ℝ) +
+        (((q n / p n i) * (x / q n) * 3 : ℕ) : ℝ) * (2 * Real.pi) := by
+    rw [hx, hq]
+    push_cast
+    field_simp [p_ne_zero n i]
+    ring
+  rw [heq]
+  symm
+  exact Real.cos_add_int_mul_two_pi _ _
 
-/-- The total mass (q1) for the all-ones vector is strictly positive. -/
-lemma q1_all_ones_pos (n : ℕ) (hn : 1 ≤ n) :
-    q1 n (allOnesVector n) > 0 := by
-  sorry
-
-/-- For sufficiently large n, the DC component of the penalty is strictly less
-    than the DC component of the mass, and the oscillatory errors are negligible,
-    making the Rayleigh quotient strictly less than 1. -/
-lemma q2_lt_q1_all_ones (n : ℕ) (h_large : 1000 ≤ n) :
-    q2 n (allOnesVector n) < q1 n (allOnesVector n) := by
+/--
+Phase 6 Main Theorem: For sufficiently large n, the Ridge Graph contains a clique
+of subsets whose average penalty is non-positive, and whose size satisfies the density bound.
+-/
+theorem exists_large_clique_of_neg_penalty (n : ℕ) (hn : 1000 ≤ n) :
+    ∃ C : Finset (Finset (Fin (w n))),
+      (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))) ∧
+      (∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0) ∧
+      (C.card : ℝ) > 1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
   sorry
 
 /-

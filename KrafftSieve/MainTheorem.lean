@@ -5,6 +5,7 @@ Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 -/
 
 import KrafftSieve.OptimalWeights
+import KrafftSieve.RidgeGraph
 
 /-!
 # Main Sieve Admissibility and Twin Prime Conjecture
@@ -16,38 +17,14 @@ namespace KrafftSieve
 open scoped BigOperators
 
 
-
-theorem all_ones_vector_implies_mu_min_lt_one (n : ℕ) (hn : 1 ≤ n)
-    (h_q1_pos : q1 n (allOnesVector n) > 0)
-    (h_ratio : q2 n (allOnesVector n) < q1 n (allOnesVector n)) :
+theorem ridge_graph_ansatz_implies_mu_min_lt_one (n : ℕ) (hn : 1 ≤ n)
+    (C : Finset (Finset (Fin (w n))))
+    (h_clique : (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))))
+    (h_offdiag : ∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0)
+    (h_large : (C.card : ℝ) >
+      1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
     muMin n < 1 := by
-  have h_attainable : Ratio n (allOnesVector n) ∈ attainableRatios n := by
-    unfold attainableRatios
-    simp only [Set.mem_setOf_eq]
-    exact ⟨allOnesVector n, h_q1_pos, rfl⟩
-  have h_inf : muMin n ≤ Ratio n (allOnesVector n) := by
-    unfold muMin
-    apply csInf_le
-    · use 0
-      intro r hr
-      obtain ⟨l, hl_pos, rfl⟩ := hr
-      unfold Ratio
-      rw [if_neg (ne_of_gt hl_pos)]
-      apply div_nonneg
-      · have h_q2_sq : q2 n l = ∑ x ∈ Finset.range (q n), c n (x : ZMod (q n)) *
-          (spatialVector n l x)^2 * Psi n (x : ZMod (q n)) := q2_eq_spatialVector_weighted_norm n l
-        rw [h_q2_sq]
-        refine Finset.sum_nonneg fun x _ => ?_
-        refine mul_nonneg (mul_nonneg (c_nonneg n _) (sq_nonneg _)) ?_
-        have h_psi : Psi n (x : ZMod (q n)) ≥ 0 := by unfold Psi; split_ifs <;> norm_num
-        exact h_psi
-      · exact le_of_lt hl_pos
-    · exact h_attainable
-  have h_ratio_eval : Ratio n (allOnesVector n) < 1 := by
-    unfold Ratio
-    rw [if_neg (ne_of_gt h_q1_pos)]
-    exact (div_lt_one h_q1_pos).mpr h_ratio
-  exact lt_of_le_of_lt h_inf h_ratio_eval
+  sorry
 
 
 /--
