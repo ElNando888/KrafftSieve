@@ -7,6 +7,7 @@ Authors: Fernando Portela, Gemini 3.5 Flash (Google DeepMind)
 import Mathlib
 import KrafftSieve.OptimalWeights
 import KrafftSieve.RidgeGraph
+import KrafftSieve.Identification
 
 /-!
 # Multi-Star Graph and the Averaging Principle
