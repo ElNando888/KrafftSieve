@@ -50,13 +50,25 @@ theorem fourier_sinc_eval (L f : ℝ) :
 The continuous Fourier overlap evaluated as a sum of Dirichlet Kernels (sinc).
 -/
 noncomputable def sincCoeff (n : ℕ) (a j i : Fin (w n)) (k : ℕ) : ℝ :=
-  sorry
+  let L := ((evalInterval n).card : ℝ)
+  let fa := (p n a : ℝ)
+  let fj := (p n j : ℝ)
+  let fi := (p n i : ℝ)
+  let k_R := (k : ℝ)
+  let f1 := 3 / fa - 3 / fj - 6 * k_R / fi
+  let f2 := 3 / fa - 3 / fj + 6 * k_R / fi
+  let f3 := 3 / fa + 3 / fj - 6 * k_R / fi
+  let f4 := 3 / fa + 3 / fj + 6 * k_R / fi
+  let sinc (f : ℝ) := if f = 0 then L else Real.sin (Real.pi * L * f) / (Real.pi * f)
+  (1 / 4) * (sinc f1 + sinc f2 + sinc f3 + sinc f4)
 
 /--
 The universal continuous weight for any edge S = {a, j}.
 -/
 noncomputable def starWeight (n : ℕ) (S : Idx n) : ℝ :=
-  sorry
+  (1 / 2) * ∑ a ∈ (S : Finset (Fin (w n))), ∑ j ∈ (S : Finset (Fin (w n))) \ {a},
+    - ∑ i : Fin (w n), ∑ k ∈ Finset.range ((p n i) / 2 + 1),
+      sincCoeff n a j i k
 
 /--
 The optimal Multi-Star test vector explicitly constructed from the anchor subset A. It cleanly
@@ -65,17 +77,37 @@ projects the universal star weights onto the bipartite edges connecting A to its
 noncomputable def multiStarVector (n : ℕ) (A : Finset (Fin (w n))) (S : Idx n) : ℝ :=
   if ∃ a ∈ A, ∃ j ∉ A, (S : Finset (Fin (w n))) = {a, j} then starWeight n S else 0
 
+noncomputable def P_survive (n m : ℕ) (S1 S2 : Idx n) : ℝ :=
+  let inter := ((S1 : Finset (Fin (w n))) ∩ (S2 : Finset (Fin (w n)))).card
+  let w_n := (w n : ℝ)
+  let m_R := (m : ℝ)
+  if inter = 2 then
+    (2 * m_R * (w_n - m_R)) / (w_n * (w_n - 1))
+  else if inter = 1 then
+    (m_R * (w_n - m_R) * (w_n - m_R - 1) +
+      m_R * (m_R - 1) * (w_n - m_R)) / (w_n * (w_n - 1) * (w_n - 2))
+  else
+    (4 * m_R * (m_R - 1) * (w_n - m_R) * (w_n - m_R - 1)) /
+      (w_n * (w_n - 1) * (w_n - 2) * (w_n - 3))
+
 /--
 The exact cross-term error sum for the mass matrix.
 -/
 noncomputable def massCrossTerms (n m : ℕ) : ℝ :=
-  sorry
+  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
+    P_survive n m S1 S2 * starWeight n S1 * starWeight n S2 *
+    (∑ x ∈ evalInterval n, basisFunction n (S1 : Finset (Fin (w n))) x *
+                           basisFunction n (S2 : Finset (Fin (w n))) x)
 
 /--
 The exact structural off-diagonal penalty sum (which is negative).
 -/
 noncomputable def penaltyOffDiagonal (n m : ℕ) : ℝ :=
-  sorry
+  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
+    P_survive n m S1 S2 * starWeight n S1 * starWeight n S2 *
+    (∑ x ∈ evalInterval n, c n (x : ZMod (q n)) *
+                           basisFunction n (S1 : Finset (Fin (w n))) x *
+                           basisFunction n (S2 : Finset (Fin (w n))) x)
 
 /--
 The expected mass evaluation over all possible anchor subsets of size m.
@@ -123,71 +155,3 @@ theorem exists_multi_star_with_mu_lt_one (n : ℕ) (hn : 1000 ≤ n) :
   sorry
 
 end KrafftSieve
-
-/-
-PROVIDED SOLUTION
-
-# MultiStarGraph Definitions
-
-This document contains the exact continuous mathematical formulas for the four `noncomputable def` placeholders currently in `KrafftSieve/MultiStarGraph.lean`. Please implement these in Lean precisely as formulated below.
-
-## 1. `sincCoeff`
-**Purpose**: Computes the exact Fourier overlap between a product of two base frequencies and a target harmonic via Dirichlet kernels (sinc functions).
-**Math**:
-For base primes $p_a, p_j$ and target harmonic $k/p_i$, the overlap integral of $\cos(6\pi x/p_a)\cos(6\pi x/p_j)\cos(12\pi k x/p_i)$ over $[-L/2, L/2]$ expands via product-to-sum into four frequencies:
-$$ f_1 = \frac{3}{p_a} - \frac{3}{p_j} - \frac{6k}{p_i}, \quad f_2 = \frac{3}{p_a} - \frac{3}{p_j} + \frac{6k}{p_i} $$
-$$ f_3 = \frac{3}{p_a} + \frac{3}{p_j} - \frac{6k}{p_i}, \quad f_4 = \frac{3}{p_a} + \frac{3}{p_j} + \frac{6k}{p_i} $$
-**Lean Definition Goal**:
-```lean
-noncomputable def sincCoeff (n : ℕ) (a j i : Fin (w n)) (k : ℕ) : ℝ :=
-  let L := ((evalInterval n).card : ℝ)
-  let f1 := 3 / (p a) - 3 / (p j) - 6 * k / (p i)
-  -- ... (define f2, f3, f4)
-  (1 / 4) * ( (Real.sin (Real.pi * L * f1) / (Real.pi * f1)) +
-              (Real.sin (Real.pi * L * f2) / (Real.pi * f2)) +
-              (Real.sin (Real.pi * L * f3) / (Real.pi * f3)) +
-              (Real.sin (Real.pi * L * f4) / (Real.pi * f4)) )
-```
-*(Note: Aristotle should handle the limits gracefully when $f_v = 0$, evaluating to $L/4$, using standard Mathlib continuous extension if necessary, or just explicit branching).*
-
-## 2. `starWeight`
-**Purpose**: The continuous edge weight designed to optimally anti-align with the target signal $c(x)$.
-**Math**:
-For edge $S = \{a, j\}$, `starWeight` is the negative sum of `sincCoeff` over all active penalty frequencies.
-**Lean Definition Goal**:
-```lean
-noncomputable def starWeight (n : ℕ) (S : Idx n) : ℝ :=
-  -- Assuming S is unpacked into a and j:
-  - ∑ i : Fin (w n), ∑ k in Finset.range (maxHarmonic n),
-      sincCoeff n a j i k
-```
-
-## 3. `massCrossTerms`
-**Purpose**: The expectation of the mass cross-terms over all random subsets $A$ of size $m$.
-**Math**:
-Let $P(S_1, S_2)$ be the probability that both edges $S_1$ and $S_2$ survive the random bipartite cut. For $S_1=\{a, j\}$ and $S_2=\{b, i\}$, this depends entirely on their intersection:
-- Shared anchor ($a=b, j \neq i$): $P = \frac{m(w-m)(w-m-1)}{w(w-1)(w-2)}$
-- Shared target ($a \neq b, j=i$): $P = \frac{m(m-1)(w-m)}{w(w-1)(w-2)}$
-- Disjoint ($a \neq b, j \neq i$): $P = \frac{m(m-1)(w-m)(w-m-1)}{w(w-1)(w-2)(w-3)}$
-
-**Lean Definition Goal**:
-```lean
-noncomputable def massCrossTerms (n m : ℕ) : ℝ :=
-  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
-    P_survive(S1, S2, m, w n) * starWeight n S1 * starWeight n S2 *
-    (∫ x in evalInterval n, basisFunction n S1 x * basisFunction n S2 x)
-```
-
-## 4. `penaltyOffDiagonal`
-**Purpose**: The expectation of the penalty cross-terms.
-**Math**:
-Structurally identical to `massCrossTerms`, but the continuous integral includes the penalty function $c(x)$.
-**Lean Definition Goal**:
-```lean
-noncomputable def penaltyOffDiagonal (n m : ℕ) : ℝ :=
-  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
-    P_survive(S1, S2, m, w n) * starWeight n S1 * starWeight n S2 *
-    (∫ x in evalInterval n, c(x) * basisFunction n S1 x * basisFunction n S2 x)
-```
-
--/
