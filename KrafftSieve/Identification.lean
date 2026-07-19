@@ -53,7 +53,8 @@ lemma matrix1_eq_massMatrixEntry (n : ℕ) (hn : 1 ≤ n) (S T : Finset (Fin (w 
       ZMod.val_natCast_of_lt (Finset.mem_range.mp hx)
     simp [Psi, hval, hx']
 
-/-- The second moment matrix evaluated cyclically matches the penalty matrix entry over the interval. -/
+/-- The second moment matrix evaluated cyclically matches the penalty matrix entry over the
+interval. -/
 lemma matrix2_eq_penaltyMatrixEntry (n : ℕ) (hn : 1 ≤ n) (S T : Finset (Fin (w n))) :
     matrix2 n S T = penaltyMatrixEntry n S T := by
   have hsub : evalInterval n ⊆ Finset.range (q n) := by
