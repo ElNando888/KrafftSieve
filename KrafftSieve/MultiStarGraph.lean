@@ -23,28 +23,61 @@ open scoped BigOperators
 The set of all possible anchor choices of size m.
 -/
 def anchorSubsets (n : ℕ) (m : ℕ) : Finset (Finset (Fin (w n))) :=
-  -- Stub for the set of subsets of size m
-  sorry
+  Finset.powersetCard m Finset.univ
 
 /--
 Helper lemma: The discrete Fourier transform of a product of cosines expands
 into a sum of Dirichlet kernels (sinc functions) via product-to-sum identities.
 -/
-theorem fourier_cos_mul_cos (L : ℝ) (f1 f2 : ℝ) (x : ℝ) :
+theorem fourier_cos_mul_cos (_L : ℝ) (f1 f2 : ℝ) (x : ℝ) :
     Real.cos (2 * Real.pi * f1 * x) * Real.cos (2 * Real.pi * f2 * x) =
     (Real.cos (2 * Real.pi * (f1 - f2) * x) + Real.cos (2 * Real.pi * (f1 + f2) * x)) / 2 := by
-  -- Follows directly from standard trigonometry: 2 cos(A) cos(B) = cos(A-B) + cos(A+B)
-  sorry
+  have hsub : 2 * Real.pi * (f1 - f2) * x =
+      2 * Real.pi * f1 * x - 2 * Real.pi * f2 * x := by ring
+  have hadd : 2 * Real.pi * (f1 + f2) * x =
+      2 * Real.pi * f1 * x + 2 * Real.pi * f2 * x := by ring
+  rw [hsub, hadd, Real.cos_sub, Real.cos_add]
+  ring
 
 /--
-Helper lemma: The integral/sum of the expanded cosine terms evaluates perfectly
-to the continuous sinc coefficients over the domain L.
+Helper lemma: the integral of a cosine evaluates to its continuous sinc coefficient.
+At zero frequency, the integral is `L`; the conditional is necessary to state this
+removable singularity correctly.
+
+The original uploaded statement omitted the zero-frequency case and asserted
+`sin (π L f) / (π f)` for every `f`. That statement is false when `f = 0` and
+`L ≠ 0`, because Lean's division gives a right-hand side of zero.
 -/
 theorem fourier_sinc_eval (L f : ℝ) :
-    (∫ x in (-L/2)..(L/2), Real.cos (2 * Real.pi * f * x)) =
-    Real.sin (Real.pi * L * f) / (Real.pi * f) := by
-  -- Standard calculus integral of cosine
-  sorry
+    (∫ x in (-L / 2)..(L / 2), Real.cos (2 * Real.pi * f * x)) =
+    if f = 0 then L else Real.sin (Real.pi * L * f) / (Real.pi * f) := by
+  by_cases hf : f = 0
+  · subst f
+    simp
+    ring
+  · rw [if_neg hf]
+    have hk : 2 * Real.pi * f ≠ 0 :=
+      mul_ne_zero (mul_ne_zero (by norm_num) Real.pi_ne_zero) hf
+    have hderiv : ∀ x : ℝ, HasDerivAt
+        (fun y : ℝ => Real.sin (2 * Real.pi * f * y) / (2 * Real.pi * f))
+        (Real.cos (2 * Real.pi * f * x)) x := by
+      intro x
+      have hlin : HasDerivAt (fun y : ℝ => (2 * Real.pi * f) * y)
+          (2 * Real.pi * f) x := by
+        simpa using (hasDerivAt_id x).const_mul (2 * Real.pi * f)
+      simpa [hk] using
+        ((Real.hasDerivAt_sin (2 * Real.pi * f * x)).comp x hlin).div_const
+          (2 * Real.pi * f)
+    have hint : IntervalIntegrable (fun x : ℝ => Real.cos (2 * Real.pi * f * x))
+        MeasureTheory.volume (-L / 2) (L / 2) :=
+      (show Continuous (fun x : ℝ => Real.cos (2 * Real.pi * f * x)) by
+        fun_prop).intervalIntegrable _ _
+    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => hderiv x) hint]
+    rw [show 2 * Real.pi * f * (L / 2) = Real.pi * L * f by ring,
+        show 2 * Real.pi * f * (-L / 2) = -(Real.pi * L * f) by ring,
+        Real.sin_neg]
+    field_simp
+    ring
 
 /--
 The continuous Fourier overlap evaluated as a sum of Dirichlet Kernels (sinc).
