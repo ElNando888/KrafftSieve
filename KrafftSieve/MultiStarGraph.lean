@@ -124,11 +124,15 @@ noncomputable def P_survive (n m : ℕ) (S1 S2 : Idx n) : ℝ :=
     (4 * m_R * (m_R - 1) * (w_n - m_R) * (w_n - m_R - 1)) /
       (w_n * (w_n - 1) * (w_n - 2) * (w_n - 3))
 
+/-- The set of all two-element edges (subsets of size 2). -/
+def Edges (n : ℕ) : Finset (Idx n) :=
+  Finset.univ.filter (fun S => S.card = 2)
+
 /--
 The exact cross-term error sum for the mass matrix.
 -/
 noncomputable def massCrossTerms (n m : ℕ) : ℝ :=
-  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
+  ∑ S1 ∈ Edges n, ∑ S2 ∈ (Edges n \ {S1}),
     P_survive n m S1 S2 * starWeight n S1 * starWeight n S2 *
     (∑ x ∈ evalInterval n, basisFunction n (S1 : Finset (Fin (w n))) x *
                            basisFunction n (S2 : Finset (Fin (w n))) x)
@@ -137,7 +141,7 @@ noncomputable def massCrossTerms (n m : ℕ) : ℝ :=
 The exact structural off-diagonal penalty sum (which is negative).
 -/
 noncomputable def penaltyOffDiagonal (n m : ℕ) : ℝ :=
-  ∑ S1 : Idx n, ∑ S2 ∈ (Finset.univ \ {S1}),
+  ∑ S1 ∈ Edges n, ∑ S2 ∈ (Edges n \ {S1}),
     P_survive n m S1 S2 * starWeight n S1 * starWeight n S2 *
     (∑ x ∈ evalInterval n, c n (x : ZMod (q n)) *
                            basisFunction n (S1 : Finset (Fin (w n))) x *
@@ -151,7 +155,7 @@ being active, multiplied by the diagonal mass sum, minus cross-term error bounds
 theorem expected_mass_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
     (∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≥
     (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
-    (∑ S : Idx n, (starWeight n S)^2 * ((evalInterval n).card : ℝ) / 4) -
+    (∑ S ∈ Edges n, (starWeight n S)^2 * ((evalInterval n).card : ℝ) / 4) -
     massCrossTerms n m :=
   sorry
 
@@ -165,7 +169,7 @@ theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
     (∑ A ∈ anchorSubsets n m, q2 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≤
     -- Expected Diagonal Penalty
     (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
-    (∑ S : Idx n, (starWeight n S)^2 *
+    (∑ S ∈ Edges n, (starWeight n S)^2 *
                   (∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (basisFunction n S x)^2)) +
     -- Expected Off-Diagonal Penalty (Structurally negative due to sinc anti-alignment)
     penaltyOffDiagonal n m :=
