@@ -234,31 +234,208 @@ def isGoodPhaseInterval (n : ℕ) (a b : ℝ) : Prop :=
 
 /--
 Greedy Sequence Accumulation:
-Given a sequence of positive reals that diverges to infinity and decays to 0, we can
-always find a finite subset of disjoint indices whose sum falls into any target interval [a, b],
-provided we start with an index sufficiently large such that the step size is smaller than b - a.
+A finite family of positive terms, each smaller than the width of a nonnegative target interval
+and having total mass above its upper endpoint, has a subset whose sum lies in that interval.
 -/
 lemma exists_subset_sum_in_interval {ι : Type*} (seq : ι → ℝ) (available : Finset ι)
-    (a b : ℝ) (hab : a < b)
+    (a b : ℝ) (hab : a < b) (ha : 0 ≤ a)
     (h_pos : ∀ i ∈ available, 0 < seq i)
     (h_step : ∀ i ∈ available, seq i < b - a)
     (h_mass : ∑ i ∈ available, seq i > b) :
-    ∃ S ⊆ available, ∑ i ∈ S, seq i ∈ Set.Icc a b := by
-  sorry
+    ∃ S ⊆ available, S.Nonempty ∧ ∑ i ∈ S, seq i ∈ Set.Icc a b := by
+  classical
+  induction available using Finset.induction_on with
+  | empty =>
+      simp at h_mass
+      linarith
+  | @insert i available hi ih =>
+      rw [Finset.sum_insert hi] at h_mass
+      by_cases htail : ∑ j ∈ available, seq j > b
+      · obtain ⟨S, hS, hne, hsum⟩ := ih
+          (fun j hj => h_pos j (Finset.mem_insert_of_mem hj))
+          (fun j hj => h_step j (Finset.mem_insert_of_mem hj)) htail
+        exact ⟨S, hS.trans (Finset.subset_insert i available), hne, hsum⟩
+      · have hsi := h_step i (Finset.mem_insert_self i available)
+        have hsum_pos : 0 < ∑ j ∈ available, seq j := by linarith
+        have havail : available.Nonempty := by
+          rw [Finset.nonempty_iff_ne_empty]
+          intro he
+          rw [he] at hsum_pos
+          simp at hsum_pos
+        refine ⟨available, Finset.subset_insert i available, havail, ?_⟩
+        rw [Set.mem_Icc]
+        constructor
+        · linarith
+        · linarith
 
 /--
 The Halved Target Strategy:
 If every individual vertex has its phase in [a/2, b/2], then every pairwise sum
 is in [a, b], guaranteeing they all perfectly phase-lock into a clique.
 -/
-lemma ridge_clique_of_halved_phases (n : ℕ) (M : ℕ) (a b : ℝ) (hab : a < b)
+lemma ridge_clique_of_halved_phases (n : ℕ) (M : ℕ) (a b : ℝ)
     (h_good : isGoodPhaseInterval n a b)
     (vertices : Fin M → Finset (Fin (w n)))
     (h_disj : ∀ i j, i ≠ j → Disjoint (vertices i) (vertices j))
     (h_phases : ∀ i, subsetPhase n (vertices i) ∈ Set.Icc (a / 2) (b / 2)) :
     (ridgeGraph n).IsClique (Set.range vertices) ∧
     (∀ S ∈ Set.range vertices, ∀ T ∈ Set.range vertices, S ≠ T → penaltyMatrixEntry n S T ≤ 0) := by
+  constructor
+  · rintro S ⟨i, rfl⟩ T ⟨j, rfl⟩ hne
+    have hij : i ≠ j := fun h => hne (congrArg vertices h)
+    have hd := h_disj i j hij
+    have hsum : subsetPhase n (vertices i) + subsetPhase n (vertices j) ∈ Set.Icc a b := by
+      have hi := h_phases i
+      have hj := h_phases j
+      simp only [Set.mem_Icc] at hi hj ⊢
+      constructor <;> linarith
+    exact (h_good.2 _ _ hd hsum).1
+  · rintro S ⟨i, rfl⟩ T ⟨j, rfl⟩ hne
+    have hij : i ≠ j := fun h => hne (congrArg vertices h)
+    have hd := h_disj i j hij
+    have hsum : subsetPhase n (vertices i) + subsetPhase n (vertices j) ∈ Set.Icc a b := by
+      have hi := h_phases i
+      have hj := h_phases j
+      simp only [Set.mem_Icc] at hi hj ⊢
+      constructor <;> linarith
+    exact (h_good.2 _ _ hd hsum).2
+
+/-- A sufficiently large injectively indexed family of disjoint vertices in a good halved phase
+interval gives the required finite ridge clique. -/
+lemma clique_from_vertices (n : ℕ) (M : ℕ) (a b : ℝ)
+    (h_good : isGoodPhaseInterval n a b)
+    (vertices : Fin M → Finset (Fin (w n)))
+    (h_inj : Function.Injective vertices)
+    (h_disj : ∀ i j, i ≠ j → Disjoint (vertices i) (vertices j))
+    (h_phases : ∀ i, subsetPhase n (vertices i) ∈ Set.Icc (a / 2) (b / 2))
+    (h_large : (M : ℝ) >
+      1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card) :
+    ∃ C : Finset (Finset (Fin (w n))),
+      (ridgeGraph n).IsClique (C : Set (Finset (Fin (w n)))) ∧
+      (∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0) ∧
+      (C.card : ℝ) >
+        1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
+  let C : Finset (Finset (Fin (w n))) := Finset.univ.image vertices
+  have hrange : (C : Set (Finset (Fin (w n)))) = Set.range vertices := by
+    ext S
+    simp [C]
+  have hc := ridge_clique_of_halved_phases n M a b h_good vertices h_disj h_phases
+  refine ⟨C, hrange.symm ▸ hc.1, ?_, ?_⟩
+  · intro S hS T hT hne
+    rw [Finset.mem_image] at hS hT
+    obtain ⟨i, _, rfl⟩ := hS
+    obtain ⟨j, _, rfl⟩ := hT
+    exact hc.2 _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ hne
+  · have hcard : C.card = M := by
+      change (Finset.univ.image vertices).card = M
+      rw [Finset.card_image_of_injective _ h_inj, Finset.card_univ, Fintype.card_fin]
+    rwa [hcard]
+
+/-- Analytically, a good phase interval exists. -/
+lemma exists_good_phase_interval (n : ℕ) (hn : 1000 ≤ n) (M : ℕ) :
+    ∃ a b : ℝ, 0 ≤ a ∧ a < b ∧ isGoodPhaseInterval n a b ∧
+      (∀ i : Fin (w n), (p n i : ℝ)⁻¹ < (b - a) / 2) ∧
+      (M : ℝ) * (b / 2) < ∑ i : Fin (w n), (p n i : ℝ)⁻¹ := by
   sorry
+
+/-- Recursive extraction from an arbitrary pool whose remaining phase mass is sufficient. -/
+lemma exists_phase_vertices_from_pool (n M : ℕ) (available : Finset (Fin (w n)))
+    (a b : ℝ) (hab : a < b) (ha : 0 ≤ a)
+    (h_step : ∀ i : Fin (w n), (p n i : ℝ)⁻¹ < (b - a) / 2)
+    (h_mass : (M : ℝ) * (b / 2) < ∑ i ∈ available, (p n i : ℝ)⁻¹) :
+    ∃ (vertices : Fin M → Finset (Fin (w n))),
+      Function.Injective vertices ∧
+      (∀ i, vertices i ⊆ available) ∧
+      (∀ i, (vertices i).Nonempty) ∧
+      (∀ i j, i ≠ j → Disjoint (vertices i) (vertices j)) ∧
+      (∀ i, subsetPhase n (vertices i) ∈ Set.Icc (a / 2) (b / 2)) := by
+  classical
+  induction M generalizing available with
+  | zero =>
+      let vertices : Fin 0 → Finset (Fin (w n)) := fun i => Fin.elim0 i
+      refine ⟨vertices, ?_, ?_, ?_, ?_, ?_⟩ <;> intro i
+      all_goals exact Fin.elim0 i
+  | succ M ih =>
+      have hb : 0 < b := lt_of_le_of_lt ha hab
+      have htarget : 0 ≤ a / 2 ∧ a / 2 < b / 2 := by constructor <;> linarith
+      have htotal : ∑ i ∈ available, (p n i : ℝ)⁻¹ > b / 2 := by
+        have hnonneg : 0 ≤ (M : ℝ) * (b / 2) :=
+          mul_nonneg (Nat.cast_nonneg _) (by linarith)
+        push_cast at h_mass
+        nlinarith
+      obtain ⟨S, hS, hS_ne, hS_phase⟩ := exists_subset_sum_in_interval
+        (fun i : Fin (w n) => (p n i : ℝ)⁻¹) available (a / 2) (b / 2)
+        htarget.2 htarget.1
+        (fun i _ => inv_pos.mpr (by exact_mod_cast p_pos n i))
+        (fun i _ => by convert h_step i using 1 ; ring) htotal
+      have hremaining : (M : ℝ) * (b / 2) <
+          ∑ i ∈ available \ S, (p n i : ℝ)⁻¹ := by
+        rw [Finset.sum_sdiff_eq_sub hS]
+        have hupper := hS_phase.2
+        push_cast at h_mass
+        nlinarith
+      obtain ⟨tail, htail_inj, htail_sub, htail_ne, htail_disj, htail_phase⟩ :=
+        ih (available \ S) hremaining
+      let vertices : Fin (M + 1) → Finset (Fin (w n)) := Fin.cons S tail
+      have hvertices_ne : ∀ i, (vertices i).Nonempty := by
+        intro i
+        refine Fin.cases ?_ (fun j => ?_) i
+        · simpa [vertices] using hS_ne
+        · simpa [vertices] using htail_ne j
+      have hvertices_disj : ∀ i j, i ≠ j → Disjoint (vertices i) (vertices j) := by
+        intro i
+        refine Fin.cases ?_ (fun i' => ?_) i
+        · intro j
+          refine Fin.cases ?_ (fun j' _ => ?_) j
+          · intro hij
+            exact (hij rfl).elim
+          · rw [Finset.disjoint_left]
+            intro x hxS hxT
+            have hxAvail : x ∈ available \ S := htail_sub j' hxT
+            exact (Finset.mem_sdiff.mp hxAvail).2 hxS
+        · intro j
+          refine Fin.cases ?_ (fun j' => ?_) j
+          · intro _
+            rw [Finset.disjoint_left]
+            intro x hxT hxS
+            have hxAvail : x ∈ available \ S := htail_sub i' hxT
+            exact (Finset.mem_sdiff.mp hxAvail).2 hxS
+          · intro hij
+            simpa [vertices] using htail_disj i' j' (by
+              intro heq
+              exact hij (congrArg Fin.succ heq))
+      have hvertices_inj : Function.Injective vertices := by
+        intro i j hij
+        by_contra hne
+        have hd := hvertices_disj i j hne
+        rw [hij, Finset.disjoint_left] at hd
+        obtain ⟨x, hx⟩ := hvertices_ne j
+        exact hd hx hx
+      refine ⟨vertices, hvertices_inj, ?_, hvertices_ne, hvertices_disj, ?_⟩
+      · intro i
+        refine Fin.cases ?_ (fun j => ?_) i
+        · simpa [vertices] using hS
+        · exact (htail_sub j).trans Finset.sdiff_subset
+      · intro i
+        refine Fin.cases ?_ (fun j => ?_) i
+        · simpa [vertices, subsetPhase] using hS_phase
+        · simpa [vertices] using htail_phase j
+
+/-- By recursively applying the greedy accumulation lemma, we can extract M mutually disjoint
+vertices perfectly falling into the halved phase target. -/
+lemma exists_valid_vertices (n : ℕ) (hn : 1000 ≤ n) (M : ℕ)
+    (h_large : (M : ℝ) >
+      1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card)
+    (a b : ℝ) (hab : a < b) (ha : 0 ≤ a)
+    (h_step : ∀ i : Fin (w n), (p n i : ℝ)⁻¹ < (b - a) / 2)
+    (h_mass : (M : ℝ) * (b / 2) < ∑ i : Fin (w n), (p n i : ℝ)⁻¹) :
+    ∃ (vertices : Fin M → Finset (Fin (w n))),
+      Function.Injective vertices ∧
+      (∀ i j, i ≠ j → Disjoint (vertices i) (vertices j)) ∧
+      (∀ i, subsetPhase n (vertices i) ∈ Set.Icc (a / 2) (b / 2)) := by
+  obtain ⟨vertices, h_inj, _, _, h_disj, h_phases⟩ :=
+    exists_phase_vertices_from_pool n M Finset.univ a b hab ha h_step (by simpa using h_mass)
+  exact ⟨vertices, h_inj, h_disj, h_phases⟩
 
 /--
 Phase 6 Main Theorem: For sufficiently large n, there exists a large clique in the Ridge Graph
@@ -270,10 +447,15 @@ theorem exists_large_ridge_clique (n : ℕ) (hn : 1000 ≤ n) :
       (∀ S ∈ C, ∀ T ∈ C, S ≠ T → penaltyMatrixEntry n S T ≤ 0) ∧
       (C.card : ℝ) >
         1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card := by
-  -- 1. Identify the good phase interval [a, b] for this n.
-  -- 2. Use exists_subset_sum_in_interval M times repeatedly to pluck out disjoint vertices.
-  -- 3. Apply ridge_clique_of_halved_phases to conclude the clique properties.
-  sorry
+  have h_bound : ∃ M : ℕ, (M : ℝ) >
+      1 + 2 * (∑ x ∈ evalInterval n, c n (x : ZMod (q n))) / (evalInterval n).card :=
+    exists_nat_gt _
+  obtain ⟨M, hM⟩ := h_bound
+  obtain ⟨a, b, ha, hab, h_good, h_step, h_mass⟩ :=
+    exists_good_phase_interval n hn M
+  obtain ⟨vertices, h_inj, h_disj, h_phases⟩ :=
+    exists_valid_vertices n hn M hM a b hab ha h_step h_mass
+  exact clique_from_vertices n M a b h_good vertices h_inj h_disj h_phases hM
 
 /-
 A finite cosine sum over a natural interval satisfies the standard Dirichlet bound.
