@@ -150,7 +150,7 @@ being active, multiplied by the diagonal mass sum, minus cross-term error bounds
 -/
 theorem expected_mass_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
     (∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≥
-    ((m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
+    (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
     (∑ S : Idx n, (starWeight n S)^2 * ((evalInterval n).card : ℝ) / 4) -
     massCrossTerms n m :=
   sorry
@@ -164,7 +164,7 @@ below the diagonal mass trace.
 theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
     (∑ A ∈ anchorSubsets n m, q2 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≤
     -- Expected Diagonal Penalty
-    ((m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
+    (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
     (∑ S : Idx n, (starWeight n S)^2 *
                   (∑ x ∈ evalInterval n, c n (x : ZMod (q n)) * (basisFunction n S x)^2)) +
     -- Expected Off-Diagonal Penalty (Structurally negative due to sinc anti-alignment)
