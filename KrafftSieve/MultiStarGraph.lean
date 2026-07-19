@@ -152,7 +152,7 @@ The expected mass evaluation over all possible anchor subsets of size m.
 By linearity of expectation, the sum of Q1(A) reduces to the probability of an edge
 being active, multiplied by the diagonal mass sum, minus cross-term error bounds.
 -/
-theorem expected_mass_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
+theorem expected_mass_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
     (∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≥
     (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
     (∑ S ∈ Edges n, (starWeight n S)^2 * ((evalInterval n).card : ℝ) / 4) -
@@ -165,7 +165,7 @@ Using the FourierTransform helpers (fourier_cos_mul_cos and fourier_sinc_eval),
 the continuous expansion of this quadratic form explicitly bounds the sum strictly
 below the diagonal mass trace.
 -/
-theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) :
+theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
     (∑ A ∈ anchorSubsets n m, q2 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≤
     -- Expected Diagonal Penalty
     (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
