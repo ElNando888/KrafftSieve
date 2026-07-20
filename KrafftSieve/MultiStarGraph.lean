@@ -20,6 +20,10 @@ power-set via the probabilistic/averaging principle over a uniform Finset.
 namespace KrafftSieve
 open scoped BigOperators
 
+-- Temporary
+set_option linter.style.setOption false
+set_option linter.style.maxHeartbeats false
+
 /--
 The set of all possible anchor choices of size m.
 -/
