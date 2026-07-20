@@ -992,6 +992,44 @@ theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 �
     ring
 
 /--
+1. Diagonal Mass Lower Bound
+The mass of an individual edge S is proportional to the interval length.
+(Aristotle: Adjust the constant C_mass = 1/4 as needed)
+-/
+theorem massMatrixEntry_diag_lower_bound (n : ℕ) (hn : 1000 ≤ n) (S : Idx n) (hS : S ∈ Edges n) :
+    massMatrixEntry n S S ≥ (1 / 4 : ℝ) * ((evalInterval n).card : ℝ) :=
+  sorry
+
+/--
+2. Diagonal Penalty Upper Bound
+The penalty of an individual edge S is bounded by a constant times the interval length.
+(Aristotle: Adjust the constant C_pen = 100 as needed)
+-/
+theorem penaltyMatrixEntry_diag_upper_bound (n : ℕ) (hn : 1000 ≤ n) (S : Idx n) (hS : S ∈ Edges n) :
+    penaltyMatrixEntry n S S ≤ (100 : ℝ) * ((evalInterval n).card : ℝ) :=
+  sorry
+
+/--
+3. Discrete Sinc Errors (Mass Cross Terms)
+The discrete cross terms are bounded by a small error decaying with w(n).
+(Aristotle: Adjust the exact bound as needed)
+-/
+theorem massCrossTerms_bound (n m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
+    |massCrossTerms n m| ≤ (1 / (w n : ℝ)) * ((m : ℝ) / (w n : ℝ)) * ((evalInterval n).card : ℝ) *
+      ∑ S ∈ Edges n, (starWeight n S)^2 :=
+  sorry
+
+/--
+4. Off-Diagonal Penalty (Strictly Negative)
+The off-diagonal penalty is strongly negative and scales quadratically with m/w.
+(Aristotle: Adjust the constant C_cross = 200 as needed)
+-/
+theorem penaltyOffDiagonal_upper_bound (n m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
+    penaltyOffDiagonal n m ≤ - (200 : ℝ) * ((m : ℝ) / (w n : ℝ))^2 * ((evalInterval n).card : ℝ) *
+      ∑ S ∈ Edges n, (starWeight n S)^2 :=
+  sorry
+
+/--
 The asymptotic guarantee that the expected ratio Q2/Q1 is strictly less than 1.
 Because the off-diagonal penalty perfectly anti-aligns with the Fourier density,
 for a sufficiently scaled m(n), the expectation is strictly less than the expected mass.
@@ -1006,7 +1044,37 @@ theorem expected_ratio_lt_one (n : ℕ) (hn : 1000 ≤ n) :
 The existence of at least one valid combination via the Averaging (Pigeonhole) Principle.
 -/
 theorem exists_multi_star_with_mu_lt_one (n : ℕ) (hn : 1000 ≤ n) :
-    ∃ A : Finset (Fin (w n)), q1 n (multiStarVector n A) > 0 ∧ Ratio n (multiStarVector n A) < 1 :=
-  sorry
+    ∃ A : Finset (Fin (w n)),
+      q1 n (multiStarVector n A) > 0 ∧ Ratio n (multiStarVector n A) < 1 := by
+  classical
+  obtain ⟨m, hm, havg⟩ := expected_ratio_lt_one n hn
+  have hanchor : (anchorSubsets n m).Nonempty := by
+    unfold anchorSubsets
+    rw [Finset.powersetCard_nonempty]
+    simpa using hm
+  have hcard : 0 < ((anchorSubsets n m).card : ℝ) := by
+    exact_mod_cast (Finset.card_pos.mpr hanchor)
+  have hsums :
+      (∑ A ∈ anchorSubsets n m, q2 n (multiStarVector n A)) <
+        ∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A) := by
+    exact (div_lt_div_iff_of_pos_right hcard).mp havg
+  have hex : ∃ A ∈ anchorSubsets n m,
+      q2 n (multiStarVector n A) < q1 n (multiStarVector n A) := by
+    by_contra h
+    push Not at h
+    have := Finset.sum_le_sum fun A hA => h A hA
+    exact (not_lt_of_ge this) hsums
+  obtain ⟨A, hA, hlt⟩ := hex
+  have hq2 : 0 ≤ q2 n (multiStarVector n A) := by
+    rw [q2_sum_sq]
+    refine Finset.sum_nonneg fun x hx => ?_
+    exact mul_nonneg (mul_nonneg (c_nonneg n _) (sq_nonneg _)) (by
+      unfold Psi
+      split <;> positivity)
+  have hq1 : 0 < q1 n (multiStarVector n A) := lt_of_le_of_lt hq2 hlt
+  refine ⟨A, hq1, ?_⟩
+  unfold Ratio
+  rw [if_neg hq1.ne']
+  exact (div_lt_one hq1).mpr hlt
 
 end KrafftSieve
