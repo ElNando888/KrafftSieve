@@ -1015,7 +1015,7 @@ The discrete cross terms are bounded by a small error decaying with w(n).
 (Aristotle: Adjust the exact bound as needed)
 -/
 theorem massCrossTerms_bound (n m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
-    |massCrossTerms n m| ≤ (1 / (w n : ℝ)) * ((m : ℝ) / (w n : ℝ)) * ((evalInterval n).card : ℝ) *
+    |massCrossTerms n m| ≤ (1 / (w n : ℝ)) * ((m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) * ((evalInterval n).card : ℝ) *
       ∑ S ∈ Edges n, (starWeight n S)^2 :=
   sorry
 
@@ -1025,7 +1025,7 @@ The off-diagonal penalty is strongly negative and scales quadratically with m/w.
 (Aristotle: Adjust the constant C_cross = 200 as needed)
 -/
 theorem penaltyOffDiagonal_upper_bound (n m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
-    penaltyOffDiagonal n m ≤ - (200 : ℝ) * ((m : ℝ) / (w n : ℝ))^2 * ((evalInterval n).card : ℝ) *
+    penaltyOffDiagonal n m ≤ - (200 : ℝ) * ((m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) * ((evalInterval n).card : ℝ) *
       ∑ S ∈ Edges n, (starWeight n S)^2 :=
   sorry
 
