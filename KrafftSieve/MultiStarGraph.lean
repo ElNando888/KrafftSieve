@@ -996,7 +996,8 @@ The asymptotic guarantee that the expected ratio Q2/Q1 is strictly less than 1.
 Because the off-diagonal penalty perfectly anti-aligns with the Fourier density,
 for a sufficiently scaled m(n), the expectation is strictly less than the expected mass.
 -/
-theorem expected_ratio_lt_one (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
+theorem expected_ratio_lt_one (n : ℕ) (hn : 1000 ≤ n) :
+    ∃ m ≤ w n,
     ((∑ A ∈ anchorSubsets n m, q2 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ)) <
     ((∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ)) :=
   sorry
