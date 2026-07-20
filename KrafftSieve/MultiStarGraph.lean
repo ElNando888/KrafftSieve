@@ -842,7 +842,7 @@ private lemma average_crosses_pair_weighted (n m : ℕ) (hm : m ≤ w n) (hn : 1
     apply Finset.sum_congr rfl
     intro A hA
     by_cases hAS : crosses A S <;> by_cases hAT : crosses A T <;>
-      simp [hAS, hAT] <;> ring
+      simp [hAS, hAT]
   rw [hsum]
   ring
 
