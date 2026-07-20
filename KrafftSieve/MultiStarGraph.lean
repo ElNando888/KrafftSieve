@@ -798,7 +798,7 @@ private lemma average_crosses_pair (n m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n
       have hle : (S ∩ T).card ≤ 2 :=
         (Finset.card_le_card Finset.inter_subset_left).trans_eq hS
       interval_cases hi : (S ∩ T).card
-      · simp [hi]
+      · simp
       · norm_num
         have h0 : (w n : ℝ) ≠ 0 := by exact_mod_cast (show w n ≠ 0 by omega)
         have h1 : (w n : ℝ) - 1 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast (show w n ≠ 1 by omega))
@@ -866,17 +866,63 @@ private lemma average_spatial_quadratic (n m : ℕ) (hm : m ≤ w n) (hn : 1000 
   exact average_crosses_pair_weighted n m hm hn S T
     (Finset.mem_filter.mp hS).2 (Finset.mem_filter.mp hT).2 _ _ _
 
+set_option maxHeartbeats 400000 in
 /--
 The expected mass evaluation over all possible anchor subsets of size m.
 By linearity of expectation, the sum of Q1(A) reduces to the probability of an edge
-being active, multiplied by the diagonal mass sum, minus cross-term error bounds.
+being active, multiplied by the diagonal mass sum, and the exact cross-term expansion.
 -/
 theorem expected_mass_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 ≤ n) :
     (∑ A ∈ anchorSubsets n m, q1 n (multiStarVector n A)) / ((anchorSubsets n m).card : ℝ) ≥
     (2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ))) *
-    (∑ S ∈ Edges n, (starWeight n S)^2 * ((evalInterval n).card : ℝ) / 4) -
+    (∑ S ∈ Edges n, (starWeight n S)^2 * massMatrixEntry n S S) +
     massCrossTerms n m := by
-  sorry
+  classical
+  simp_rw [q1_multiStar_eq_spatial n (by omega)]
+  rw [average_spatial_quadratic n m hm hn]
+  unfold massCrossTerms
+  have hsplit (S : Finset (Fin (w n))) (hS : S ∈ Edges n) :
+      (∑ T ∈ Edges n,
+        P_survive n m S T * starWeight n S * massMatrixEntry n S T * starWeight n T) =
+      P_survive n m S S * starWeight n S * massMatrixEntry n S S * starWeight n S +
+      ∑ T ∈ Edges n \ {S},
+        P_survive n m S T * starWeight n S * massMatrixEntry n S T * starWeight n T := by
+    have hsub : {S} ⊆ Edges n := Finset.singleton_subset_iff.mpr hS
+    have h := Finset.sum_sdiff (f := fun T =>
+      P_survive n m S T * starWeight n S * massMatrixEntry n S T * starWeight n T) hsub
+    rw [add_comm]
+    simpa using h.symm
+  have hsplitAll :
+      (∑ S ∈ Edges n, ∑ T ∈ Edges n,
+        P_survive n m S T * starWeight n S * massMatrixEntry n S T * starWeight n T) =
+      ∑ S ∈ Edges n,
+        (P_survive n m S S * starWeight n S * massMatrixEntry n S S * starWeight n S +
+        ∑ T ∈ Edges n \ {S},
+          P_survive n m S T * starWeight n S * massMatrixEntry n S T * starWeight n T) := by
+    apply Finset.sum_congr rfl
+    intro S hS
+    exact hsplit S hS
+  rw [hsplitAll, Finset.sum_add_distrib]
+  apply le_of_eq
+  congr 1
+  · rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro S hS
+    have hScard : S.card = 2 := (Finset.mem_filter.mp hS).2
+    have hp : P_survive n m S S =
+        2 * (m : ℝ) * (w n - m : ℝ) / ((w n : ℝ) * (w n - 1 : ℝ)) := by
+      unfold P_survive
+      simp [hScard]
+    rw [hp]
+    unfold massMatrixEntry
+    simp only [pow_two]
+    ring
+  · apply Finset.sum_congr rfl
+    intro S hS
+    apply Finset.sum_congr rfl
+    intro T hT
+    unfold massMatrixEntry
+    ring
 
 set_option maxHeartbeats 800000 in
 -- The finite-sum normalization is elaboration-intensive in Lean 4.32.
@@ -933,7 +979,7 @@ theorem expected_penalty_bound (n : ℕ) (m : ℕ) (hm : m ≤ w n) (hn : 1000 �
     rw [hp]
     unfold penaltyMatrixEntry
     simp only [pow_two]
-    ring
+    ring_nf
   · apply Finset.sum_congr rfl
     intro S hS
     apply Finset.sum_congr rfl
