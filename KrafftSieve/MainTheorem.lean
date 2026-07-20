@@ -16,9 +16,6 @@ This file connects the discrete optimal sieve weights to the Twin Prime Conjectu
 namespace KrafftSieve
 open scoped BigOperators
 
-
-
-
 theorem multi_star_ansatz_implies_mu_min_lt_one (n : ℕ) (hn : 1000 ≤ n) : muMin n < 1 := by
   obtain ⟨A, hq1, h_ratio⟩ := exists_multi_star_with_mu_lt_one n hn
   have h_attainable : Ratio n (multiStarVector n A) ∈ attainableRatios n := by
@@ -71,7 +68,6 @@ theorem mu_min_lt_one_implies_tpc :
 
 /--
 Unconditional result: for all n >= 1000, muMin n < 1.
-This relies on the Phase 6 Main Theorem which constructs a large negative clique.
 -/
 theorem unconditional_mu_min_lt_one (n : ℕ) (hn : 1000 ≤ n) : muMin n < 1 := by
   exact multi_star_ansatz_implies_mu_min_lt_one n hn
@@ -87,5 +83,7 @@ theorem infinitely_many_twin_primes : {p : ℕ | Prime p ∧ Prime (p + 2)}.Infi
   constructor
   · exact unconditional_mu_min_lt_one _ (by omega)
   · omega
+
+#print axioms infinitely_many_twin_primes
 
 end KrafftSieve
